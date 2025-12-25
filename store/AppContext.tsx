@@ -1,0 +1,1 @@
+// File removed: Deprecated state management (replaced by FirebaseContext)

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" class="preload" style="scroll-behavior: smooth;">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>AMAZIO Art Fest</title>
+    
+    <!-- PWA Manifest and Theme Color -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0F1210" />
+    <meta name="description" content="A comprehensive web application to manage all aspects of an Art Fest." />
+
+    <!-- Apple PWA tags -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AMAZIO Art Fest" />
+
+    <!-- Theme Blocking Script: Prevents Light/Dark flash on load -->
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('theme') || 'dark';
+          var root = document.documentElement;
+          if (theme === 'system') {
+            var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            root.classList.add(dark ? 'dark' : 'light');
+          } else {
+            root.classList.add(theme);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Fonts System -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Source+Sans+3:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              amazio: {
+                bg: '#0F1210', 
+                surface: '#181C19',
+                'light-bg': '#FAF8F3',
+                'light-surface': '#FFFFFF',
+                'light-linen': '#F2F0EA',
+                primary: '#2B3B2A',
+                secondary: '#4D5A2A',
+                accent: '#9AA86A',
+                neon: '#B4C47A',
+                cream: '#F2F4EE',
+                muted: '#8A9A88',
+                'light-glow': '#C9D6A3',
+              },
+            },
+            fontFamily: {
+              sans: ['"Inter"', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
+              montserrat: ['"Montserrat"', 'sans-serif'],
+              source: ['"Source Sans 3"', 'sans-serif'],
+              slab: ['"Roboto Slab"', 'serif'],
+            },
+            borderRadius: {
+              xl: '16px',
+              '2xl': '20px',
+              '3xl': '32px',
+            },
+            boxShadow: {
+              'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+              'glass-hover': '0 12px 40px 0 rgba(0, 0, 0, 0.4)',
+              'glass-light': '0 8px 32px 0 rgba(43, 59, 42, 0.08)',
+              'glass-light-hover': '0 12px 40px 0 rgba(43, 59, 42, 0.12)',
+              'neon': '0 0 10px rgba(180, 196, 122, 0.3)',
+              'glow': '0 0 20px rgba(154, 168, 106, 0.15)',
+            },
+            backgroundImage: {
+                'forest-gradient': 'linear-gradient(135deg, #2B3B2A 0%, #4D5A2A 100%)',
+                'moss-gradient': 'linear-gradient(135deg, #4D5A2A 0%, #9AA86A 100%)',
+                'glass-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                'forest-gradient-light': 'linear-gradient(135deg, #4D5A2A 0%, #2B3B2A 100%)',
+                'glass-gradient-light': 'linear-gradient(145deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.4) 100%)',
+                'warm-gradient': 'linear-gradient(135deg, #FAF8F3 0%, #F2F0EA 100%)',
+            }
+          },
+        },
+      };
+    </script>
+    <style type="text/css">
+      /* CRITICAL: Disable transitions during initial theme application */
+      .preload,
+      .preload * {
+        -webkit-transition: none !important;
+        -moz-transition: none !important;
+        -ms-transition: none !important;
+        -o-transition: none !important;
+        transition: none !important;
+      }
+
+      :root {
+        --bg-color: #0F1210;
+        --panel-bg: #181C19;
+        --card-bg: rgba(24, 28, 25, 0.6);
+        --accent: #9AA86A;
+        --muted: #8A9A88;
+        --glass-overlay-opacity: 0.02;
+        --gradient-start: #2B3B2A;
+        --gradient-end: #4D5A2A;
+        --shadow-color: rgba(0, 0, 0, 0.3);
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--bg-color);
+        color: #F2F4EE;
+        /* Safe areas are handled by components to avoid gaps */
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+      
+      html.dark body {
+         background-color: var(--bg-color);
+         color: #F2F4EE;
+      }
+      
+      html.dark select option {
+        background-color: #181C19 !important;
+        color: #F2F4EE !important;
+      }
+
+      html:not(.dark) body {
+        background-color: #FAF8F3;
+        color: #1F2B1B;
+      }
+
+      .ambient-light {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        pointer-events: none;
+        transition: opacity 0.7s ease-in-out;
+      }
+      
+      html.dark .ambient-light {
+        background: radial-gradient(circle at 15% 50%, rgba(43, 59, 42, 0.2) 0%, transparent 40%),
+                    radial-gradient(circle at 85% 30%, rgba(77, 90, 42, 0.15) 0%, transparent 40%),
+                    radial-gradient(circle at 50% 90%, rgba(154, 168, 106, 0.05) 0%, transparent 50%);
+      }
+
+      html:not(.dark) .ambient-light {
+         background: radial-gradient(circle at 10% 20%, rgba(154, 168, 106, 0.15) 0%, transparent 45%),
+                    radial-gradient(circle at 90% 60%, rgba(77, 90, 42, 0.08) 0%, transparent 40%),
+                    radial-gradient(circle at 50% 95%, rgba(201, 214, 163, 0.2) 0%, transparent 50%);
+      }
+
+      .noise-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: var(--glass-overlay-opacity);
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        pointer-events: none;
+      }
+      
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Playfair Display', serif;
+      }
+
+      input[type="checkbox"] {
+        accent-color: var(--accent);
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(138, 154, 136, 0.2);
+        border-radius: 10px;
+        transition: background 0.3s ease;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(138, 154, 136, 0.4);
+      }
+
+      .transition-theme {
+        transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .custom-scrollbar {
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(138, 154, 136, 0.2) transparent;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.548.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1/dist/jszip.min.js",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1/dist/html2canvas.min.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-amazio-light-bg dark:bg-amazio-bg text-amazio-primary dark:text-amazio-cream font-sans selection:bg-amazio-accent selection:text-amazio-bg overflow-x-hidden">
+    <div id="root"></div>
+    <div class="ambient-light"></div>
+    <div class="noise-overlay"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

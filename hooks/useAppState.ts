@@ -1,0 +1,1 @@
+// File removed: Deprecated hook (replaced by useFirebase)

@@ -1,0 +1,5 @@
+{
+  "name": "Art Fest Manager",
+  "description": "A comprehensive web application to manage all aspects of an Art Fest, from initialization and participant entry to scheduling, tabulation, results, and reporting.",
+  "requestFramePermissions": []
+}
