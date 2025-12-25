@@ -1,4 +1,3 @@
-
 import { Activity, ArrowRight, Award, Calendar, ClipboardList, Clock, Crown, ExternalLink, Flag, Monitor, Sparkles, TrendingUp, Trophy, Users, CheckCircle2, Circle } from 'lucide-react';
 import React, { useMemo } from 'react';
 import Card from '../components/Card';
@@ -32,27 +31,6 @@ const StatCard: React.FC<{ icon: React.ElementType, title: string, value: string
         </div>
     </div>
   </div>
-);
-
-// Define an interface for OnboardingStep props to avoid "key" property errors in JSX
-interface OnboardingStepProps {
-  label: string;
-  isDone: boolean;
-  onClick: () => void;
-}
-
-// Use React.FC with the defined interface to fix "key" prop error
-const OnboardingStep: React.FC<OnboardingStepProps> = ({ label, isDone, onClick }) => (
-    <button 
-        onClick={onClick}
-        className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isDone ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30' : 'bg-white dark:bg-white/5 border-zinc-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-800'}`}
-    >
-        <div className="flex items-center gap-3">
-            {isDone ? <CheckCircle2 className="text-emerald-500" size={20} /> : <Circle className="text-zinc-300 dark:text-zinc-700" size={20} />}
-            <span className={`text-sm font-bold tracking-tight uppercase ${isDone ? 'text-emerald-700 dark:text-emerald-400 line-through opacity-60' : 'text-zinc-700 dark:text-zinc-300'}`}>{label}</span>
-        </div>
-        {!isDone && <ArrowRight size={14} className="text-zinc-400" />}
-    </button>
 );
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
@@ -122,16 +100,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
     resultsDeclared: state?.results.filter(r => r.status === ResultStatus.DECLARED).length || 0
   };
 
-  const isManager = currentUser?.role === UserRole.MANAGER;
-  const onboardingSteps = [
-    { label: 'Set Institution Details', done: !!state?.settings.institutionDetails?.name, tab: TABS.GENERAL_SETTINGS },
-    { label: 'Register Categories', done: state?.categories.length! > 0, tab: TABS.TEAMS_CATEGORIES },
-    { label: 'Configure Grade Tiers', done: state?.gradePoints.single.length! > 0, tab: TABS.GRADE_POINTS },
-    { label: 'Create Contest Items', done: state?.items.length! > 0, tab: TABS.ITEMS },
-    { label: 'Build Student Census', done: state?.participants.length! > 0, tab: TABS.DATA_ENTRY },
-    { label: 'Schedule Timeline', done: state?.schedule.length! > 0, tab: TABS.SCHEDULE }
-  ];
-
   return (
     <div className="space-y-6 animate-in fade-in duration-700 pb-24">
        <div className="relative w-full rounded-[2.5rem] bg-[#E8E4D5] dark:bg-[#1A1F1B] border border-amazio-primary/10 shadow-2xl overflow-hidden group transition-all duration-700">
@@ -176,15 +144,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-              {isManager && (
-                <Card title="Quick Setup Roadmap">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {onboardingSteps.map((step, i) => (
-                            <OnboardingStep key={i} label={step.label} isDone={step.done} onClick={() => setActiveTab(step.tab)} />
-                        ))}
-                    </div>
-                </Card>
-              )}
               <Card title="Unit Standings">
                 <div className="space-y-1">
                     {teamPoints.map((team, index) => {

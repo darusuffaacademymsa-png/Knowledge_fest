@@ -139,6 +139,30 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
 
                         <div className="flex-grow"></div>
 
+                        {/* Desktop Search Field */}
+                        {isSearchablePage && (
+                            <div className="hidden md:flex items-center mx-4 max-w-xs flex-grow animate-in fade-in duration-500">
+                                <div className="relative w-full group">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-indigo-500 transition-colors" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search records..." 
+                                        value={globalSearchTerm}
+                                        onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                                        className="w-full bg-white/50 dark:bg-black/20 border border-amazio-primary/10 dark:border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all shadow-inner"
+                                    />
+                                    {globalSearchTerm && (
+                                        <button 
+                                            onClick={() => setGlobalSearchTerm('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-rose-500 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
                             {hasSubNavigation && (
                                 <div className="relative lg:hidden" ref={subNavRef}>
