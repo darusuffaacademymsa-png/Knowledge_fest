@@ -1,11 +1,11 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { doc, onSnapshot, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
 import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType } from '../types';
 import { DEFAULT_PAGE_PERMISSIONS, TABS } from '../constants';
 
-// --- Default State ---
+// --- Default State Template ---
 const defaultState: AppState = {
   settings: {
     organizingTeam: 'Knowledge Fest Committee',
@@ -61,20 +61,6 @@ const defaultState: AppState = {
   permissions: DEFAULT_PAGE_PERMISSIONS,
 };
 
-export const migrateState = (stateToMigrate: any): AppState => {
-    let migratedState = { ...defaultState, ...stateToMigrate };
-    if (migratedState.users) {
-        migratedState.users = migratedState.users.map((u: any) => {
-            const { password, ...rest } = u;
-            return rest;
-        });
-    }
-    // Deep migration for sub-objects if missing
-    if (!migratedState.settings.institutionDetails) migratedState.settings.institutionDetails = defaultState.settings.institutionDetails;
-    if (!migratedState.settings.branding) migratedState.settings.branding = defaultState.settings.branding;
-    return migratedState as AppState;
-};
-
 const cleanData = (data: any): any => {
     if (Array.isArray(data)) return data.map(cleanData);
     if (data !== null && typeof data === 'object') {
@@ -92,7 +78,7 @@ interface FirebaseContextType {
   currentUser: User | null;
   firebaseUser: FirebaseUser | null; 
   loading: boolean;
-  isOnline: boolean; // Connectivity indicator
+  isOnline: boolean;
   globalFilters: { teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; };
   setGlobalFilters: React.Dispatch<React.SetStateAction<{ teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; }>>;
   globalSearchTerm: string;
@@ -164,18 +150,17 @@ interface FirebaseContextType {
 
 export const FirebaseContext = createContext<FirebaseContextType | null>(null);
 
-const docRef = doc(db, 'artfest', 'data_v1');
+const BASE_COLLECTION = 'artfest_v2';
 
 export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [firestoreLoading, setFirestoreLoading] = useState(true);
+  const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [authLoading, setAuthLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   
-  // Filters...
   const [globalFilters, setGlobalFilters] = useState({ teamId: [] as string[], categoryId: [] as string[], performanceType: [] as string[], itemId: [] as string[], status: [] as ResultStatus[], date: [] as string[], stage: [] as string[] });
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   
@@ -204,32 +189,29 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     return () => unsubscribeAuth();
   }, []);
 
+  // Set up individual listeners for each data block
   useEffect(() => {
-    setFirestoreLoading(true);
-    setError(null);
-    
-    const unsubscribeSnapshot = onSnapshot(docRef, 
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setState(migrateState(data));
-        } else {
-          setState(defaultState);
-        }
-        setFirestoreLoading(false);
-      }, 
-      (e: any) => {
-        if (e.code === 'permission-denied') {
-             if (firebaseUser) setError("Database Access Denied.");
-             else setState(defaultState); 
-        } else {
-             setError("Sync connection failed.");
-        }
-        setFirestoreLoading(false);
-      }
-    );
-    return () => unsubscribeSnapshot();
-  }, [firebaseUser]); 
+    const dataKeys = Object.keys(defaultState);
+    const initialLoading: Record<string, boolean> = {};
+    dataKeys.forEach(k => initialLoading[k] = true);
+    setLoadingMap(initialLoading);
+
+    const unsubscribers = dataKeys.map(key => {
+      return onSnapshot(doc(db, BASE_COLLECTION, key), (snapshot) => {
+        const data = snapshot.data();
+        setState(prev => {
+          const current = prev || defaultState;
+          return { ...current, [key]: data ? data.value : defaultState[key as keyof AppState] };
+        });
+        setLoadingMap(prev => ({ ...prev, [key]: false }));
+      }, (e) => {
+        console.error(`Listener failed for ${key}:`, e);
+        setLoadingMap(prev => ({ ...prev, [key]: false }));
+      });
+    });
+
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, []);
 
   useEffect(() => {
     if (state && firebaseUser) {
@@ -253,32 +235,27 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     setFirebaseUser(null);
   };
 
-  const updateField = async (field: string, value: any) => {
-    if (!state) return;
+  const writeDoc = async (key: string, value: any) => {
+    const docRef = doc(db, BASE_COLLECTION, key);
     const sanitizedValue = cleanData(value);
-    try {
-        await updateDoc(docRef, { [field]: sanitizedValue });
-    } catch (e: any) {
-        if (e.code === 'not-found') await setDoc(docRef, { ...state, [field]: sanitizedValue });
-    }
+    await setDoc(docRef, { value: sanitizedValue }, { merge: false });
   };
 
-  // Implement generic update handlers...
   const genericOps = (listName: keyof AppState) => ({
       add: async (payload: any) => {
           if (!state) return;
           const newList = [...(state[listName] as any[]), { ...payload, id: `${listName}_${Date.now()}` }];
-          await updateField(listName, newList);
+          await writeDoc(listName, newList);
       },
       update: async (payload: any) => {
           if (!state) return;
           const newList = (state[listName] as any[]).map(item => item.id === payload.id ? payload : item);
-          await updateField(listName, newList);
+          await writeDoc(listName, newList);
       },
       deleteMultiple: async (ids: string[]) => {
           if (!state) return;
           const newList = (state[listName] as any[]).filter(item => !ids.includes(item.id));
-          await updateField(listName, newList);
+          await writeDoc(listName, newList);
       }
   });
 
@@ -287,81 +264,81 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const itemOps = genericOps('items');
   const partOps = genericOps('participants');
 
+  const isLoading = authLoading || Object.values(loadingMap).some(v => v);
+
   const contextValue: FirebaseContextType = {
-    state, currentUser, firebaseUser, loading: firestoreLoading || authLoading, isOnline,
+    state, currentUser, firebaseUser, loading: isLoading, isOnline,
     login, logout, globalFilters, setGlobalFilters, globalSearchTerm, setGlobalSearchTerm,
     dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, gradeSubView, setGradeSubView,
     scoringSubView, setScoringSubView, judgesSubView, setJudgesSubView, settingsSubView, setSettingsSubView,
-    updateSettings: (p) => updateField('settings', { ...state?.settings, ...p }),
-    addCategory: catOps.add, addMultipleCategories: async (p) => updateField('categories', [...(state?.categories || []), ...p]),
-    updateCategory: catOps.update, reorderCategories: (p) => updateField('categories', p), deleteMultipleCategories: catOps.deleteMultiple,
-    addTeam: teamOps.add, addMultipleTeams: async (p) => updateField('teams', [...(state?.teams || []), ...p]),
-    updateTeam: teamOps.update, reorderTeams: (p) => updateField('teams', p), deleteMultipleTeams: teamOps.deleteMultiple,
-    addItem: itemOps.add, addMultipleItems: async (p) => updateField('items', [...(state?.items || []), ...p]),
+    updateSettings: (p) => writeDoc('settings', { ...state?.settings, ...p }),
+    addCategory: catOps.add, addMultipleCategories: async (p) => writeDoc('categories', [...(state?.categories || []), ...p]),
+    updateCategory: catOps.update, reorderCategories: (p) => writeDoc('categories', p), deleteMultipleCategories: catOps.deleteMultiple,
+    addTeam: teamOps.add, addMultipleTeams: async (p) => writeDoc('teams', [...(state?.teams || []), ...p]),
+    updateTeam: teamOps.update, reorderTeams: (p) => writeDoc('teams', p), deleteMultipleTeams: teamOps.deleteMultiple,
+    addItem: itemOps.add, addMultipleItems: async (p) => writeDoc('items', [...(state?.items || []), ...p]),
     updateItem: itemOps.update, deleteMultipleItems: itemOps.deleteMultiple,
     addGrade: async ({ itemType, grade }) => {
         const list = [...state!.gradePoints[itemType], { ...grade, id: `g_${Date.now()}` }];
-        await updateField(`gradePoints.${itemType}`, list);
+        await writeDoc('gradePoints', { ...state!.gradePoints, [itemType]: list });
     },
     updateGrade: async ({ itemType, grade }) => {
         const list = state!.gradePoints[itemType].map(g => g.id === grade.id ? grade : g);
-        await updateField(`gradePoints.${itemType}`, list);
+        await writeDoc('gradePoints', { ...state!.gradePoints, [itemType]: list });
     },
     deleteGrade: async ({ itemType, gradeId }) => {
         const list = state!.gradePoints[itemType].filter(g => g.id !== gradeId);
-        await updateField(`gradePoints.${itemType}`, list);
+        await writeDoc('gradePoints', { ...state!.gradePoints, [itemType]: list });
     },
-    addCodeLetter: async (p) => updateField('codeLetters', [...state!.codeLetters, { ...p, id: `c_${Date.now()}` }]),
-    addMultipleCodeLetters: async (p) => updateField('codeLetters', [...state!.codeLetters, ...p]),
-    updateCodeLetter: async (p) => updateField('codeLetters', state!.codeLetters.map(c => c.id === p.id ? p : c)),
-    reorderCodeLetters: (p) => updateField('codeLetters', p),
-    deleteCodeLetter: async (id) => updateField('codeLetters', state!.codeLetters.filter(c => c.id !== id)),
-    addJudge: async (p) => updateField('judges', [...state!.judges, { ...p, id: `j_${Date.now()}` }]),
-    updateJudge: async (p) => updateField('judges', state!.judges.map(j => j.id === p.id ? p : j)),
-    reorderJudges: (p) => updateField('judges', p),
-    deleteMultipleJudges: async (ids) => updateField('judges', state!.judges.filter(j => !ids.includes(j.id))),
+    addCodeLetter: async (p) => writeDoc('codeLetters', [...state!.codeLetters, { ...p, id: `c_${Date.now()}` }]),
+    addMultipleCodeLetters: async (p) => writeDoc('codeLetters', [...state!.codeLetters, ...p]),
+    updateCodeLetter: async (p) => writeDoc('codeLetters', state!.codeLetters.map(c => c.id === p.id ? p : c)),
+    reorderCodeLetters: (p) => writeDoc('codeLetters', p),
+    deleteCodeLetter: async (id) => writeDoc('codeLetters', state!.codeLetters.filter(c => c.id !== id)),
+    addJudge: async (p) => writeDoc('judges', [...state!.judges, { ...p, id: `j_${Date.now()}` }]),
+    updateJudge: async (p) => writeDoc('judges', state!.judges.map(j => j.id === p.id ? p : j)),
+    reorderJudges: (p) => writeDoc('judges', p),
+    deleteMultipleJudges: async (ids) => writeDoc('judges', state!.judges.filter(j => !ids.includes(j.id))),
     updateItemJudges: async (p) => {
         const assignments = state!.judgeAssignments.filter(a => a.itemId !== p.itemId);
         assignments.push({ ...p, id: `${p.itemId}-${p.categoryId}` });
-        await updateField('judgeAssignments', assignments);
+        await writeDoc('judgeAssignments', assignments);
     },
-    setJudgeAssignments: (p) => updateField('judgeAssignments', p),
-    addParticipant: partOps.add, addMultipleParticipants: async (p) => updateField('participants', [...state!.participants, ...p]),
+    setJudgeAssignments: (p) => writeDoc('judgeAssignments', p),
+    addParticipant: partOps.add, addMultipleParticipants: async (p) => writeDoc('participants', [...state!.participants, ...p]),
     updateParticipant: partOps.update, updateMultipleParticipants: async (p) => {
         const map = new Map(p.map(x => [x.id, x]));
         const next = state!.participants.map(x => map.has(x.id) ? map.get(x.id)! : x);
-        await updateField('participants', next);
+        await writeDoc('participants', next);
     },
     deleteMultipleParticipants: partOps.deleteMultiple,
-    setSchedule: (p) => updateField('schedule', p),
-    addScheduleEvent: async (p) => updateField('schedule', [...state!.schedule, p]),
+    setSchedule: (p) => writeDoc('schedule', p),
+    addScheduleEvent: async (p) => writeDoc('schedule', [...state!.schedule, p]),
     updateTabulationEntry: async (p) => {
         const next = state!.tabulation.filter(t => t.id !== p.id);
         next.push(p);
-        await updateField('tabulation', next);
+        await writeDoc('tabulation', next);
     },
     updateMultipleTabulationEntries: async (p) => {
         const map = new Map(p.map(x => [x.id, x]));
         const next = state!.tabulation.map(x => map.has(x.id) ? map.get(x.id)! : x);
         p.forEach(x => { if(!state!.tabulation.find(t=>t.id===x.id)) next.push(x); });
-        await updateField('tabulation', next);
+        await writeDoc('tabulation', next);
     },
-    deleteEventTabulation: async (itemId) => updateField('tabulation', state!.tabulation.filter(t => t.itemId !== itemId)),
+    deleteEventTabulation: async (itemId) => writeDoc('tabulation', state!.tabulation.filter(t => t.itemId !== itemId)),
     updateResultStatus: async (p) => {
         const next = state!.results.filter(r => r.itemId !== p.itemId);
         next.push({ ...p, winners: [] });
-        await updateField('results', next);
+        await writeDoc('results', next);
     },
     declareResult: async (p) => {
-        // Implementation of ranking logic handled by component usually, 
-        // but here it updates the DB status
-        await updateField('results', state!.results.map(r => r.itemId === p.itemId ? { ...r, status: ResultStatus.DECLARED } : r));
+        await writeDoc('results', state!.results.map(r => r.itemId === p.itemId ? { ...r, status: ResultStatus.DECLARED } : r));
     },
-    addUser: async (p) => updateField('users', [...state!.users, { ...p, id: `u_${Date.now()}` }]),
-    updateUser: async (p) => updateField('users', state!.users.map(u => u.id === p.id ? p : u)),
-    deleteUser: async (id) => updateField('users', state!.users.filter(u => u.id !== id)),
-    updatePermissions: async ({ role, pages }) => updateField(`permissions.${role}`, pages),
-    updateInstruction: async ({ page, text }) => updateField(`settings.instructions.${page}`, text),
+    addUser: async (p) => writeDoc('users', [...state!.users, { ...p, id: `u_${Date.now()}` }]),
+    updateUser: async (p) => writeDoc('users', state!.users.map(u => u.id === p.id ? p : u)),
+    deleteUser: async (id) => writeDoc('users', state!.users.filter(u => u.id !== id)),
+    updatePermissions: async ({ role, pages }) => writeDoc('permissions', { ...state?.permissions, [role]: pages }),
+    updateInstruction: async ({ page, text }) => writeDoc('settings', { ...state?.settings, instructions: { ...state?.settings.instructions, [page]: text } }),
     hasPermission: (tab) => state?.permissions[currentUser!.role].includes(tab) || false,
     backupData: () => {
         const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
@@ -371,7 +348,9 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         const reader = new FileReader();
         reader.onload = async (e) => {
             const data = JSON.parse(e.target?.result as string);
-            await setDoc(docRef, migrateState(data));
+            for (const key of Object.keys(data)) {
+                await writeDoc(key, data[key]);
+            }
         };
         reader.readAsText(file);
     }
