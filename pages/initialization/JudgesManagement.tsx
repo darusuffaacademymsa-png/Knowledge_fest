@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
@@ -10,7 +9,7 @@ import {
     Trophy, Activity, Sparkles, RefreshCw, AlertTriangle, Clock, UserCheck, ShieldCheck,
     MapPin
 } from 'lucide-react';
-import { Judge, Item, ItemType, PerformanceType } from '../../types';
+import { Judge, Item, ItemType, PerformanceType, JudgeAssignment } from '../../types';
 
 // --- Color Palette & Helpers ---
 const ART_FEST_PALETTE = {
@@ -170,17 +169,22 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
     secondaryList, pendingSelections, onToggle, onSave, 
     isSaving, isDirty, state 
 }) => {
+    const [search, setSearch] = useState('');
+
     if (!isOpen) return null;
 
-    // Requirement 3: Sort assigned items/judges first
-    const sortedList = useMemo(() => {
-        return [...secondaryList].sort((a, b) => {
-            const aSelected = pendingSelections.has(a.id) ? 1 : 0;
-            const bSelected = pendingSelections.has(b.id) ? 1 : 0;
-            if (aSelected !== bSelected) return bSelected - aSelected;
-            return a.name.localeCompare(b.name);
-        });
-    }, [secondaryList, pendingSelections]);
+    // Filter and Sort List
+    const filteredAndSortedList = useMemo(() => {
+        const q = search.toLowerCase();
+        return secondaryList
+            .filter(entity => entity.name.toLowerCase().includes(q))
+            .sort((a, b) => {
+                const aSelected = pendingSelections.has(a.id) ? 1 : 0;
+                const bSelected = pendingSelections.has(b.id) ? 1 : 0;
+                if (aSelected !== bSelected) return bSelected - aSelected;
+                return a.name.localeCompare(b.name);
+            });
+    }, [secondaryList, pendingSelections, search]);
 
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
@@ -198,11 +202,24 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                     <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors text-zinc-400"><X size={24}/></button>
                 </div>
 
-                <div className="flex-grow overflow-y-auto p-8 custom-scrollbar">
+                {/* Local Search in Modal */}
+                <div className="px-8 pt-6">
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-indigo-500 transition-colors" />
+                        <input 
+                            type="text" 
+                            placeholder={`Search ${mode === 'BY_ITEM' ? 'Judges' : 'Items'}...`}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex-grow overflow-y-auto p-8 pt-6 custom-scrollbar">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {sortedList.map(entity => {
+                        {filteredAndSortedList.map(entity => {
                             const isSelected = pendingSelections.has(entity.id);
-                            // If MODE is BY_ITEM, then 'entity' is a Judge from secondaryList
                             const isJudgeEntity = mode === 'BY_ITEM'; 
                             
                             return (
@@ -217,7 +234,6 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                                         </div>
                                         <div className="min-w-0">
                                             <div className={`text-sm font-black uppercase tracking-tight truncate ${isSelected ? 'text-amazio-primary dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}>{entity.name}</div>
-                                            {/* Show Place for Judge */}
                                             {isJudgeEntity && entity.place && (
                                                 <div className="flex items-center gap-1 mt-0.5">
                                                     <MapPin size={9} className="text-zinc-400" />
@@ -226,7 +242,6 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                                                     </div>
                                                 </div>
                                             )}
-                                            {/* Show Category for Item */}
                                             {mode === 'BY_JUDGE' && (
                                                 <div className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mt-0.5 truncate">
                                                     {state.categories.find((c: any) => c.id === entity.categoryId)?.name}
@@ -240,6 +255,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
                                 </div>
                             );
                         })}
+                        {filteredAndSortedList.length === 0 && (
+                            <div className="col-span-full py-12 text-center opacity-30 italic text-xs uppercase font-bold">No matches found</div>
+                        )}
                     </div>
                 </div>
 
@@ -259,13 +277,13 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({
     );
 };
 
-// --- Selection Card Component (New) ---
+// --- Selection Card Component ---
 
 const SelectableCard: React.FC<{ 
     title: string; 
     item?: Item;
-    subtitle?: string; // Profession
-    location?: string; // Place
+    subtitle?: string; 
+    location?: string; 
     isActive: boolean; 
     count: number; 
     onClick: () => void;
@@ -273,8 +291,6 @@ const SelectableCard: React.FC<{
 }> = ({ title, item, subtitle, location, isActive, count, onClick, state }) => {
     const catName = item ? state.categories.find((c: any) => c.id === item.categoryId)?.name : '';
     const catColor = getCategoryColor(catName);
-    
-    // Determine avatar/icon logic
     const theme = !item ? getAvatarTheme(title) : null;
 
     return (
@@ -293,8 +309,7 @@ const SelectableCard: React.FC<{
                             {title.charAt(0)}
                         </div>
                     )}
-                    {/* Status Badge */}
-                    <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-lg border text-[9px] font-black tracking-widest transition-all whitespace-nowrap ${count > 0 ? 'bg-[#2B3B2A] text-white border-[#2B3B2A] shadow-sm' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                    <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-lg border text-[9px] font-black tracking-widest transition-all whitespace-nowrap ${count > 0 ? (isActive ? 'bg-white/20 text-white border-white/30' : 'bg-[#2B3B2A] text-white border-[#2B3B2A] shadow-sm') : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
                         {count > 0 ? <UserCheck size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={3} />}
                         {count > 0 ? `${count} Assigned` : 'Unassigned'}
                     </div>
@@ -336,53 +351,37 @@ const SelectableCard: React.FC<{
 const JudgesManagement: React.FC = () => {
     const { 
         state, addJudge, updateJudge, deleteMultipleJudges, 
-        updateItemJudges, judgesSubView: view, 
+        setJudgeAssignments, judgesSubView: view, 
         globalSearchTerm, globalFilters 
     } = useFirebase();
 
     const [assignmentMode, setAssignmentMode] = useState<'BY_ITEM' | 'BY_JUDGE'>('BY_ITEM');
-    
-    // Assignment Selection State
     const [selectedPrimaryId, setSelectedPrimaryId] = useState<string | null>(null);
     const [pendingSelections, setPendingSelections] = useState<Set<string>>(new Set());
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
-    // Registry State
-    const [isEditingJudge, setIsEditingJudge] = useState<string | null>(null);
     const [selectedRegistryIds, setSelectedRegistryIds] = useState<Set<string>>(new Set());
     const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
+    const [isEditingJudge, setIsEditingJudge] = useState<string | null>(null);
 
-    // --- Data Mappings ---
-    const categories = useMemo(() => state?.categories || [], [state?.categories]);
-    const items = useMemo(() => state?.items || [], [state?.items]);
     const judges = useMemo(() => state?.judges || [], [state?.judges]);
+    const items = useMemo(() => state?.items || [], [state?.items]);
 
-    // Enhanced Assignment Map with filtering
     const assignmentMap = useMemo(() => {
         const map = new Map<string, Set<string>>();
-        const validJudgeIds = new Set(judges.map(j => j.id)); // Create set of valid IDs
-        
+        const validJudgeIds = new Set(judges.map(j => j.id));
         state?.judgeAssignments.forEach(ja => {
-            const compositeId = ja.itemId;
-            if (!map.has(compositeId)) map.set(compositeId, new Set());
-            
-            ja.judgeIds.forEach(jid => {
-                // Only include if judge exists in registry
-                if (validJudgeIds.has(jid)) {
-                    map.get(compositeId)?.add(jid);
-                }
-            });
+            const currentItemJudges = new Set<string>();
+            ja.judgeIds.forEach(jid => { if (validJudgeIds.has(jid)) currentItemJudges.add(jid); });
+            if (currentItemJudges.size > 0) map.set(ja.itemId, currentItemJudges);
         });
         return map;
     }, [state?.judgeAssignments, judges]);
 
-    // Requirement 2: Total number of assigned items
     const totalAssignedItemsCount = useMemo(() => {
         return items.filter(i => (assignmentMap.get(i.id)?.size || 0) > 0).length;
     }, [items, assignmentMap]);
 
-    // Handle Selection Initialization
     useEffect(() => {
         if (selectedPrimaryId) {
             const initialSet = new Set<string>();
@@ -392,9 +391,7 @@ const JudgesManagement: React.FC = () => {
             } else {
                 items.forEach(item => {
                     const assignedJudges = assignmentMap.get(item.id);
-                    if (assignedJudges && assignedJudges.has(selectedPrimaryId)) {
-                        initialSet.add(item.id);
-                    }
+                    if (assignedJudges && assignedJudges.has(selectedPrimaryId)) initialSet.add(item.id);
                 });
             }
             setPendingSelections(initialSet);
@@ -405,7 +402,6 @@ const JudgesManagement: React.FC = () => {
         }
     }, [selectedPrimaryId, assignmentMode, assignmentMap, items]);
 
-    // Filter Primary List using Global State (Header Bar)
     const filteredPrimaryList = useMemo(() => {
         const q = globalSearchTerm.toLowerCase();
         const cats = globalFilters.categoryId;
@@ -436,41 +432,60 @@ const JudgesManagement: React.FC = () => {
         if (!selectedPrimaryId || !state) return;
         setIsSaving(true);
         try {
+            const newAssignments: JudgeAssignment[] = [];
+            const processedItemIds = new Set<string>();
+
             if (assignmentMode === 'BY_ITEM') {
-                const item = items.find(i => i.id === selectedPrimaryId);
-                if (item) await updateItemJudges({ itemId: item.id, categoryId: item.categoryId, judgeIds: Array.from(pendingSelections) });
+                // Updating list of judges for one item
+                const targetItem = items.find(i => i.id === selectedPrimaryId);
+                if (!targetItem) throw new Error("Item not found");
+
+                // Process target item
+                // Explicitly cast to string[] to resolve 'unknown[]' assignment error
+                const targetJudgeIds = Array.from(pendingSelections) as string[];
+                if (targetJudgeIds.length > 0) {
+                    newAssignments.push({ id: `${targetItem.id}-${targetItem.categoryId}`, itemId: targetItem.id, categoryId: targetItem.categoryId, judgeIds: targetJudgeIds });
+                }
+                processedItemIds.add(targetItem.id);
+
+                // Preserve other items
+                state.judgeAssignments.forEach(ja => {
+                    if (!processedItemIds.has(ja.itemId)) newAssignments.push(ja);
+                });
             } else {
+                // Updating list of items for one judge
                 const judgeId = selectedPrimaryId;
-                const updatePromises: Promise<void>[] = [];
+                
+                // Construct mapping from scratch for all items
                 items.forEach(item => {
-                    const currentJudges = new Set(assignmentMap.get(item.id) || []);
-                    if (pendingSelections.has(item.id) && !currentJudges.has(judgeId)) {
+                    // Explicitly define Set type to avoid 'unknown' inference during assignment
+                    const currentJudges = new Set<string>(assignmentMap.get(item.id) || []);
+                    if (pendingSelections.has(item.id)) {
                         currentJudges.add(judgeId);
-                        updatePromises.push(updateItemJudges({ itemId: item.id, categoryId: item.categoryId, judgeIds: Array.from(currentJudges) }));
-                    } else if (!pendingSelections.has(item.id) && currentJudges.has(judgeId)) {
+                    } else {
                         currentJudges.delete(judgeId);
-                        updatePromises.push(updateItemJudges({ itemId: item.id, categoryId: item.categoryId, judgeIds: Array.from(currentJudges) }));
+                    }
+
+                    if (currentJudges.size > 0) {
+                        // Explicitly cast to string[] to resolve 'unknown[]' assignment error
+                        newAssignments.push({ id: `${item.id}-${item.categoryId}`, itemId: item.id, categoryId: item.categoryId, judgeIds: Array.from(currentJudges) as string[] });
                     }
                 });
-                await Promise.all(updatePromises);
             }
+
+            await setJudgeAssignments(newAssignments);
             setIsDirty(false);
             setSelectedPrimaryId(null);
-        } catch (error) { console.error(error); alert("Failed to save."); }
+        } catch (error) { console.error(error); alert("Failed to save changes."); }
         finally { setIsSaving(false); }
     };
 
     const handleSaveJudge = async (data: Omit<Judge, 'id'>) => {
-        if (isEditingJudge) {
-            await updateJudge({ id: isEditingJudge, ...data });
-        } else {
-            await addJudge(data);
-        }
+        if (isEditingJudge) await updateJudge({ id: isEditingJudge, ...data });
+        else await addJudge(data);
         setIsEditingJudge(null);
         setIsJudgeModalOpen(false);
     };
-
-    if (!state) return <div>Loading...</div>;
 
     return (
         <div className="space-y-6 md:space-y-10 animate-in fade-in duration-500 pb-24 relative">
@@ -503,7 +518,6 @@ const JudgesManagement: React.FC = () => {
                         {filteredPrimaryList.map(entity => {
                             const isActive = selectedPrimaryId === entity.id;
                             const item = (assignmentMode === 'BY_ITEM') ? entity as Item : undefined;
-                            // If it's not an item, it's a Judge
                             const judge = !item ? entity as Judge : undefined;
                             
                             let count = 0;
@@ -532,13 +546,12 @@ const JudgesManagement: React.FC = () => {
                         )}
                     </div>
 
-                    {/* The Assignment Modal Window */}
                     {selectedPrimaryId && (
                         <AssignmentModal 
                             isOpen={!!selectedPrimaryId}
                             onClose={() => setSelectedPrimaryId(null)}
                             title={assignmentMode === 'BY_ITEM' ? items.find(i=>i.id===selectedPrimaryId)?.name || 'Assign Judges' : judges.find(j=>j.id===selectedPrimaryId)?.name || 'Assign Items'}
-                            subtitle={assignmentMode === 'BY_ITEM' ? categories.find(c=>c.id === items.find(i=>i.id===selectedPrimaryId)?.categoryId)?.name : 'Judge Record'}
+                            subtitle={assignmentMode === 'BY_ITEM' ? state.categories.find(c=>c.id === items.find(i=>i.id===selectedPrimaryId)?.categoryId)?.name : 'Judge Record'}
                             mode={assignmentMode}
                             primaryId={selectedPrimaryId}
                             secondaryList={assignmentMode === 'BY_ITEM' ? judges : items}
@@ -581,7 +594,7 @@ const JudgesManagement: React.FC = () => {
                                     <div 
                                         key={j.id} 
                                         onClick={() => setSelectedRegistryIds(prev => { const n = new Set(prev); if(n.has(j.id)) n.delete(j.id); else n.add(j.id); return n; })}
-                                        className={`group relative p-6 rounded-[2rem] border transition-all duration-300 cursor-pointer flex flex-col gap-4 ${isSelected ? 'bg-indigo-50/50 border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-white dark:bg-zinc-900/40 border-zinc-100 dark:border-white/5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:-translate-y-1'}`}
+                                        className={`group relative p-6 rounded-[2rem] border transition-all duration-300 cursor-pointer flex flex-col gap-4 ${isSelected ? 'bg-indigo-50/50 border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-white dark:bg-zinc-900/40 border-zinc-100 dark:border-white/5 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-lg hover:-translate-y-1'}`}
                                     >
                                         <div className="flex justify-between items-start">
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black ${theme.bg} ${theme.text}`}>
@@ -597,14 +610,12 @@ const JudgesManagement: React.FC = () => {
                                                 {isSelected && <div className="p-2 bg-indigo-500 text-white rounded-xl shadow-md"><Check size={16} strokeWidth={3}/></div>}
                                             </div>
                                         </div>
-                                        
                                         <div>
                                             <h3 className="font-black text-lg text-amazio-primary dark:text-white leading-tight truncate">{j.name}</h3>
                                             {j.profession && (
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500/80 mt-1 truncate">{j.profession}</p>
                                             )}
                                         </div>
-
                                         {j.place && (
                                             <div className="pt-4 mt-auto border-t border-zinc-100 dark:border-white/5 flex items-center gap-2 text-zinc-400">
                                                 <MapPin size={14} />
