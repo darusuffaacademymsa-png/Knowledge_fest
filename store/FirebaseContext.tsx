@@ -205,7 +205,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       }, (e) => {
         console.warn(`Listener failed for ${key}, falling back to default values. Error: ${e.message}`);
-        // Ensure state key is initialized with default even on failure to prevent app crashes
         setState(prev => {
           const current = prev || defaultState;
           return { ...current, [key]: (defaultState as any)[key] };
@@ -331,9 +330,13 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     },
     deleteEventTabulation: async (itemId) => writeDoc('tabulation', state!.tabulation.filter(t => t.itemId !== itemId)),
     saveResult: async (payload: Result) => {
-        const next = state!.results.filter(r => r.itemId !== payload.itemId);
-        next.push(payload);
-        await writeDoc('results', next);
+        setState(prev => {
+            if (!prev) return prev;
+            const nextResults = prev.results.filter(r => r.itemId !== payload.itemId);
+            nextResults.push(payload);
+            writeDoc('results', nextResults); // Sideways fire
+            return { ...prev, results: nextResults };
+        });
     },
     addUser: async (p) => writeDoc('users', [...state!.users, { ...p, id: `u_${Date.now()}` }]),
     updateUser: async (p) => writeDoc('users', state!.users.map(u => u.id === p.id ? p : u)),
