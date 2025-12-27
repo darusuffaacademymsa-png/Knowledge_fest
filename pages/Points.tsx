@@ -157,7 +157,7 @@ const SearchableDropdown = ({
                     {Icon ? <Icon size={16} /> : <Search size={16} />}
                 </div>
                 <input 
-                    type="text"
+                    type="text" 
                     className="w-full bg-transparent outline-none text-sm font-bold text-zinc-800 dark:text-zinc-200 placeholder-zinc-400"
                     placeholder={selectedOption ? selectedOption.label : placeholder}
                     value={isOpen ? search : (selectedOption ? selectedOption.label : '')}
@@ -260,13 +260,14 @@ const PointsPage: React.FC = () => {
                 let gradePts = 0;
                 let gradeName = '-';
                 if (winner.gradeId) {
-                    const gradeConfig = item.type === ItemType.SINGLE ? gradePoints.single : gradePoints.group;
+                    const gradeConfig = item.type === ItemType.SINGLE ? (gradePoints.single || []) : (gradePoints.group || []);
                     const grade = gradeConfig.find(g => g.id === winner.gradeId);
                     if (grade) {
                         gradeName = grade.name;
+                        // Fix: Parenthesized fallback
                         gradePts = (item.gradePointsOverride && item.gradePointsOverride[grade.id] !== undefined)
                             ? item.gradePointsOverride[grade.id]
-                            : grade.points;
+                            : (grade.points || 0);
                     }
                 }
 

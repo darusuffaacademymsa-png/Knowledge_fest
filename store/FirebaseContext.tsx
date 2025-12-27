@@ -330,13 +330,10 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     },
     deleteEventTabulation: async (itemId) => writeDoc('tabulation', state!.tabulation.filter(t => t.itemId !== itemId)),
     saveResult: async (payload: Result) => {
-        setState(prev => {
-            if (!prev) return prev;
-            const nextResults = prev.results.filter(r => r.itemId !== payload.itemId);
-            nextResults.push(payload);
-            writeDoc('results', nextResults); // Sideways fire
-            return { ...prev, results: nextResults };
-        });
+        if (!state) return;
+        const nextResults = state.results.filter(r => r.itemId !== payload.itemId);
+        nextResults.push(payload);
+        await writeDoc('results', nextResults);
     },
     addUser: async (p) => writeDoc('users', [...state!.users, { ...p, id: `u_${Date.now()}` }]),
     updateUser: async (p) => writeDoc('users', state!.users.map(u => u.id === p.id ? p : u)),

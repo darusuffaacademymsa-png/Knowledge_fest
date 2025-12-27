@@ -89,10 +89,11 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
                 {isDeclared && onUnlock && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onUnlock(item); }} 
-                        className="p-2 rounded-xl text-zinc-300 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all"
-                        title="Unlock result for editing"
+                        className="p-3 rounded-xl text-amber-500 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1.5"
+                        title="Modify Results"
                     >
-                        <LockOpen size={16}/>
+                        <LockOpen size={14} strokeWidth={3} />
+                        <span className="text-[9px] font-black uppercase">Edit</span>
                     </button>
                 )}
             </div>
@@ -132,7 +133,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
                         className="flex-grow py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 bg-amazio-primary text-white shadow-amazio-primary/20"
                     >
                         {isDeclared ? <Eye size={14}/> : <Edit3 size={14}/>}
-                        {isDeclared ? 'View Verdict' : 'Enter Scores'}
+                        {isDeclared ? 'View Summary' : 'Score Item'}
                     </button>
                     {isDraft && onDeclare && (
                         <button 
@@ -155,10 +156,11 @@ const ScoringTable: React.FC<{
     judgeIds: string[];
     isDeclared: boolean;
     isJudge: boolean;
+    isManager: boolean;
     currentJudgeId?: string;
     onMarkChange: (pid: string, jid: string, val: string) => void;
     state: any;
-}> = ({ participants, judgeIds, isDeclared, isJudge, currentJudgeId, onMarkChange, state }) => {
+}> = ({ participants, judgeIds, isDeclared, isJudge, isManager, currentJudgeId, onMarkChange, state }) => {
     return (
         <div className={`bg-white dark:bg-[#121412] rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-glass-light dark:shadow-2xl overflow-hidden animate-in fade-in duration-500`}>
             <div className="overflow-x-auto custom-scrollbar">
@@ -201,10 +203,10 @@ const ScoringTable: React.FC<{
                                                 type="number"
                                                 inputMode="decimal"
                                                 min="0" max="100" step="0.1"
-                                                disabled={isDeclared || (isJudge && jid !== currentJudgeId)}
+                                                disabled={(isDeclared && !isManager) || (isJudge && jid !== currentJudgeId)}
                                                 value={sp.marks[jid] ?? ''}
                                                 onChange={e => onMarkChange(sp.participantId, jid, e.target.value)}
-                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${isDeclared ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
+                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 text-indigo-300'}`}
                                                 placeholder="--"
                                             />
                                         </div>
@@ -271,7 +273,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     const getScoringForItem = useCallback((item: Item, currentTabulation: TabulationEntry[]) => {
         if (!state) return [];
-        const gradesConfig = item.type === ItemType.SINGLE ? state.gradePoints.single : state.gradePoints.group;
+        const gradesConfig = item.type === ItemType.SINGLE ? (state.gradePoints?.single || []) : (state.gradePoints?.group || []);
         const enrolled = state.participants.filter(p => p.itemIds.includes(item.id));
         
         let entities: { id: string, name: string, chestNumber: string, teamId: string, isGroup: boolean }[] = [];
@@ -310,7 +312,8 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             const validMarks = Object.values(marks).filter(m => m !== null) as number[];
             const finalMark = validMarks.length > 0 ? validMarks.reduce((a,b) => a+b,0) / validMarks.length : 0;
             const grade = gradesConfig.find(g => finalMark >= g.lowerLimit && finalMark <= g.upperLimit);
-            const gradePoints = grade ? (item.gradePointsOverride?.[grade.id] ?? grade.points) : 0;
+            // Fix: Added parentheses to resolve ambiguity between ?? and ||
+            const gradePoints = grade ? (item.gradePointsOverride?.[grade.id] ?? (grade.points || 0)) : 0;
             return {
                 participantId: entity.id,
                 participantName: entity.name,
@@ -336,9 +339,9 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 const markRank = uniqueMarks.indexOf(score.finalMark) + 1;
                 if (markRank <= 3) {
                     rank = markRank;
-                    if (rank === 1) prizePoints = item.points.first;
-                    else if (rank === 2) prizePoints = item.points.second;
-                    else if (rank === 3) prizePoints = item.points.third;
+                    if (rank === 1) prizePoints = item.points?.first || 0;
+                    else if (rank === 2) prizePoints = item.points?.second || 0;
+                    else if (rank === 3) prizePoints = item.points?.third || 0;
                 }
             }
             return { ...score, rank, prizePoints, totalPoints: prizePoints + score.gradePoints };
@@ -370,6 +373,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         // 2. If already declared, re-calculate and re-save results immediately to keep points in sync
         if (isDeclared && isManager && state) {
             const simulatedTabs = state.tabulation.map(t => t.id === entryId ? nextTab : t);
+            // Defensive Check
+            const foundInSim = simulatedTabs.find(t => t.id === entryId);
+            if (foundInSim) foundInSim.marks = marks;
+
             const scoring = getScoringForItem(selectedItem, simulatedTabs);
             const winners = scoring.map(sp => ({
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
@@ -415,7 +422,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         if (!confirm(`Unlock ${item.name}? This will allow mark modifications while keeping existing data.`)) return;
         setIsSaving(true);
         try {
-            // Find existing winners to preserve them if possible, but change status
             const existingResult = state.results.find(r => r.itemId === item.id);
             await saveResult({ 
                 itemId: item.id, 
@@ -456,7 +462,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={16}/> Unlock for Correction</button>
                              ) : (
                                 <>
-                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all disabled:opacity-50"><Save size={18}/> {isSaving ? '...' : 'Save Draft'}</button>
+                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all disabled:opacity-50"><Save size={18}/> {isSaving ? '...' : 'Save Draft'}</button>
                                     <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={18} strokeWidth={3}/> {isSaving ? 'Finalizing...' : 'Declare Verdict'}</button>
                                 </>
                              )}
@@ -470,7 +476,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                 )}
                 {!isMobile ? (
-                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isJudge={isJudge} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
+                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
                 ) : (
                     <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4`}>
                         {scoredParticipants.map(sp => (

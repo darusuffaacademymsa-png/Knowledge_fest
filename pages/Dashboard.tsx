@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Award, Calendar, ClipboardList, Clock, Crown, ExternalLink, Flag, Monitor, Sparkles, TrendingUp, Trophy, Users, CheckCircle2, Circle } from 'lucide-react';
+import { Activity, ArrowRight, Award, Calendar, ClipboardList, Clock, Crown, ExternalLink, Flag, Monitor, Sparkles, TrendingUp, Trophy, Users, CheckCircle2, Circle, ListFilter } from 'lucide-react';
 import React, { useMemo } from 'react';
 import Card from '../components/Card';
 import { TABS } from '../constants';
@@ -55,15 +55,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
             const participant = participants.find(p => p.id === winner.participantId);
             if (!participant) return;
             let pointsWon = 0;
-            if (winner.position === 1) pointsWon += item.points.first;
-            else if (winner.position === 2) pointsWon += item.points.second;
-            else if (winner.position === 3) pointsWon += item.points.third;
+            if (winner.position === 1) pointsWon += (item.points?.first || 0);
+            else if (winner.position === 2) pointsWon += (item.points?.second || 0);
+            else if (winner.position === 3) pointsWon += (item.points?.third || 0);
+            
             if (winner.gradeId) {
-                const gradeConfig = item.type === ItemType.SINGLE ? gradePoints.single : gradePoints.group;
+                const gradeConfig = item.type === ItemType.SINGLE ? (gradePoints?.single || []) : (gradePoints?.group || []);
                 const grade = gradeConfig.find(g => g.id === winner.gradeId);
                 if (grade) {
                     if (item.gradePointsOverride && item.gradePointsOverride[grade.id] !== undefined) pointsWon += item.gradePointsOverride[grade.id];
-                    else pointsWon += grade.points;
+                    else pointsWon += (grade.points || 0);
                 }
             }
             if (tPoints[participant.teamId] !== undefined) tPoints[participant.teamId] += pointsWon;
@@ -80,7 +81,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
   const recentResult = useMemo(() => {
     if (!state) return null;
     const validDeclaredResults = state.results.filter(r => r.status === ResultStatus.DECLARED && hasJudgeAccess(r.itemId));
-    const lastDeclared = validDeclaredResults.pop(); 
+    const lastDeclared = validDeclaredResults[validDeclaredResults.length - 1]; 
     if (!lastDeclared) return null;
     const item = state.items.find(i => i.id === lastDeclared.itemId);
     const category = state.categories.find(c => c.id === lastDeclared.categoryId);
@@ -147,7 +148,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
               <Card title="Unit Standings">
                 <div className="space-y-1">
                     {teamPoints.map((team, index) => {
-                        const progress = teamPoints[0].points > 0 ? (team.points / teamPoints[0].points) * 100 : 0;
+                        const progress = (teamPoints[0]?.points || 0) > 0 ? (team.points / teamPoints[0].points) * 100 : 0;
                         return (
                             <div key={team.id} className="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                 <div className="flex items-center justify-between mb-2">
@@ -162,6 +163,50 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
                             </div>
                         )
                     })}
+                </div>
+              </Card>
+
+              {/* Debug Points Ledger for Transparency */}
+              <Card title="Live Points Ledger" action={<div className="text-[10px] font-black uppercase text-zinc-400">Audit Mode</div>}>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                            <tr>
+                                <th className="px-4 py-3">Event Item</th>
+                                <th className="px-4 py-3">Team</th>
+                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3 text-right">Yield</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-50 dark:divide-white/5">
+                            {state.results.filter(r => r.status === ResultStatus.DECLARED).slice(-5).reverse().map((res, i) => {
+                                const item = state.items.find(it => it.id === res.itemId);
+                                return res.winners.map((win, j) => {
+                                    const part = state.participants.find(p => p.id === win.participantId);
+                                    const team = state.teams.find(t => t.id === part?.teamId);
+                                    let pts = 0;
+                                    if (win.position === 1) pts += (item?.points?.first || 0);
+                                    else if (win.position === 2) pts += (item?.points?.second || 0);
+                                    else if (win.position === 3) pts += (item?.points?.third || 0);
+                                    if (win.gradeId) {
+                                        const gradeConfig = item?.type === ItemType.SINGLE ? (state.gradePoints?.single || []) : (state.gradePoints?.group || []);
+                                        const grade = gradeConfig.find(g => g.id === win.gradeId);
+                                        // Fix: Added parentheses to resolve ambiguity between ?? and ||
+                                        if (grade) pts += (item?.gradePointsOverride?.[grade.id] ?? (grade.points || 0));
+                                    }
+
+                                    return (
+                                        <tr key={`${i}-${j}`} className="text-xs hover:bg-zinc-50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-4 py-3 font-bold text-zinc-600 dark:text-zinc-300 truncate max-w-[150px]">{item?.name}</td>
+                                            <td className="px-4 py-3 font-bold text-amazio-primary dark:text-zinc-100">{team?.name || '---'}</td>
+                                            <td className="px-4 py-3"><span className="px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-black uppercase text-[8px] border border-emerald-100 dark:border-emerald-800">Rank {win.position}</span></td>
+                                            <td className="px-4 py-3 text-right font-black text-indigo-600 dark:text-indigo-400">+{pts}</td>
+                                        </tr>
+                                    );
+                                });
+                            })}
+                        </tbody>
+                    </table>
                 </div>
               </Card>
           </div>
