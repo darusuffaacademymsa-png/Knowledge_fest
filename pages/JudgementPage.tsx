@@ -206,7 +206,7 @@ const ScoringTable: React.FC<{
                                                 disabled={(isDeclared && !isManager) || (isJudge && jid !== currentJudgeId)}
                                                 value={sp.marks[jid] ?? ''}
                                                 onChange={e => onMarkChange(sp.participantId, jid, e.target.value)}
-                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 text-indigo-300'}`}
+                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
                                                 placeholder="--"
                                             />
                                         </div>
@@ -462,7 +462,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={16}/> Unlock for Correction</button>
                              ) : (
                                 <>
-                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all disabled:opacity-50"><Save size={18}/> {isSaving ? '...' : 'Save Draft'}</button>
+                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all disabled:opacity-50"><Save size={18}/> {isSaving ? '...' : 'Save Draft'}</button>
                                     <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={18} strokeWidth={3}/> {isSaving ? 'Finalizing...' : 'Declare Verdict'}</button>
                                 </>
                              )}
