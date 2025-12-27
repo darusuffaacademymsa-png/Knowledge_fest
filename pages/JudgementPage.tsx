@@ -240,7 +240,7 @@ const ScoringTable: React.FC<{
 // --- Main Page Component ---
 
 const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
-    const { state, currentUser, globalFilters, globalSearchTerm, updateTabulationEntry, deleteEventTabulation, updateResultStatus, declareResult } = useFirebase();
+    const { state, currentUser, globalFilters, globalSearchTerm, updateTabulationEntry, deleteEventTabulation, saveResult } = useFirebase();
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -280,7 +280,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const scoredParticipants = useMemo(() => {
         if (!selectedItem || !state) return [];
         const item = selectedItem;
-        const category = state.categories.find(c => c.id === item.categoryId);
         const gradesConfig = item.type === ItemType.SINGLE ? state.gradePoints.single : state.gradePoints.group;
         
         // Find all enrolled participants
@@ -406,10 +405,17 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         if (!selectedItem) return;
         setIsSaving(true);
         try {
-            await updateResultStatus({ 
+            const winners = scoredParticipants.map(sp => ({
+                participantId: sp.participantId,
+                position: sp.rank,
+                mark: sp.finalMark,
+                gradeId: sp.grade?.id || null
+            }));
+            await saveResult({ 
                 itemId: selectedItem.id, 
                 categoryId: selectedItem.categoryId, 
-                status: ResultStatus.UPLOADED 
+                status: ResultStatus.UPLOADED,
+                winners: winners
             });
             alert("Results saved as draft.");
         } catch (e) { alert("Failed to save draft."); }
@@ -421,7 +427,18 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         if (!confirm("Are you sure you want to declare results? This will finalize rankings and notify all users.")) return;
         setIsSaving(true);
         try {
-            await declareResult({ itemId: selectedItem.id, categoryId: selectedItem.categoryId });
+            const winners = scoredParticipants.map(sp => ({
+                participantId: sp.participantId,
+                position: sp.rank,
+                mark: sp.finalMark,
+                gradeId: sp.grade?.id || null
+            }));
+            await saveResult({ 
+                itemId: selectedItem.id, 
+                categoryId: selectedItem.categoryId, 
+                status: ResultStatus.DECLARED,
+                winners: winners
+            });
             alert("Results declared successfully!");
         } catch (e) { alert("Failed to declare results."); }
         finally { setIsSaving(false); }
@@ -434,7 +451,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         setIsSaving(true);
         try {
             // 1. Reset Status
-            await updateResultStatus({ itemId: selectedItem.id, categoryId: selectedItem.categoryId, status: ResultStatus.NOT_UPLOADED });
+            await saveResult({ itemId: selectedItem.id, categoryId: selectedItem.categoryId, status: ResultStatus.NOT_UPLOADED, winners: [] });
             // 2. Clear Marks (Tabulation)
             await deleteEventTabulation(selectedItem.id);
             alert("Event data purged successfully.");

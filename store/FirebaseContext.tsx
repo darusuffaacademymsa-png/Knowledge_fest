@@ -120,7 +120,7 @@ interface FirebaseContextType {
   updateCodeLetter: (payload: CodeLetter) => Promise<void>;
   reorderCodeLetters: (payload: CodeLetter[]) => Promise<void>;
   deleteCodeLetter: (id: string) => Promise<void>;
-  addJudge: (payload: Omit<Judge, 'id'>) => Promise<void>;
+  addJudge: (payload: { name: string; place?: string; profession?: string; }) => Promise<void>;
   updateJudge: (payload: Judge) => Promise<void>;
   reorderJudges: (payload: Judge[]) => Promise<void>;
   deleteMultipleJudges: (ids: string[]) => Promise<void>;
@@ -136,8 +136,7 @@ interface FirebaseContextType {
   updateTabulationEntry: (payload: TabulationEntry) => Promise<void>;
   updateMultipleTabulationEntries: (payload: TabulationEntry[]) => Promise<void>;
   deleteEventTabulation: (itemId: string) => Promise<void>;
-  updateResultStatus: (payload: { itemId: string, categoryId: string, status: ResultStatus }) => Promise<void>;
-  declareResult: (payload: { itemId: string, categoryId: string }) => Promise<void>;
+  saveResult: (payload: Result) => Promise<void>;
   addUser: (payload: Omit<User, 'id'>) => Promise<void>;
   updateUser: (payload: User) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
@@ -205,7 +204,12 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       }, (e) => {
-        console.error(`Listener failed for ${key}:`, e);
+        console.warn(`Listener failed for ${key}, falling back to default values. Error: ${e.message}`);
+        // Ensure state key is initialized with default even on failure to prevent app crashes
+        setState(prev => {
+          const current = prev || defaultState;
+          return { ...current, [key]: (defaultState as any)[key] };
+        });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       });
     });
@@ -326,13 +330,10 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         await writeDoc('tabulation', next);
     },
     deleteEventTabulation: async (itemId) => writeDoc('tabulation', state!.tabulation.filter(t => t.itemId !== itemId)),
-    updateResultStatus: async (p) => {
-        const next = state!.results.filter(r => r.itemId !== p.itemId);
-        next.push({ ...p, winners: [] });
+    saveResult: async (payload: Result) => {
+        const next = state!.results.filter(r => r.itemId !== payload.itemId);
+        next.push(payload);
         await writeDoc('results', next);
-    },
-    declareResult: async (p) => {
-        await writeDoc('results', state!.results.map(r => r.itemId === p.itemId ? { ...r, status: ResultStatus.DECLARED } : r));
     },
     addUser: async (p) => writeDoc('users', [...state!.users, { ...p, id: `u_${Date.now()}` }]),
     updateUser: async (p) => writeDoc('users', state!.users.map(u => u.id === p.id ? p : u)),

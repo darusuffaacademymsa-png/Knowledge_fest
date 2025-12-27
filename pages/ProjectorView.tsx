@@ -1,5 +1,4 @@
-
-import { ArrowLeft, Award, Crown, Maximize, Minimize, Sparkles, Trophy, Star, ShieldCheck, Activity, Users, ClipboardList, Calendar, Clock, ChevronRight, Moon, Sun, Play, Pause, Layers, Plus, Zap, MapPin, Sparkle, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Award, Crown, Maximize, Minimize, Sparkles, Trophy, Star, ShieldCheck, Activity, Users, ClipboardList, Calendar, Clock, ChevronRight, Moon, Sun, Play, Pause, Layers, Plus, Zap, MapPin, Sparkle, TrendingUp, ChevronUp } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TABS } from '../constants';
 import { useFirebase } from '../hooks/useFirebase';
@@ -10,9 +9,9 @@ interface ProjectorViewProps {
 }
 
 // --- Cinematic Constants ---
-const SLIDE_DURATION = 20000; 
-const REVEAL_DELAY = 1200; 
-const RACE_DURATION = 6000; 
+const SLIDE_DURATION = 15000; // Faster rotation
+const REVEAL_DELAY = 1500; 
+const RACE_DURATION = 5000; 
 
 type SlideType = 'RESULT' | 'LEADERBOARD' | 'STATS' | 'UPCOMING';
 
@@ -28,8 +27,8 @@ const CountUp: React.FC<{ start?: number; end: number; duration?: number; onFini
         const step = (timestamp: number) => {
             if (!startTime) startTime = timestamp;
             const progress = Math.min((timestamp - startTime) / duration, 1);
-            const easeOutQuad = (t: number) => t * (2 - t);
-            const current = Math.floor(start + (easeOutQuad(progress) * (end - start)));
+            const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+            const current = Math.floor(start + (easeOutExpo(progress) * (end - start)));
             setCount(current);
             
             if (progress < 1) {
@@ -42,7 +41,7 @@ const CountUp: React.FC<{ start?: number; end: number; duration?: number; onFini
         animationFrame = window.requestAnimationFrame(step);
         return () => window.cancelAnimationFrame(animationFrame);
     }, [start, end, duration, onFinish]);
-    return <>{count}</>;
+    return <>{count.toLocaleString()}</>;
 };
 
 // --- Slide Components ---
@@ -53,33 +52,68 @@ const ResultSlide: React.FC<{ result: any; revealStep: number; isDark: boolean }
     const rank1 = result.winners.find((w: any) => w.position === 1);
 
     const RankCard = ({ rank, winner, isVisible, isChampion }: any) => {
-        if (!isVisible) return null;
-        const colors = {
-            1: { bg: 'from-amber-400/20 via-yellow-500/10 to-amber-600/20', border: 'border-yellow-500/50', text: 'text-yellow-500', badge: 'bg-gradient-to-br from-amber-300 to-yellow-600' },
-            2: { bg: 'from-slate-400/20 via-slate-500/10 to-slate-600/20', border: 'border-slate-400/50', text: 'text-slate-400', badge: 'bg-gradient-to-br from-slate-200 to-slate-500' },
-            3: { bg: 'from-orange-400/20 via-orange-500/10 to-orange-600/20', border: 'border-orange-500/50', text: 'text-orange-500', badge: 'bg-gradient-to-br from-orange-300 to-orange-600' }
+        if (!isVisible || !winner) return null;
+        
+        const config = {
+            1: { 
+                bg: 'bg-gradient-to-b from-amber-400 via-yellow-500 to-amber-600', 
+                border: 'border-yellow-300 shadow-[0_0_100px_rgba(234,179,8,0.4)]', 
+                text: 'text-white', 
+                subText: 'text-amber-100',
+                points: 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]',
+                icon: <Crown className="w-full h-full text-white" fill="currentColor"/>
+            },
+            2: { 
+                bg: 'bg-gradient-to-b from-slate-400 via-slate-500 to-slate-600', 
+                border: 'border-slate-300 shadow-[0_0_50px_rgba(148,163,184,0.3)]', 
+                text: 'text-white', 
+                subText: 'text-slate-100',
+                points: 'text-white',
+                icon: <Star className="w-full h-full text-white" fill="currentColor"/>
+            },
+            3: { 
+                bg: 'bg-gradient-to-b from-orange-400 via-orange-500 to-orange-600', 
+                border: 'border-orange-300 shadow-[0_0_50px_rgba(249,115,22,0.3)]', 
+                text: 'text-white', 
+                subText: 'text-orange-100',
+                points: 'text-white',
+                icon: <Trophy className="w-full h-full text-white" fill="currentColor"/>
+            }
         }[rank as 1|2|3]!;
 
         return (
-            <div className={`relative flex-1 w-full md:w-auto flex flex-col items-center p-[2vh] md:p-[3vh] rounded-[2.5rem] border-2 backdrop-blur-3xl animate-in zoom-in-95 slide-in-from-bottom-12 duration-1000 bg-gradient-to-br ${colors.bg} ${colors.border} ${isChampion ? 'scale-100 md:scale-105 z-20 md:mx-[1.5vw] shadow-[0_0_60px_rgba(234,179,8,0.2)]' : 'scale-95 md:scale-90 opacity-90'}`}>
-                {isChampion && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full bg-yellow-500 text-black text-[1vh] font-black font-source uppercase tracking-[0.4em] shadow-2xl animate-pulse whitespace-nowrap">
-                        Winner
+            <div className={`
+                relative flex flex-col items-center p-8 md:p-12 rounded-[4rem] border-4 
+                animate-in zoom-in-50 slide-in-from-bottom-24 duration-1000 
+                ${config.bg} ${config.border} 
+                ${isChampion ? 'scale-110 z-20 md:mx-10' : 'scale-90 z-10 opacity-90'}
+            `}>
+                {/* Visual Flair */}
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.1] mix-blend-overlay"></div>
+                <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                <div className="relative mb-8">
+                    <div className="w-24 h-24 md:w-32 md:h-32 flex items-center justify-center p-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.2)]">
+                        {config.icon}
                     </div>
-                )}
-                <div className={`w-10 h-10 md:w-[10vh] md:h-[10vh] rounded-full flex items-center justify-center font-black text-lg md:text-[4.5vh] mb-3 md:mb-[2vh] shadow-2xl border-4 border-white/20 text-white font-inter ${colors.badge}`}>
-                    {rank}
+                    <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-white flex items-center justify-center font-black text-2xl text-zinc-900 border-4 border-zinc-900/10">
+                        {rank}
+                    </div>
                 </div>
-                <div className="text-center space-y-1">
-                    <h3 className={`text-xl md:text-[4.5vh] font-black font-serif uppercase tracking-tighter leading-tight drop-shadow-sm ${isChampion ? (isDark ? 'text-white' : 'text-zinc-900') : colors.text}`}>
+
+                <div className="text-center space-y-2 mb-8">
+                    <h3 className={`text-4xl md:text-6xl font-black font-serif uppercase tracking-tighter leading-none ${config.text}`}>
                         {winner.participantName}
                     </h3>
-                    <p className="text-[1.3vh] font-bold font-montserrat text-zinc-500 uppercase tracking-[0.2em]">{winner.teamName}</p>
+                    <p className={`text-xl md:text-2xl font-black font-source uppercase tracking-[0.3em] ${config.subText}`}>{winner.teamName}</p>
                 </div>
-                <div className="mt-3 md:mt-[2vh] flex items-center gap-3 border-t border-white/10 pt-3 md:pt-[2vh] w-full justify-center">
-                    <div className="text-center">
-                        <p className="text-[0.9vh] font-black font-source uppercase tracking-widest text-zinc-500 mb-1 opacity-60">Points</p>
-                        <div className="text-xl md:text-[3.5vh] font-black font-inter text-emerald-500 tabular-nums">+<CountUp end={winner.totalPoints} /></div>
+
+                <div className="w-full h-px bg-white/20 mb-8"></div>
+
+                <div className="text-center">
+                    <p className={`text-sm font-black uppercase tracking-[0.5em] mb-2 ${config.subText} opacity-80`}>TOTAL POINTS</p>
+                    <div className={`text-6xl md:text-8xl font-black font-inter tabular-nums leading-none ${config.points}`}>
+                        <CountUp end={winner.totalPoints} duration={2500} />
                     </div>
                 </div>
             </div>
@@ -87,27 +121,34 @@ const ResultSlide: React.FC<{ result: any; revealStep: number; isDark: boolean }
     };
 
     return (
-        <div className="h-full w-full flex flex-col items-center justify-center p-[4vh] animate-in fade-in duration-1000">
-            <div className="text-center mb-[3vh] space-y-1">
-                <div className="inline-flex items-center gap-2 px-4 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 mb-1 animate-pulse">
-                    <Zap size={12} className="text-emerald-500 fill-current" />
-                    <span className="text-[1.1vh] font-black font-source uppercase tracking-[0.4em] text-emerald-500">{result.categoryName}</span>
+        <div className="h-full w-full flex flex-col items-center justify-center p-12 overflow-hidden relative">
+            {/* Massive Background Reveal Text */}
+            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[40vh] font-black font-serif uppercase tracking-tighter opacity-[0.03] select-none pointer-events-none transition-all duration-1000 ${revealStep >= 3 ? 'scale-110 opacity-[0.05]' : 'scale-90'}`}>
+                WINNER
+            </div>
+
+            <div className="text-center mb-12 relative z-20">
+                <div className="inline-flex items-center gap-4 px-8 py-3 bg-emerald-500/10 rounded-full border-2 border-emerald-500/20 mb-4 animate-pulse">
+                    <Sparkles size={24} className="text-emerald-500" />
+                    <span className="text-xl font-black font-source uppercase tracking-[0.5em] text-emerald-500">{result.categoryName}</span>
                 </div>
-                <h1 className="text-3xl md:text-[7vh] font-black font-serif uppercase tracking-tighter leading-tight drop-shadow-2xl">{result.itemName}</h1>
-                <div className="flex items-center justify-center gap-4 pt-1">
-                    <div className="h-[1px] w-[8vw] bg-gradient-to-r from-transparent via-zinc-500 to-transparent opacity-30"></div>
-                    <span className="text-[0.9vh] font-bold font-source uppercase tracking-[0.5em] text-zinc-500">Official Declaration</span>
-                    <div className="h-[1px] w-[8vw] bg-gradient-to-r from-transparent via-zinc-500 to-transparent opacity-30"></div>
+                <h1 className="text-6xl md:text-[10vh] font-black font-serif uppercase tracking-tighter leading-none drop-shadow-2xl mb-4">{result.itemName}</h1>
+                <div className="flex items-center justify-center gap-6">
+                    <div className="h-1 w-24 bg-gradient-to-r from-transparent to-zinc-500/30"></div>
+                    <span className="text-sm font-black font-source uppercase tracking-[0.8em] text-zinc-500">Official Verdict</span>
+                    <div className="h-1 w-24 bg-gradient-to-l from-transparent to-zinc-500/30"></div>
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-[85vw] gap-4 md:gap-[2vw] flex-1 overflow-hidden">
-                <div className="flex flex-col md:flex-row w-full md:w-auto items-center justify-center gap-4 md:gap-[1vw]">
+            <div className="flex flex-col md:flex-row items-end justify-center w-full max-w-[95vw] gap-8 md:gap-0 flex-1 relative z-20">
+                <div className="order-2 md:order-1">
+                    <RankCard rank={2} winner={rank2} isVisible={revealStep >= 2} />
+                </div>
+                <div className="order-1 md:order-2">
                     <RankCard rank={1} winner={rank1} isVisible={revealStep >= 3} isChampion />
-                    <div className="flex flex-row md:flex-row w-full md:w-auto gap-3 md:gap-[1vw] justify-center">
-                        <RankCard rank={2} winner={rank2} isVisible={revealStep >= 2} />
-                        <RankCard rank={3} winner={rank3} isVisible={revealStep >= 1} />
-                    </div>
+                </div>
+                <div className="order-3 md:order-3">
+                    <RankCard rank={3} winner={rank3} isVisible={revealStep >= 1} />
                 </div>
             </div>
         </div>
@@ -116,178 +157,101 @@ const ResultSlide: React.FC<{ result: any; revealStep: number; isDark: boolean }
 
 const LeaderboardSlide: React.FC<{ teams: any[]; active: boolean }> = ({ teams, active }) => {
     const [animate, setAnimate] = useState(false);
-    const [isFinished, setIsFinished] = useState(false);
-    // REMOVED SLICE: Show all teams
-    const topTeams = useMemo(() => teams, [teams]);
+    const topTeams = useMemo(() => teams.slice(0, 10), [teams]);
     const maxPoints = Math.max(...teams.map(t => t.points), 1);
 
     useEffect(() => {
         if (active) {
             setAnimate(false);
-            setIsFinished(false);
-            const timer = setTimeout(() => setAnimate(true), 800);
+            const timer = setTimeout(() => setAnimate(true), 500);
             return () => clearTimeout(timer);
-        } else {
-            setAnimate(false);
-            setIsFinished(false);
         }
-    }, [active, teams]);
-
-    const handleRaceFinish = () => {
-        setIsFinished(true);
-    };
+        setAnimate(false);
+    }, [active]);
 
     return (
-        <div className="h-full w-full flex flex-col p-[4vh] md:p-[6vh] overflow-hidden relative">
-            {/* Header Overlay */}
-            <div className="flex flex-col md:flex-row justify-between items-end mb-[3vh] gap-4 relative z-20 shrink-0">
-                <div className="space-y-0.5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_15px_#10b981] animate-pulse"></div>
-                        <h2 className="text-[1.6vh] font-black font-source uppercase tracking-[0.5em] text-indigo-500">Live Global Ranking</h2>
-                    </div>
-                    <h1 className="text-4xl md:text-[9vh] font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white drop-shadow-sm">The Tally</h1>
-                </div>
+        <div className="h-full w-full flex flex-col p-16 relative overflow-hidden">
+            {/* Background Flair */}
+            <div className="absolute top-0 right-0 p-20 opacity-10">
+                <Trophy size={400} strokeWidth={1} />
+            </div>
 
-                <div className="px-6 py-2.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[1.2vh] font-black font-source uppercase tracking-[0.4em] animate-pulse backdrop-blur-xl">
-                    Art Fest Standings
+            <div className="flex justify-between items-end mb-16 relative z-10">
+                <div>
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-[0_0_20px_#10b981] animate-pulse"></div>
+                        <h2 className="text-2xl font-black font-source uppercase tracking-[0.5em] text-indigo-500">Global Scoreboard</h2>
+                    </div>
+                    <h1 className="text-8xl md:text-[12vh] font-black font-serif uppercase tracking-tighter leading-none drop-shadow-lg">Point Tally</h1>
+                </div>
+                <div className="px-10 py-5 rounded-[2rem] bg-indigo-500 text-white shadow-2xl animate-bounce">
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mb-1">Leading Unit</div>
+                    <div className="text-3xl font-black uppercase">{topTeams[0]?.name || '---'}</div>
                 </div>
             </div>
 
-            {/* Vertical 3D Bar Race Arena - Added overflow-x-auto for large team lists */}
-            <div className="flex-1 flex items-end justify-center gap-2 md:gap-[2vw] relative z-10 px-4 md:px-10 pb-[2vh] perspective-[2500px] min-h-0 overflow-x-auto no-scrollbar">
+            <div className="flex-1 flex flex-col gap-4 relative z-10 overflow-y-auto no-scrollbar pb-20">
                 {topTeams.map((team, i) => {
-                    const isWinner = i === 0;
-                    const isSilver = i === 1;
-                    const isBronze = i === 2;
                     const percentage = (team.points / maxPoints) * 100;
+                    const isWinner = i === 0;
                     
-                    const barColor = isWinner 
-                        ? 'from-amber-400 via-yellow-500 to-amber-600 shadow-[0_0_80px_rgba(251,191,36,0.4)]' 
-                        : isSilver
-                        ? 'from-slate-300 via-slate-400 to-slate-500 shadow-[0_0_30px_rgba(148,163,184,0.2)]'
-                        : isBronze
-                        ? 'from-orange-400 via-orange-500 to-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.2)]'
-                        : 'from-indigo-600/40 via-indigo-700/30 to-indigo-900/20 border-white/10';
-
                     return (
-                        <div key={team.id} className="flex-1 flex flex-col items-center justify-end h-full min-w-[60px] max-w-[120px]">
-                            {/* Points HUD */}
-                            <div 
-                                className={`mb-[1.5vh] transition-all duration-1000 transform ${animate ? 'opacity-100 translate-y-0 scale-110' : 'opacity-0 translate-y-12 scale-90'}`}
-                            >
-                                <div className={`text-lg md:text-[5.5vh] font-black font-inter tabular-nums tracking-tighter text-center leading-none ${isWinner ? 'text-amber-400 drop-shadow-glow' : 'text-white/90'}`}>
-                                    {animate ? (
-                                        <CountUp 
-                                            start={0} 
-                                            end={team.points} 
-                                            duration={RACE_DURATION} 
-                                            onFinish={isWinner ? handleRaceFinish : undefined} 
-                                        />
-                                    ) : '0'}
-                                </div>
-                                <div className="text-[0.9vh] font-black font-source uppercase tracking-[0.3em] text-zinc-500 text-center mt-1 opacity-50">Points</div>
+                        <div key={team.id} className="group relative flex items-center h-20 md:h-24">
+                            {/* Rank Indicator */}
+                            <div className={`w-20 md:w-24 shrink-0 flex items-center justify-center font-black text-3xl md:text-5xl font-inter ${isWinner ? 'text-amber-500' : 'text-zinc-500/50'}`}>
+                                {(i + 1).toString().padStart(2, '0')}
                             </div>
 
-                            {/* 3D Vertical Bar Structure */}
-                            <div className="relative w-full flex-1 flex items-end justify-center max-h-[60vh]">
-                                <div 
-                                    className={`relative w-[80%] md:w-[70%] transition-all duration-[6000ms] ease-out-expo rounded-t-[1rem] md:rounded-t-[1.5rem] border-t-2 border-white/20 bg-gradient-to-b ${barColor} transform-gpu origin-bottom`}
-                                    style={{ 
-                                        height: animate ? `${Math.max(percentage, 5)}%` : '0%',
-                                        transitionDelay: `${i * 150}ms`,
-                                        transform: isWinner && isFinished ? 'scaleX(1.1) translateY(-2vh) translateZ(80px)' : 'scaleX(1) translateY(0) translateZ(0)'
-                                    }}
-                                >
-                                    {/* 3D Depth Layers */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/25 rounded-t-[1rem] md:rounded-t-[1.5rem]"></div>
-                                    
-                                    {/* Victory Finish Sequence */}
-                                    {isWinner && isFinished && (
-                                        <div className="absolute inset-0 overflow-hidden rounded-t-[1rem] md:rounded-t-[1.5rem]">
-                                            <div className="absolute inset-0 bg-white/30 animate-victory-pulse pointer-events-none"></div>
-                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full animate-victory-shimmer"></div>
-                                            <div className="absolute top-[2vh] left-1/2 -translate-x-1/2 animate-winner-pop">
-                                                <div className="relative">
-                                                    <Crown size={24} className="text-black drop-shadow-[0_0_20px_#fff]" fill="currentColor"/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Rotating Team Name Labels */}
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-                                        <span className={`text-[1vh] md:text-[1.8vh] font-black font-montserrat uppercase tracking-[0.3em] whitespace-nowrap -rotate-90 select-none transition-opacity duration-2000 ${animate ? 'opacity-30' : 'opacity-0'}`}>
-                                            {team.name}
-                                        </span>
-                                    </div>
-
-                                    {/* Rank Indicator */}
-                                    <div className="absolute bottom-[1vh] left-0 right-0 text-center">
-                                        <div className={`text-sm md:text-[3vh] font-black font-inter ${isWinner ? 'text-black/80' : 'text-white/20'}`}>
-                                            {i + 1}
-                                        </div>
+                            {/* Track and Bar */}
+                            <div className="flex-grow h-full flex flex-col justify-center px-6">
+                                <div className="flex justify-between items-end mb-2">
+                                    <span className={`text-xl md:text-3xl font-black uppercase tracking-tight ${isWinner ? 'text-white' : 'text-zinc-400'}`}>
+                                        {team.name}
+                                    </span>
+                                    <div className={`text-3xl md:text-5xl font-black font-inter tabular-nums leading-none ${isWinner ? 'text-amber-400' : 'text-emerald-500'}`}>
+                                        {animate ? <CountUp end={team.points} duration={RACE_DURATION} /> : '0'}
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Baseline Identity */}
-                            <div className="mt-[2vh] w-full text-center min-h-[4vh]">
-                                <span className={`text-[1vh] md:text-[1.5vh] font-black font-montserrat uppercase tracking-[0.2em] block truncate px-1 transition-all duration-1000 ${isWinner && isFinished ? 'text-amber-400 scale-110 drop-shadow-glow' : 'text-zinc-500'}`}>
-                                    {team.name}
-                                </span>
+                                <div className="h-3 md:h-4 w-full bg-zinc-800/50 rounded-full overflow-hidden border border-white/5">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-[5000ms] ease-out-expo relative
+                                            ${isWinner ? 'bg-gradient-to-r from-amber-600 to-yellow-400' : 'bg-gradient-to-r from-indigo-600 to-emerald-400'}
+                                        `}
+                                        style={{ width: animate ? `${Math.max(percentage, 5)}%` : '0%' }}
+                                    >
+                                        <div className="absolute inset-0 bg-white/20 animate-shimmer-sweep"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     );
                 })}
-            </div>
-
-            {/* Victory Confetti Blast */}
-            {isFinished && (
-                <div className="absolute inset-0 z-50 pointer-events-none">
-                    {[...Array(30)].map((_, i) => (
-                        <div 
-                            key={i} 
-                            className="absolute bg-gradient-to-br from-amber-200 to-yellow-500 w-3 h-3 rounded-sm animate-confetti-fall"
-                            style={{ 
-                                left: `${Math.random() * 100}%`,
-                                top: `-20px`,
-                                animationDelay: `${Math.random() * 5}s`,
-                                transform: `rotate(${Math.random() * 360}deg)`,
-                                opacity: Math.random() + 0.3
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* Cinematic Background Typography */}
-            <div className="absolute bottom-[-5%] left-0 text-[35vh] font-black font-serif uppercase text-zinc-500/5 pointer-events-none select-none tracking-tighter z-0 leading-none">
-                Art Fest
             </div>
         </div>
     );
 };
 
 const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
-    <div className="h-full w-full flex flex-col items-center justify-center p-[5vh] md:p-[6vh] animate-in zoom-in-105 duration-1000 overflow-hidden">
-        <div className="text-center mb-[6vh]">
-            <h2 className="text-[2vh] font-black font-source uppercase tracking-[0.6em] text-indigo-500 mb-2">Event Intelligence</h2>
-            <h1 className="text-4xl md:text-[10vh] font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white drop-shadow-xl">Live Metrics</h1>
+    <div className="h-full w-full flex flex-col items-center justify-center p-20 animate-in zoom-in-95 duration-1000">
+        <div className="text-center mb-16">
+            <h2 className="text-3xl font-black font-source uppercase tracking-[0.8em] text-indigo-500 mb-4">Art Fest Ecosystem</h2>
+            <h1 className="text-8xl md:text-[14vh] font-black font-serif uppercase tracking-tighter leading-none drop-shadow-2xl">Festival Pulse</h1>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-[3vh] md:gap-[4vh] w-full max-w-[80vw]">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-12 w-full max-w-7xl">
             {[
-                { icon: Users, label: 'Delegates', value: stats.participants, color: 'text-indigo-500' },
-                { icon: Trophy, label: 'Declared Results', value: stats.declared, color: 'text-amber-500' },
-                { icon: Activity, label: 'Total Point Tally', value: stats.totalPoints, color: 'text-sky-500' },
-                { icon: ClipboardList, label: 'Categories', value: stats.categories, color: 'text-rose-500' },
-                { icon: Layers, label: 'Scopes', value: stats.items, color: 'text-emerald-500' },
-                { icon: Calendar, label: 'Scheduled', value: stats.scheduled, color: 'text-purple-500' }
+                { icon: Users, label: 'Delegates', value: stats.participants, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                { icon: Trophy, label: 'Results Ready', value: stats.declared, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { icon: Star, label: 'Global Points', value: stats.totalPoints, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { icon: ClipboardList, label: 'Categories', value: stats.categories, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                { icon: Layers, label: 'Competitions', value: stats.items, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+                { icon: Calendar, label: 'Scheduled', value: stats.scheduled, color: 'text-purple-500', bg: 'bg-purple-500/10' }
             ].map((stat, i) => (
-                <div key={i} className="group flex flex-col items-center p-[3vh] md:p-[4vh] rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-2xl transition-all duration-700 hover:bg-white/10">
-                    <stat.icon size={36} className={`${stat.color} mb-[2vh] md:w-[7vh] md:h-[7vh]`} />
-                    <div className="text-3xl md:text-[8vh] font-black font-inter mb-1 tabular-nums tracking-tighter leading-none text-white"><CountUp end={stat.value} /></div>
-                    <p className="text-[1.1vh] font-bold font-source uppercase tracking-[0.6em] text-zinc-500 text-center opacity-70">{stat.label}</p>
+                <div key={i} className={`flex flex-col items-center p-12 rounded-[4rem] ${stat.bg} border-4 border-white/5 backdrop-blur-3xl shadow-2xl transition-transform hover:scale-105 duration-500`}>
+                    <stat.icon size={64} className={`${stat.color} mb-6`} />
+                    <div className="text-6xl md:text-8xl font-black font-inter mb-2 tabular-nums leading-none">
+                        <CountUp end={stat.value} />
+                    </div>
+                    <p className="text-lg font-black font-source uppercase tracking-[0.5em] text-zinc-500 opacity-60 text-center">{stat.label}</p>
                 </div>
             ))}
         </div>
@@ -295,41 +259,35 @@ const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
 );
 
 const UpcomingSlide: React.FC<{ events: any[] }> = ({ events }) => (
-    <div className="h-full w-full flex flex-col p-[4vh] md:p-[6vh] animate-in fade-in slide-in-from-bottom-24 duration-1000 overflow-hidden">
-        <div className="mb-[4vh] flex flex-col md:flex-row justify-between items-end gap-3 shrink-0">
-            <div className="space-y-0.5">
-                <h2 className="text-[2vh] font-black font-source uppercase tracking-[0.5em] text-amber-500 flex items-center gap-5">
-                    <Clock size={20} className="md:w-[4vh] md:h-[4vh]" /> Time Stream
+    <div className="h-full w-full flex flex-col p-16 animate-in slide-in-from-right-24 duration-1000">
+        <div className="mb-16 flex justify-between items-end">
+            <div>
+                <h2 className="text-3xl font-black font-source uppercase tracking-[0.5em] text-amber-500 mb-2 flex items-center gap-4">
+                    <Clock size={32} /> LIVE TIMELINE
                 </h2>
-                <h1 className="text-4xl md:text-[10vh] font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white drop-shadow-xl">Program Flow</h1>
+                <h1 className="text-8xl md:text-[12vh] font-black font-serif uppercase tracking-tighter leading-none drop-shadow-xl">Program Flow</h1>
             </div>
-            <div className="text-right">
-                <div className="px-8 py-3 rounded-full bg-emerald-500 text-black text-[1.4vh] font-black font-source uppercase tracking-[0.5em] animate-pulse shadow-[0_0_40px_rgba(16,185,129,0.5)]">Live Feed</div>
+            <div className="px-10 py-5 rounded-full bg-emerald-500 text-black text-xl font-black font-source uppercase tracking-[0.5em] animate-pulse">
+                Next Up
             </div>
         </div>
-        <div className="flex-1 flex flex-col gap-[2.5vh] overflow-y-auto pr-2 custom-scrollbar pb-[10vh]">
-            {events.length > 0 ? events.map((ev, i) => (
-                <div key={i} className="flex items-center gap-6 md:gap-[4vw] p-4 md:p-[3.5vh] bg-white/5 rounded-[4rem] border border-white/10 backdrop-blur-3xl relative overflow-hidden group hover:bg-white/10 transition-all duration-700 shrink-0">
-                    <div className="w-20 h-20 md:w-[22vh] md:h-[22vh] rounded-[3.5rem] bg-zinc-950 border-2 border-white/10 flex flex-col items-center justify-center text-center shrink-0 shadow-2xl transition-transform group-hover:scale-105">
-                        <span className="text-[1.2vh] font-black font-source uppercase text-zinc-500 mb-1">{ev.date.split(' ')[0]}</span>
-                        <span className="text-2xl md:text-[9vh] font-black font-inter text-white leading-none tabular-nums tracking-tighter">{ev.time.split(' ')[0]}</span>
-                        <span className="text-[1.2vh] font-black font-source uppercase text-amber-500 mt-1">{ev.time.split(' ')[1]}</span>
+        <div className="flex-1 flex flex-col gap-6 overflow-hidden pr-4">
+            {events.slice(0, 4).map((ev, i) => (
+                <div key={i} className="flex items-center gap-12 p-8 md:p-12 bg-white/5 rounded-[5rem] border-4 border-white/5 backdrop-blur-3xl relative overflow-hidden group hover:bg-white/10 transition-all duration-700">
+                    <div className="w-32 h-32 md:w-48 md:h-48 rounded-[4rem] bg-zinc-950 border-4 border-emerald-500/20 flex flex-col items-center justify-center text-center shrink-0 shadow-2xl transition-transform group-hover:scale-105">
+                        <span className="text-lg font-black font-source uppercase text-zinc-500 mb-2">{ev.date}</span>
+                        <span className="text-4xl md:text-6xl font-black font-inter text-white leading-none">{ev.time}</span>
                     </div>
                     <div className="flex-grow min-w-0">
-                        <div className="flex flex-wrap items-center gap-3 md:gap-[1.5vw] mb-2 md:mb-[2vh]">
-                            <span className="px-4 py-1.5 rounded-2xl bg-indigo-500/20 text-indigo-400 text-[1.2vh] md:text-[2vh] font-black font-source uppercase tracking-[0.4em] border border-indigo-500/30">{ev.categoryName}</span>
-                            <span className="px-4 py-1.5 rounded-2xl bg-white/5 text-zinc-400 text-[1.2vh] md:text-[2vh] font-black font-source uppercase tracking-[0.4em] border border-white/10 flex items-center gap-3"><MapPin size={18} className="text-emerald-500" /> {ev.stage}</span>
+                        <div className="flex items-center gap-6 mb-4">
+                            <span className="px-6 py-2 rounded-2xl bg-indigo-500 text-white text-sm font-black font-source uppercase tracking-[0.4em] shadow-lg">{ev.categoryName}</span>
+                            <span className="text-2xl font-black text-zinc-500 flex items-center gap-2 uppercase tracking-widest"><MapPin size={24} className="text-rose-500" /> {ev.stage}</span>
                         </div>
-                        <h3 className="text-2xl md:text-[7.5vh] font-black font-montserrat uppercase tracking-tighter truncate leading-none text-zinc-100">{ev.itemName}</h3>
+                        <h3 className="text-5xl md:text-7xl font-black font-serif uppercase tracking-tighter truncate leading-none text-white drop-shadow-lg">{ev.itemName}</h3>
                     </div>
-                    <ChevronRight size={64} className="text-white opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-6 hidden md:block" strokeWidth={4} />
+                    <ChevronRight size={100} className="text-white opacity-10 group-hover:opacity-100 transition-all transform group-hover:translate-x-6" strokeWidth={4} />
                 </div>
-            )) : (
-                <div className="flex-1 flex flex-col items-center justify-center opacity-20">
-                    <Calendar size={120} strokeWidth={1} className="text-zinc-500" />
-                    <p className="text-[3vh] font-black font-source uppercase tracking-[0.6em] mt-10 text-zinc-400">Queue Ready</p>
-                </div>
-            )}
+            ))}
         </div>
     </div>
 );
@@ -345,7 +303,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // --- Data Aggregation ---
     const data = useMemo(() => {
         if (!state) return null;
         
@@ -365,7 +322,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                 const gConfig = item?.type === ItemType.SINGLE ? state.gradePoints.single : state.gradePoints.group;
                 const g = w.gradeId ? gConfig.find(grade => grade.id === w.gradeId) : null;
                 if (g) pts += (item?.gradePointsOverride?.[g.id] ?? g.points);
-                return { ...w, participantName: item?.type === ItemType.GROUP ? `${p?.name} & Party` : (p?.name || '---'), place: p?.place, teamName: t?.name || '---', totalPoints: pts, gradeName: g?.name || '-' };
+                return { ...w, participantName: item?.type === ItemType.GROUP ? `${p?.name} & Party` : (p?.name || '---'), place: p?.place, teamName: t?.name || '---', totalPoints: pts };
             }).sort((a,b) => (a.position || 99) - (b.position || 99));
             resultSlideData = { itemName: item?.name, categoryName: category?.name, winners };
         }
@@ -389,25 +346,23 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
         });
         const leaderboardData = state.teams.map(t => ({ ...t, points: teamPointsMap[t.id] })).sort((a,b) => b.points - a.points);
 
-        const statsData = {
-            participants: state.participants.length,
-            items: state.items.length,
-            declared: declared.length,
-            categories: state.categories.length,
-            totalPoints: Object.values(teamPointsMap).reduce((a, b) => a + b, 0),
-            scheduled: state.schedule.length
+        return { 
+            result: resultSlideData, 
+            leaderboard: leaderboardData, 
+            stats: {
+                participants: state.participants.length,
+                items: state.items.length,
+                declared: declared.length,
+                categories: state.categories.length,
+                totalPoints: Object.values(teamPointsMap).reduce((a, b) => a + b, 0),
+                scheduled: state.schedule.length
+            },
+            upcoming: state.schedule.map(ev => ({ ...ev, itemName: state.items.find(i => i.id === ev.itemId)?.name, categoryName: state.categories.find(c => c.id === ev.categoryId)?.name }))
         };
-
-        const upcomingData = state.schedule
-            .map(ev => ({ ...ev, itemName: state.items.find(i => i.id === ev.itemId)?.name, categoryName: state.categories.find(c => c.id === ev.categoryId)?.name }));
-            // REMOVED SLICE: Show full list
-
-        return { result: resultSlideData, leaderboard: leaderboardData, stats: statsData, upcoming: upcomingData };
     }, [state]);
 
     useEffect(() => {
         if (isPaused) return;
-
         const cycle = setInterval(() => {
             setActiveSlide(current => {
                 if (current === 'RESULT') return 'LEADERBOARD';
@@ -416,7 +371,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                 return 'RESULT';
             });
         }, SLIDE_DURATION);
-
         return () => clearInterval(cycle);
     }, [isPaused]);
 
@@ -425,7 +379,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             setRevealStep(0);
             const t3 = setTimeout(() => setRevealStep(1), REVEAL_DELAY);
             const t2 = setTimeout(() => setRevealStep(2), REVEAL_DELAY * 2);
-            const t1 = setTimeout(() => setRevealStep(3), REVEAL_DELAY * 3.5);
+            const t1 = setTimeout(() => setRevealStep(3), REVEAL_DELAY * 4);
             return () => { clearTimeout(t3); clearTimeout(t2); clearTimeout(t1); };
         }
     }, [activeSlide, data?.result?.itemName]); 
@@ -438,23 +392,21 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     if (!state || !data) return null;
 
     return (
-        <div 
-            ref={containerRef} 
-            className={`h-screen w-screen overflow-hidden relative font-sans select-none transition-colors duration-1000 ${theme === 'dark' ? 'bg-[#030403] text-white' : 'bg-[#FAF8F4] text-zinc-900'}`}
-        >
-            {/* Cinematic Background Orbs */}
+        <div ref={containerRef} className={`h-screen w-screen overflow-hidden relative font-sans select-none transition-colors duration-1000 ${theme === 'dark' ? 'bg-[#030403] text-white' : 'bg-[#FAF8F4] text-zinc-900'}`}>
+            
+            {/* Massive Moving Background Glows */}
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className={`absolute top-[-30%] left-[-20%] w-[100vw] h-[100vw] rounded-full blur-[350px] animate-pulse-slow opacity-20 ${theme === 'dark' ? 'bg-emerald-900/50' : 'bg-emerald-300/40'}`}></div>
-                <div className={`absolute bottom-[-30%] right-[-20%] w-[100vw] h-[100vw] rounded-full blur-[350px] animate-pulse-slow delay-2000 opacity-20 ${theme === 'dark' ? 'bg-indigo-900/50' : 'bg-indigo-300/40'}`}></div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.08] mix-blend-overlay"></div>
+                <div className={`absolute top-[-30%] left-[-20%] w-[100vw] h-[100vw] rounded-full blur-[400px] animate-blob-pulse-1 opacity-20 ${theme === 'dark' ? 'bg-indigo-900/50' : 'bg-indigo-300/40'}`}></div>
+                <div className={`absolute bottom-[-30%] right-[-20%] w-[100vw] h-[100vw] rounded-full blur-[400px] animate-blob-pulse-2 opacity-20 ${theme === 'dark' ? 'bg-emerald-900/50' : 'bg-emerald-300/40'}`}></div>
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.1] mix-blend-overlay"></div>
             </div>
 
-            {/* Content Display Engine */}
+            {/* Display Layer */}
             <main className="relative z-10 h-full w-full overflow-hidden">
                 <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${activeSlide === 'RESULT' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
                    {data.result ? <ResultSlide result={data.result} revealStep={revealStep} isDark={theme === 'dark'} /> : <StatsSlide stats={data.stats} />}
                 </div>
-                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${activeSlide === 'LEADERBOARD' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24 pointer-events-none'}`}>
+                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${activeSlide === 'LEADERBOARD' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32 pointer-events-none'}`}>
                     <LeaderboardSlide teams={data.leaderboard} active={activeSlide === 'LEADERBOARD'} />
                 </div>
                 <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${activeSlide === 'STATS' ? 'opacity-100 scale-100' : 'opacity-0 scale-110 pointer-events-none'}`}>
@@ -465,126 +417,47 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                 </div>
             </main>
 
-            {/* Cinematic Brand Footer */}
-            <div className="absolute bottom-[3vh] left-0 right-0 flex flex-col md:flex-row justify-between items-center px-[8vw] z-20 gap-3 md:gap-0 shrink-0">
-                <div className="flex items-center gap-8 opacity-60 text-center md:text-left group transition-opacity hover:opacity-100">
-                    <div className="flex flex-col">
-                        <span className="text-[1vh] font-black font-source uppercase tracking-[0.7em] mb-1 text-indigo-500">Official Broadcast Center</span>
-                        <span className="text-xl md:text-[3.2vh] font-black font-serif uppercase tracking-[0.3em] truncate max-w-[500px] md:max-w-none leading-none text-zinc-100 drop-shadow-md">{state.settings.heading}</span>
-                    </div>
+            {/* Footer Brand Info */}
+            <div className="absolute bottom-10 left-0 right-0 flex justify-between items-end px-20 z-20">
+                <div className="space-y-1">
+                    <span className="text-[10px] font-black font-source uppercase tracking-[0.7em] text-indigo-500 opacity-60">Production Environment v6.2</span>
+                    <h4 className="text-3xl font-black font-serif uppercase tracking-tighter text-zinc-100 leading-none">{state.settings.heading}</h4>
                 </div>
-                <div className="flex items-center gap-10">
-                    <div className="text-right opacity-40 hidden sm:block">
-                        <p className="text-[1vh] font-black font-source uppercase tracking-[0.5em] mb-1">State Sync 5.4</p>
-                        <p className="text-[1.4vh] font-bold font-source uppercase tracking-widest text-zinc-400">Cinematic Core</p>
-                    </div>
-                    {state.settings.institutionDetails?.logoUrl && (
-                        <img src={state.settings.institutionDetails.logoUrl} className="h-[4vh] md:h-[5vh] object-contain grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-700" alt="Logo" />
-                    )}
-                </div>
+                {state.settings.institutionDetails?.logoUrl && (
+                    <img src={state.settings.institutionDetails.logoUrl} className="h-16 w-16 object-contain grayscale opacity-40 hover:opacity-100 transition-opacity" alt="Logo" />
+                )}
             </div>
 
-            {/* Progress Visualization Bar */}
-            <div className="absolute top-0 left-0 right-0 h-[4px] z-[100] flex gap-4 px-20 pt-10">
+            {/* Progress Bars */}
+            <div className="absolute top-10 inset-x-20 flex gap-4 z-[100]">
                 {['RESULT', 'LEADERBOARD', 'STATS', 'UPCOMING'].map((s) => (
-                    <div key={s} className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden backdrop-blur-xl shadow-inner">
-                        {activeSlide === s && !isPaused && (
-                            <div className="h-full bg-emerald-500 animate-slide-progress shadow-[0_0_20px_#10b981]"></div>
-                        )}
-                        {activeSlide === s && isPaused && (
-                            <div className="h-full bg-emerald-500 w-full opacity-60 shadow-[0_0_15px_#10b981]"></div>
+                    <div key={s} className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden backdrop-blur-xl">
+                        {activeSlide === s && (
+                            <div className="h-full bg-emerald-500 animate-slide-progress shadow-[0_0_15px_#10b981]"></div>
                         )}
                     </div>
                 ))}
             </div>
 
-            {/* Invisible HUD Controls */}
-            <div className="absolute top-16 right-20 flex gap-3 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-1000 z-[200]">
-                <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="p-3 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 transition-all text-white shadow-2xl">
-                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
-                <button onClick={() => setIsPaused(!isPaused)} className="p-3 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 transition-all text-white shadow-2xl">
-                    {isPaused ? <Play size={18} /> : <Pause size={18} />}
-                </button>
-                <button onClick={toggleFullscreen} className="p-3 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 transition-all text-white shadow-2xl">
-                    {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-                </button>
-                <button onClick={() => onNavigate(TABS.DASHBOARD)} className="p-3 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 transition-all text-white shadow-2xl">
-                    <ArrowLeft size={18} />
-                </button>
+            {/* Hidden Controls (Hover) */}
+            <div className="absolute top-20 right-20 flex gap-3 opacity-0 hover:opacity-100 transition-opacity duration-500 z-[200]">
+                <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="p-4 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 text-white"><Sun size={20}/></button>
+                <button onClick={() => setIsPaused(!isPaused)} className="p-4 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 text-white">{isPaused ? <Play size={20}/> : <Pause size={20}/>}</button>
+                <button onClick={toggleFullscreen} className="p-4 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 text-white"><Maximize size={20}/></button>
+                <button onClick={() => onNavigate(TABS.DASHBOARD)} className="p-4 bg-white/5 backdrop-blur-3xl hover:bg-white/15 rounded-2xl border border-white/10 text-white"><ArrowLeft size={20}/></button>
             </div>
 
             <style>{`
-                @keyframes slide-progress {
-                    from { width: 0%; }
-                    to { width: 100%; }
-                }
-                .animate-slide-progress {
-                    animation: slide-progress ${SLIDE_DURATION}ms linear forwards;
-                }
-                @keyframes shimmer-sweep {
-                    from { transform: translateX(-150%) skewX(-25deg); }
-                    to { transform: translateX(250%) skewX(-25deg); }
-                }
-                .animate-shimmer-sweep {
-                    animation: shimmer-sweep 3.5s infinite linear;
-                }
-                .animate-pulse-slow {
-                    animation: pulse 12s infinite ease-in-out;
-                }
-                .perspective-[2500px] {
-                    perspective: 2500px;
-                }
-                .ease-out-expo {
-                    transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
-                }
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255,255,255,0.08);
-                    border-radius: 30px;
-                }
-                .drop-shadow-glow {
-                    filter: drop-shadow(0 0 15px rgba(251,191,36,0.6));
-                }
-                @keyframes victory-pulse {
-                    0% { opacity: 0.1; }
-                    50% { opacity: 1; }
-                    100% { opacity: 0.1; }
-                }
-                .animate-victory-pulse {
-                    animation: victory-pulse 0.7s infinite;
-                }
-                @keyframes victory-shimmer {
-                    0% { transform: translateX(-200%) skewX(-30deg); }
-                    100% { transform: translateX(300%) skewX(-30deg); }
-                }
-                .animate-victory-shimmer {
-                    animation: victory-shimmer 1.8s infinite linear;
-                }
-                @keyframes confetti-fall {
-                    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-                    100% { transform: translateY(115vh) rotate(1080deg); opacity: 0; }
-                }
-                .animate-confetti-fall {
-                    animation: confetti-fall 4.5s ease-in forwards;
-                }
-                @keyframes winner-pop {
-                    0% { transform: translate(-50%, 30px) scale(0.6); opacity: 0; }
-                    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-                }
-                .animate-winner-pop {
-                    animation: winner-pop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-                }
-                @media (max-width: 768px) {
-                    .animate-in {
-                        animation-duration: 900ms !important;
-                    }
-                }
+                @keyframes slide-progress { from { width: 0%; } to { width: 100%; } }
+                .animate-slide-progress { animation: slide-progress ${SLIDE_DURATION}ms linear forwards; }
+                @keyframes shimmer-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+                .animate-shimmer-sweep { animation: shimmer-sweep 2s infinite ease-in-out; }
+                @keyframes blob-pulse-1 { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(5vw, 5vh) scale(1.1); } 66% { transform: translate(-5vw, 10vh) scale(0.9); } }
+                @keyframes blob-pulse-2 { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(-10vw, -5vh) scale(1.2); } 66% { transform: translate(5vw, -10vh) scale(0.8); } }
+                .animate-blob-pulse-1 { animation: blob-pulse-1 20s infinite ease-in-out; }
+                .animate-blob-pulse-2 { animation: blob-pulse-2 25s infinite ease-in-out; }
+                .ease-out-expo { transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1); }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
             `}</style>
         </div>
     );
