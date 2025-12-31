@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
-import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin } from 'lucide-react';
+import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin, ClipboardList, Tag } from 'lucide-react';
 import { UserRole, PerformanceType, ResultStatus } from '../types';
 import { TABS } from '../constants';
 
@@ -127,12 +127,14 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
     const showItemFilter = pageTitle === TABS.REPORTS;
     const isScoringPage = pageTitle === TABS.SCORING_RESULTS;
     const isSchedulePage = pageTitle === TABS.SCHEDULE;
+    const isCodesPage = pageTitle === TABS.GRADE_POINTS;
 
     const activeCount = [
-        !isScoringPage && !isTeamLeader && !isSchedulePage && globalFilters.teamId.length > 0,
+        !isScoringPage && !isTeamLeader && !isSchedulePage && !isCodesPage && globalFilters.teamId.length > 0,
         isScoringPage && globalFilters.status.length > 0,
         isSchedulePage && globalFilters.date.length > 0,
         isSchedulePage && globalFilters.stage.length > 0,
+        isCodesPage && globalFilters.assignmentStatus.length > 0,
         globalFilters.categoryId.length > 0,
         globalFilters.performanceType.length > 0,
         showItemFilter && globalFilters.itemId.length > 0
@@ -153,7 +155,8 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
             itemId: [],
             status: [],
             date: [],
-            stage: []
+            stage: [],
+            assignmentStatus: []
         });
         setIsMobileOpen(false);
     };
@@ -172,6 +175,10 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
         { id: ResultStatus.UPLOADED, name: 'Draft', icon: Award },
         { id: ResultStatus.NOT_UPLOADED, name: 'Not Uploaded', icon: Clock }
     ];
+    const assignmentOptions = [
+        { id: 'ASSIGNED', name: 'Assigned', icon: Tag },
+        { id: 'UNASSIGNED', name: 'Unassigned', icon: ClipboardList }
+    ];
     
     // Schedule specific options
     const dateOptions = (state.settings.eventDays || []).map(d => ({ id: d, name: d }));
@@ -187,8 +194,17 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
                     onChange={ids => setGlobalFilters(prev => ({ ...prev, status: ids as ResultStatus[] }))} 
                 />
             )}
+
+            {isCodesPage && (
+                <MultiSelect 
+                    label="Assignment" 
+                    options={assignmentOptions} 
+                    selectedIds={globalFilters.assignmentStatus} 
+                    onChange={ids => setGlobalFilters(prev => ({ ...prev, assignmentStatus: ids }))} 
+                />
+            )}
             
-            {!isScoringPage && !isSchedulePage && (
+            {!isScoringPage && !isSchedulePage && !isCodesPage && (
                 <MultiSelect 
                     label="Team" 
                     options={teamOptions} 
@@ -311,6 +327,28 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
                                 </div>
                             )}
 
+                            {isCodesPage && (
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Assignment Status</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {assignmentOptions.map(s => (
+                                            <button 
+                                                key={s.id} 
+                                                onClick={() => {
+                                                    const next = globalFilters.assignmentStatus.includes(s.id) 
+                                                        ? globalFilters.assignmentStatus.filter(id => id !== s.id) 
+                                                        : [...globalFilters.assignmentStatus, s.id];
+                                                    setGlobalFilters(prev => ({ ...prev, assignmentStatus: next }));
+                                                }}
+                                                className={`px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-tight text-center border transition-all ${globalFilters.assignmentStatus.includes(s.id) ? 'bg-indigo-600 text-white border-indigo-700 shadow-md' : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-500 border-zinc-100 dark:border-zinc-800'}`}
+                                            >
+                                                {s.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {isSchedulePage && (
                                 <>
                                     <div className="space-y-3">
@@ -350,7 +388,7 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
                                 </>
                             )}
 
-                            {!isScoringPage && !isSchedulePage && (
+                            {!isScoringPage && !isSchedulePage && !isCodesPage && (
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Team Scopes</label>
                                     <div className="grid grid-cols-2 gap-2">

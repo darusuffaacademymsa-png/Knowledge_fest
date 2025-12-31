@@ -79,8 +79,8 @@ interface FirebaseContextType {
   firebaseUser: FirebaseUser | null; 
   loading: boolean;
   isOnline: boolean;
-  globalFilters: { teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; };
-  setGlobalFilters: React.Dispatch<React.SetStateAction<{ teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; }>>;
+  globalFilters: { teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; };
+  setGlobalFilters: React.Dispatch<React.SetStateAction<{ teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; }>>;
   globalSearchTerm: string;
   setGlobalSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   dataEntryView: 'ITEMS' | 'PARTICIPANTS';
@@ -160,7 +160,16 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   
-  const [globalFilters, setGlobalFilters] = useState({ teamId: [] as string[], categoryId: [] as string[], performanceType: [] as string[], itemId: [] as string[], status: [] as ResultStatus[], date: [] as string[], stage: [] as string[] });
+  const [globalFilters, setGlobalFilters] = useState({ 
+    teamId: [] as string[], 
+    categoryId: [] as string[], 
+    performanceType: [] as string[], 
+    itemId: [] as string[], 
+    status: [] as ResultStatus[], 
+    date: [] as string[], 
+    stage: [] as string[],
+    assignmentStatus: [] as string[]
+  });
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   
   const [dataEntryView, setDataEntryView] = useState<'ITEMS' | 'PARTICIPANTS'>('ITEMS');

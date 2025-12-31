@@ -10,7 +10,7 @@ import {
     Dices, Save, CheckCircle, CheckCircle2, Edit2, X, Layers, Sparkles, Plus,
     LayoutList, Mic, PenTool, Search, Filter, Keyboard, ArrowRightLeft,
     CheckSquare, Square, MousePointer2, ListRestart, Zap, Info, RotateCcw,
-    Award, Star, Settings2
+    Award, Star, Settings2, ShieldAlert
 } from 'lucide-react';
 
 // --- VISUALIZERS & HELPERS ---
@@ -203,8 +203,21 @@ const LotMachine: React.FC = () => {
         if (!state) return [];
         let items = state.items;
         if (selectedCategoryId) items = items.filter(i => i.categoryId === selectedCategoryId);
-        if (globalFilters.categoryId.length > 0) items = items.filter(i => globalFilters.categoryId.includes(i.categoryId));
-        if (globalFilters.performanceType.length > 0) items = items.filter(i => globalFilters.performanceType.includes(i.performanceType));
+        if (globalFilters.categoryId?.length > 0) items = items.filter(i => globalFilters.categoryId.includes(i.categoryId));
+        if (globalFilters.performanceType?.length > 0) items = items.filter(i => globalFilters.performanceType.includes(i.performanceType));
+        
+        if (globalFilters.assignmentStatus?.length > 0) {
+            items = items.filter(item => {
+                const isAssigned = state.tabulation.some(t => t.itemId === item.id && t.codeLetter);
+                const showAssigned = globalFilters.assignmentStatus.includes('ASSIGNED');
+                const showUnassigned = globalFilters.assignmentStatus.includes('UNASSIGNED');
+                if (showAssigned && showUnassigned) return true;
+                if (showAssigned) return isAssigned;
+                if (showUnassigned) return !isAssigned;
+                return true;
+            });
+        }
+
         if (globalSearchTerm) {
             const query = globalSearchTerm.toLowerCase();
             items = items.filter(i => i.name.toLowerCase().includes(query));
@@ -379,17 +392,59 @@ const BulkCodeAssigner: React.FC = () => {
     const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
     const [manualEditId, setManualEditId] = useState<string | null>(null);
 
+    // Check if an item has any codes assigned
+    const getItemAssignedStatus = (itemId: string) => {
+        if (!state) return false;
+        return state.tabulation.some(t => t.itemId === itemId && t.codeLetter);
+    };
+
+    // Check if an item has duplicate codes (Conflict)
+    const getItemConflictStatus = (itemId: string) => {
+        if (!state) return false;
+        const tabs = state.tabulation.filter(t => t.itemId === itemId && t.codeLetter);
+        const codes = tabs.map(t => t.codeLetter);
+        const uniqueCodes = new Set(codes);
+        return codes.length !== uniqueCodes.size;
+    };
+
     const filteredItems = useMemo(() => {
         if (!state) return [];
         return state.items.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(globalSearchTerm.toLowerCase());
-            const matchesCat = globalFilters.categoryId.length > 0 ? globalFilters.categoryId.includes(item.categoryId) : true;
-            return matchesSearch && matchesCat;
+            const matchesCat = globalFilters.categoryId?.length > 0 ? globalFilters.categoryId.includes(item.categoryId) : true;
+            const matchesPerf = globalFilters.performanceType?.length > 0 ? globalFilters.performanceType.includes(item.performanceType) : true;
+            
+            let matchesStatus = true;
+            if (globalFilters.assignmentStatus?.length > 0) {
+                const isAssigned = getItemAssignedStatus(item.id);
+                const showAssigned = globalFilters.assignmentStatus.includes('ASSIGNED');
+                const showUnassigned = globalFilters.assignmentStatus.includes('UNASSIGNED');
+                if (showAssigned && showUnassigned) matchesStatus = true;
+                else if (showAssigned) matchesStatus = isAssigned;
+                else if (showUnassigned) matchesStatus = !isAssigned;
+            }
+
+            return matchesSearch && matchesCat && matchesPerf && matchesStatus;
         }).sort((a,b) => a.name.localeCompare(b.name));
     }, [state, globalSearchTerm, globalFilters]);
 
+    // Group items by category for the requested grouping
+    const groupedItems = useMemo(() => {
+        if (!state) return [];
+        const result: { category: any, items: Item[] }[] = [];
+        state.categories.forEach(cat => {
+            const catItems = filteredItems.filter(i => i.categoryId === cat.id);
+            if (catItems.length > 0) result.push({ category: cat, items: catItems });
+        });
+        return result.sort((a, b) => a.category.name.localeCompare(b.category.name));
+    }, [state, filteredItems]);
+
+    const hasAnyConflicts = useMemo(() => {
+        return filteredItems.some(item => getItemConflictStatus(item.id));
+    }, [filteredItems, state?.tabulation]);
+
     const runBatchAssign = async () => {
-        if (!state || state.codeLetters.length === 0) return;
+        if (!state || (state.codeLetters?.length || 0) === 0) return;
         const updates: TabulationEntry[] = [];
         Array.from(selectedItemIds).forEach(itemId => {
             const item = state.items.find(i => i.id === itemId);
@@ -420,11 +475,20 @@ const BulkCodeAssigner: React.FC = () => {
     };
 
     return (
-        <div className="bg-white/80 dark:bg-white/[0.02] backdrop-blur-xl rounded-[3rem] border border-amazio-primary/5 dark:border-white/5 p-8 shadow-glass-light dark:shadow-2xl relative flex flex-col h-full">
-            <SectionTitle title="Direct Mapping" icon={LayoutList} color="indigo" />
-            <div className="flex flex-col gap-6 flex-grow">
+        <div className="bg-white/80 dark:bg-white/[0.02] backdrop-blur-xl rounded-[3rem] border border-amazio-primary/5 dark:border-white/5 p-8 shadow-glass-light dark:shadow-2xl relative flex flex-col h-full overflow-hidden">
+            <div className="flex justify-between items-start mb-6">
+                <SectionTitle title="Direct Mapping" icon={LayoutList} color="indigo" />
+                {hasAnyConflicts && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full border border-rose-100 dark:border-rose-900/30 animate-pulse">
+                        <AlertTriangle size={12} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Duplicate Codes Detected</span>
+                    </div>
+                )}
+            </div>
+            
+            <div className="flex flex-col gap-6 flex-grow overflow-hidden h-full">
                 {selectedItemIds.size > 0 && (
-                    <div className="flex flex-col gap-3 bg-indigo-600 text-white p-4 rounded-2xl shadow-xl animate-in slide-in-from-top-4">
+                    <div className="flex flex-col gap-3 bg-indigo-600 text-white p-4 rounded-2xl shadow-xl animate-in slide-in-from-top-4 shrink-0">
                         <div className="flex justify-between items-center">
                             <span className="font-black text-xs uppercase tracking-widest">{selectedItemIds.size} Items Selected</span>
                             {selectedItemIds.size === 1 && (
@@ -439,14 +503,70 @@ const BulkCodeAssigner: React.FC = () => {
                         </div>
                     </div>
                 )}
-                <div className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-2 flex-grow">
-                    {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => setSelectedItemIds(prev => { const n = new Set(prev); if(n.has(item.id)) n.delete(item.id); else n.add(item.id); return n; })} className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedItemIds.has(item.id) ? 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-500' : 'bg-white dark:bg-[#121412] border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
-                            <div className="font-black text-xs uppercase truncate pr-4">{item.name}</div>
-                            <div className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${selectedItemIds.has(item.id) ? 'bg-indigo-600 border-indigo-600 shadow-md' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900'}`}>{selectedItemIds.has(item.id) && <Check size={14} className="text-white" strokeWidth={4} />}</div>
+
+                <div className="overflow-y-auto flex-grow custom-scrollbar space-y-8 px-1 max-h-[500px]">
+                    {groupedItems.map(group => (
+                        <div key={group.category.id} className="space-y-3">
+                            <div className="flex items-center gap-3 px-1">
+                                <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 shrink-0">{group.category.name}</span>
+                                <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                {group.items.map(item => {
+                                    const isSelected = selectedItemIds.has(item.id);
+                                    const isAssigned = getItemAssignedStatus(item.id);
+                                    const hasConflict = getItemConflictStatus(item.id);
+                                    
+                                    return (
+                                        <div 
+                                            key={item.id} 
+                                            onClick={() => setSelectedItemIds(prev => { const n = new Set(prev); if(n.has(item.id)) n.delete(item.id); else n.add(item.id); return n; })} 
+                                            className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all 
+                                                ${isSelected 
+                                                    ? 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-500 shadow-md scale-[1.01]' 
+                                                    : isAssigned 
+                                                        ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500/40 shadow-sm' 
+                                                        : 'bg-white dark:bg-[#121412] border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}
+                                        >
+                                            <div className="min-w-0 pr-4 flex-grow flex items-center gap-3">
+                                                <div className="truncate">
+                                                    <div className={`font-black text-xs uppercase ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : isAssigned ? 'text-emerald-800 dark:text-emerald-400' : 'text-amazio-primary dark:text-zinc-200'}`}>
+                                                        {item.name}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-white/5 px-1.5 py-0.5 rounded">{item.performanceType}</span>
+                                                        {hasConflict && (
+                                                            <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 animate-pulse">
+                                                                <AlertTriangle size={10} />
+                                                                <span className="text-[8px] font-black uppercase tracking-widest">Conflicting Codes</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                {isAssigned && !isSelected && <CheckCircle size={16} className="text-emerald-600 dark:text-emerald-400" strokeWidth={3} />}
+                                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors 
+                                                    ${isSelected ? 'bg-indigo-600 border-indigo-600 shadow-md' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900'}`}>
+                                                    {isSelected && <Check size={14} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     ))}
-                    {filteredItems.length === 0 && <div className="py-20 text-center opacity-30 italic text-[10px] uppercase font-bold">No items match current filter</div>}
+
+                    {groupedItems.length === 0 && (
+                        <div className="py-24 text-center opacity-30 italic text-[10px] uppercase font-bold border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] flex flex-col items-center justify-center gap-4">
+                            <Layers size={48} strokeWidth={1} />
+                            <span>No items match current filter</span>
+                        </div>
+                    )}
                 </div>
             </div>
             {manualEditId && <ManualCodeEditorModal itemId={manualEditId} onClose={() => setManualEditId(null)} />}
@@ -474,8 +594,15 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
         setDraftEntries(initial);
     }, [itemEntries]);
 
+    const hasConflict = useMemo(() => {
+        const codes = Object.values(draftEntries).filter(c => c !== '');
+        return codes.length !== new Set(codes).size;
+    }, [draftEntries]);
+
     const handleSave = async () => {
         if (!state || !item) return;
+        if (hasConflict && !confirm("Warning: Duplicate code letters detected. Participants within the same item should have unique codes. Save anyway?")) return;
+        
         const updates = Object.entries(draftEntries).map(([pid, code]) => {
             const entryId = `${itemId}-${pid}`;
             const existing = state.tabulation.find(t => t.id === entryId);
@@ -499,13 +626,37 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl"><X size={20} className="text-zinc-500"/></button>
                 </div>
+
+                {hasConflict && (
+                    <div className="px-6 py-3 bg-rose-50 dark:bg-rose-900/20 border-b border-rose-100 dark:border-rose-900/30 flex items-center gap-3 animate-in slide-in-from-top-2">
+                        <AlertTriangle size={16} className="text-rose-500 shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400">Duplicate code assignment detected</span>
+                    </div>
+                )}
+
                 <div className="flex-grow overflow-y-auto p-6 custom-scrollbar space-y-3">
-                    {itemEntries.map(e => (
-                        <div key={e.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 transition-all">
-                            <div className="min-w-0 pr-4"><div className="font-black text-sm uppercase tracking-tight text-amazio-primary dark:text-zinc-100 truncate">{e.name}</div><div className="text-[10px] font-mono font-black text-zinc-400 mt-0.5">#{e.chestNumber}</div></div>
-                            <input type="text" value={draftEntries[e.id] || ''} onChange={ev => setDraftEntries(prev => ({ ...prev, [e.id]: ev.target.value.toUpperCase().substring(0, 1) }))} className="w-14 h-12 rounded-xl bg-white dark:bg-zinc-800 border-2 border-indigo-200 dark:border-indigo-900 text-center font-black text-lg text-indigo-600 dark:text-indigo-400 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="?" maxLength={1}/>
-                        </div>
-                    ))}
+                    {itemEntries.map(e => {
+                        const isDuplicate = Object.values(draftEntries).filter(c => c !== '' && c === draftEntries[e.id]).length > 1;
+                        return (
+                            <div key={e.id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isDuplicate ? 'bg-rose-50/30 dark:bg-rose-900/10 border-rose-500/40' : 'bg-zinc-50 dark:bg-black/20 border-zinc-100 dark:border-white/5'}`}>
+                                <div className="min-w-0 pr-4">
+                                    <div className={`font-black text-sm uppercase tracking-tight truncate ${isDuplicate ? 'text-rose-600 dark:text-rose-400' : 'text-amazio-primary dark:text-zinc-100'}`}>
+                                        {e.name}
+                                    </div>
+                                    <div className="text-[10px] font-mono font-black text-zinc-400 mt-0.5">#{e.chestNumber}</div>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    value={draftEntries[e.id] || ''} 
+                                    onChange={ev => setDraftEntries(prev => ({ ...prev, [e.id]: ev.target.value.toUpperCase().substring(0, 1) }))} 
+                                    className={`w-14 h-12 rounded-xl bg-white dark:bg-zinc-800 border-2 text-center font-black text-lg outline-none focus:ring-4 transition-all
+                                        ${isDuplicate ? 'border-rose-500 text-rose-600 focus:ring-rose-500/10' : 'border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500/10'}`} 
+                                    placeholder="?" 
+                                    maxLength={1}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
                 <div className="p-7 border-t border-white/5 bg-zinc-50 dark:bg-white/[0.02] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Discard</button>
@@ -690,7 +841,7 @@ const ItemOverrideSection: React.FC = () => {
         if (!state) return [];
         return state.items.filter(i => {
             const matchSearch = i.name.toLowerCase().includes(globalSearchTerm.toLowerCase());
-            const matchCat = globalFilters.categoryId.length > 0 ? globalFilters.categoryId.includes(i.categoryId) : true;
+            const matchCat = globalFilters.categoryId?.length > 0 ? globalFilters.categoryId.includes(i.categoryId) : true;
             return matchSearch && matchCat;
         }).sort((a,b) => a.name.localeCompare(b.name));
     }, [state, globalSearchTerm, globalFilters]);

@@ -4,7 +4,7 @@ import {
     Monitor, Users, ChevronDown, Lock, User, 
     Sun, Moon, Laptop, Eye, EyeOff, LogOut, AlertCircle,
     Flag, Layers, Calendar, Gavel, BookOpen, Trees, TreePine, Leaf,
-    CheckCircle2, Star, Shapes, Lightbulb, Mic
+    CheckCircle2, Star, Shapes, Lightbulb, Mic, MapPin
 } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
 import { Settings, ItemType } from '../types';
@@ -63,7 +63,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
     };
 
     return (
-        <div className="min-h-screen bg-[#F1F5DC] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">
+        <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">
             
             {/* Style Guide Patterns Overlay */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-[0.04] dark:opacity-[0.07]">
@@ -82,7 +82,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             </div>
 
             {/* Navigation */}
-            <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-[#F1F5DC]/90 dark:bg-[#0F1210]/90 backdrop-blur-2xl border-b border-[#283618]/5 dark:border-white/5 py-4' : 'bg-transparent py-10'}`}>
+            <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-[#FAF9F6]/90 dark:bg-[#0F1210]/90 backdrop-blur-2xl border-b border-[#283618]/5 dark:border-white/5 py-4' : 'bg-transparent py-10'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         {settings.branding?.typographyUrl ? (
@@ -280,7 +280,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                                         required 
                                         value={username}
                                         onChange={e => setUsername(e.target.value)}
-                                        className="w-full pl-14 pr-6 py-5 rounded-3xl bg-[#F1F5DC]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
+                                        className="w-full pl-14 pr-6 py-5 rounded-3xl bg-[#FAF9F6]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
                                     />
                                 </div>
                                 <div className="relative group">
@@ -291,7 +291,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                                         required 
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
-                                        className="w-full pl-14 pr-14 py-5 rounded-3xl bg-[#F1F5DC]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
+                                        className="w-full pl-14 pr-14 py-5 rounded-3xl bg-[#FAF9F6]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
                                     />
                                     <button 
                                         type="button" 

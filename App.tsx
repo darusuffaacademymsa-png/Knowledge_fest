@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TABS, SIDEBAR_GROUPS } from './constants';
 import { useFirebase } from './hooks/useFirebase';
@@ -59,7 +58,8 @@ const App: React.FC = () => {
         itemId: [],
         status: [],
         date: [],
-        stage: []
+        stage: [],
+        assignmentStatus: []
     });
     setGlobalSearchTerm('');
 
@@ -279,13 +279,17 @@ const App: React.FC = () => {
     const currentScrollY = e.currentTarget.scrollTop;
     const deltaY = currentScrollY - lastScrollY.current;
 
-    // To get a "full screen experience", we hide the header on any scroll 
-    // unless we are near the very top of the page.
+    // Responsive Header: Hide on Scroll Down, Show on Scroll Up
     if (currentScrollY > 60) {
-        if (Math.abs(deltaY) > 5) {
+        if (deltaY > 10) {
+            // Scrolling down - hide header
             if (isHeaderVisible) setIsHeaderVisible(false);
+        } else if (deltaY < -10) {
+            // Scrolling up - show header
+            if (!isHeaderVisible) setIsHeaderVisible(true);
         }
     } else {
+        // Near top - always show header
         if (!isHeaderVisible) setIsHeaderVisible(true);
     }
     
