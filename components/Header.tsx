@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Menu, LogOut, ChevronDown, Sun, Moon, Laptop, Search, X, ArrowLeft, Milestone, Gavel, Palette, BookText, Database, ShieldCheck, User as UserIcon, ClipboardList, LayoutList, Users, Hash, Medal, Info, Wifi, WifiOff, Cloud } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Sun, Moon, Laptop, Search, X, ArrowLeft, Milestone, Gavel, Palette, BookText, Database, ShieldCheck, User as UserIcon, ClipboardList, LayoutList, Users, Hash, Medal, Info, Wifi, WifiOff, Cloud, Home } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { useFirebase } from '../hooks/useFirebase';
 import { PAGES_WITH_GLOBAL_FILTERS, TABS, TAB_DISPLAY_NAMES } from '../constants';
@@ -13,9 +13,10 @@ interface HeaderProps {
     theme: 'light' | 'dark' | 'system';
     toggleTheme: (theme: 'light' | 'dark' | 'system') => void;
     isVisible?: boolean; 
+    onTitleClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, currentUser, theme, toggleTheme, isVisible = true }) => {
+const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, currentUser, theme, toggleTheme, isVisible = true, onTitleClick }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -62,6 +63,12 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
         if (theme === 'light') return <Sun className="h-4 w-4" />;
         if (theme === 'dark') return <Moon className="h-4 w-4" />;
         return <Laptop className="h-4 w-4" />;
+    };
+
+    const cycleTheme = () => {
+        if (theme === 'light') toggleTheme('dark');
+        else if (theme === 'dark') toggleTheme('system');
+        else toggleTheme('light');
     };
 
     const subNavOptions = useMemo(() => {
@@ -113,10 +120,20 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                 ) : (
                     <>
                         <div className="flex items-center gap-3 min-w-0">
-                            <button onClick={onMenuClick} className="lg:hidden p-1 rounded-lg text-zinc-800 dark:text-zinc-400 flex-shrink-0"><Menu className="h-5 w-5" /></button>
-                            <h1 className="text-sm md:text-lg font-black font-serif text-amazio-primary dark:text-white tracking-tight truncate">{displayTitle}</h1>
+                            {currentUser ? (
+                                <button onClick={onMenuClick} className="lg:hidden p-1 rounded-lg text-zinc-800 dark:text-zinc-400 flex-shrink-0"><Menu className="h-5 w-5" /></button>
+                            ) : (
+                                <button 
+                                    onClick={onTitleClick} 
+                                    className="p-2 rounded-xl bg-[#283618]/5 dark:bg-white/5 text-[#283618] dark:text-white transition-all hover:scale-105 active:scale-95 flex items-center gap-2 border border-[#283618]/10"
+                                    title="Return to Landing Page"
+                                >
+                                    <ArrowLeft size={16} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xs:inline">Exit to Home</span>
+                                </button>
+                            )}
+                            <h1 onClick={onTitleClick} className="text-sm md:text-lg font-black font-serif text-amazio-primary dark:text-white tracking-tight truncate cursor-pointer hover:opacity-80 transition-opacity">{displayTitle}</h1>
                             
-                            {/* Sync Indicator */}
                             <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ml-2 border ${isOnline ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-900' : 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/30 dark:border-rose-900'}`}>
                                 {isOnline ? <Wifi size={10}/> : <WifiOff size={10}/>}
                                 {isOnline ? 'Synced' : 'Offline'}
@@ -139,7 +156,6 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
 
                         <div className="flex-grow"></div>
 
-                        {/* Desktop Search Field */}
                         {isSearchablePage && (
                             <div className="hidden md:flex items-center mx-4 max-w-xs flex-grow animate-in fade-in duration-500">
                                 <div className="relative w-full group">
@@ -190,30 +206,41 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                             {showGlobalFilters && <UniversalFilter pageTitle={pageTitle} />}
 
                             <div className="relative" ref={themeRef}>
-                                <button onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)} className={`p-2 rounded-xl transition-all ${theme === 'light' ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10'}`}>{getThemeIcon()}</button>
+                                <button 
+                                    onClick={cycleTheme}
+                                    onContextMenu={(e) => { e.preventDefault(); setIsThemeMenuOpen(!isThemeMenuOpen); }}
+                                    className={`p-2 rounded-xl transition-all ${theme === 'light' ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/10' : theme === 'dark' ? 'text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : 'text-indigo-500 bg-indigo-50 dark:bg-indigo-900/10'}`}
+                                    title={`Current Theme: ${theme}. Click to cycle.`}
+                                >
+                                    {getThemeIcon()}
+                                </button>
                                 {isThemeMenuOpen && (
                                     <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#151816] border border-amazio-primary/10 dark:border-white/10 rounded-xl shadow-xl py-1 z-50">
-                                        <button onClick={() => { toggleTheme('light'); setIsThemeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs ${theme === 'light' ? 'text-amber-600' : 'text-zinc-600 dark:text-zinc-400'}`}><Sun size={14} /> Light</button>
-                                        <button onClick={() => { toggleTheme('dark'); setIsThemeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs ${theme === 'dark' ? 'text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}><Moon size={14} /> Dark</button>
+                                        <button onClick={() => { toggleTheme('light'); setIsThemeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs ${theme === 'light' ? 'text-amber-600 font-bold' : 'text-zinc-600 dark:text-zinc-400'}`}><Sun size={14} /> Light</button>
+                                        <button onClick={() => { toggleTheme('dark'); setIsThemeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs ${theme === 'dark' ? 'text-emerald-400 font-bold' : 'text-zinc-600 dark:text-zinc-400'}`}><Moon size={14} /> Dark</button>
+                                        <button onClick={() => { toggleTheme('system'); setIsThemeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs ${theme === 'system' ? 'text-indigo-500 font-bold' : 'text-zinc-600 dark:text-zinc-400'}`}><Laptop size={14} /> System</button>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="relative" ref={profileRef}>
-                                <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-1.5 pl-0.5 pr-1 py-0.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px]"><div className="w-full h-full rounded-full bg-white dark:bg-black flex items-center justify-center"><span className="font-bold text-[10px] text-emerald-600 uppercase">{currentUser?.username.substring(0,2)}</span></div></div>
-                                    <ChevronDown size={12} className={`text-zinc-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isProfileOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#151816] border border-amazio-primary/10 dark:border-white/10 rounded-xl shadow-xl py-1 z-50">
-                                        <div className="px-3 py-2 border-b border-amazio-primary/5 dark:border-white/5">
-                                            <p className="text-xs font-bold text-amazio-primary dark:text-white truncate">{currentUser?.username}</p>
-                                            <p className="text-[10px] text-zinc-500 uppercase">{currentUser?.role}</p>
+                            {currentUser && (
+                                <div className="relative" ref={profileRef}>
+                                    <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-1.5 pl-0.5 pr-1 py-0.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px]"><div className="w-full h-full rounded-full bg-white dark:bg-black flex items-center justify-center"><span className="font-bold text-[10px] text-emerald-600 uppercase">{currentUser?.username.substring(0,2)}</span></div></div>
+                                        <ChevronDown size={12} className={`text-zinc-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isProfileOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#151816] border border-amazio-primary/10 dark:border-white/10 rounded-xl shadow-xl py-1 z-50">
+                                            <div className="px-3 py-2 border-b border-amazio-primary/5 dark:border-white/5">
+                                                <p className="text-xs font-bold text-amazio-primary dark:text-white truncate">{currentUser?.username}</p>
+                                                <p className="text-[10px] text-zinc-500 uppercase">{currentUser?.role}</p>
+                                            </div>
+                                            <button onClick={() => onTitleClick?.()} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/5"><Home size={14} /> Back to Home</button>
+                                            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50"><LogOut size={14} /> Sign Out</button>
                                         </div>
-                                        <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50"><LogOut size={14} /> Sign Out</button>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </>
                 )}

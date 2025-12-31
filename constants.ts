@@ -2,6 +2,7 @@ import { Settings, Users, ClipboardList, Medal, Hash, LayoutDashboard, UserPlus,
 import { UserRole } from './types';
 
 export const TABS = {
+  LANDING: 'Home',
   DASHBOARD: 'Dashboard',
   PROJECTOR: 'Projector Mode',
   GENERAL_SETTINGS: 'Settings',
@@ -18,8 +19,16 @@ export const TABS = {
   CREATIVE_STUDIO: 'E-Poster & Certificate',
 };
 
+// Pages accessible without authentication
+export const GUEST_PERMISSIONS = [
+  TABS.LANDING,
+  TABS.DASHBOARD,
+  TABS.CREATIVE_STUDIO,
+];
+
 // Map each tab to a Tailwind color base
 export const TAB_COLORS: { [key: string]: string } = {
+    [TABS.LANDING]: 'emerald',
     [TABS.DASHBOARD]: 'sky',
     [TABS.PROJECTOR]: 'purple',
     [TABS.DATA_ENTRY]: 'emerald',
@@ -37,6 +46,7 @@ export const TAB_COLORS: { [key: string]: string } = {
 };
 
 export const TAB_DISPLAY_NAMES: { [key: string]: string } = {
+    [TABS.LANDING]: 'Welcome Home',
     [TABS.ITEMS]: 'Items & Participants',
     [TABS.CREATIVE_STUDIO]: 'E-Poster & Certificate',
     [TABS.ITEM_TIMER]: 'Stage Timer',
@@ -60,10 +70,10 @@ export const USER_ROLES = {
     JUDGE: UserRole.JUDGE,
 };
 
-// FIX: Changed type from { [key: string]: string[] } to { [key in UserRole]: string[] } to match AppState interface
 export const DEFAULT_PAGE_PERMISSIONS: { [key in UserRole]: string[] } = {
     [UserRole.MANAGER]: Object.values(TABS),
     [UserRole.TEAM_LEADER]: [
+        TABS.LANDING,
         TABS.DASHBOARD,
         TABS.DATA_ENTRY,
         TABS.SCHEDULE,
@@ -72,12 +82,14 @@ export const DEFAULT_PAGE_PERMISSIONS: { [key in UserRole]: string[] } = {
         TABS.CREATIVE_STUDIO,
     ],
     [UserRole.THIRD_PARTY]: [
+        TABS.LANDING,
         TABS.DASHBOARD,
         TABS.REPORTS,
         TABS.CREATIVE_STUDIO,
         TABS.SCHEDULE
     ],
     [UserRole.JUDGE]: [
+        TABS.LANDING,
         TABS.DASHBOARD,
         TABS.SCORING_RESULTS,
         TABS.ITEM_TIMER,
@@ -94,25 +106,38 @@ export const INITIALIZATION_SUB_PAGE_ICONS = {
 
 export const SIDEBAR_GROUPS = [
     {
-        title: 'Overview',
-        tabs: [TABS.DASHBOARD]
-    },
-    {
-        title: 'Management',
+        title: 'Core',
         tabs: [
-            TABS.DATA_ENTRY,
-            TABS.ITEMS,
-            TABS.TEAMS_CATEGORIES,
-            TABS.GRADE_POINTS,
-            TABS.JUDGES_MANAGEMENT,
-            TABS.SCHEDULE,
-            TABS.ITEM_TIMER,
-            TABS.SCORING_RESULTS,
-            TABS.GENERAL_SETTINGS
+            TABS.LANDING, 
+            TABS.DASHBOARD,
+            TABS.PROJECTOR
         ]
     },
     {
-        title: 'Analytics & Output',
-        tabs: [TABS.POINTS, TABS.REPORTS, TABS.CREATIVE_STUDIO]
+        title: 'Setup & Registry',
+        tabs: [
+            TABS.GENERAL_SETTINGS,
+            TABS.TEAMS_CATEGORIES,
+            TABS.ITEMS,
+            TABS.DATA_ENTRY,
+            TABS.GRADE_POINTS,
+            TABS.JUDGES_MANAGEMENT
+        ]
+    },
+    {
+        title: 'Live Operations',
+        tabs: [
+            TABS.SCHEDULE,
+            TABS.ITEM_TIMER,
+            TABS.SCORING_RESULTS
+        ]
+    },
+    {
+        title: 'Analytics & Media',
+        tabs: [
+            TABS.POINTS, 
+            TABS.REPORTS, 
+            TABS.CREATIVE_STUDIO
+        ]
     }
 ];

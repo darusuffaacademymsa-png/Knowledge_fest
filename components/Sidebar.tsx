@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TABS, SIDEBAR_GROUPS, INITIALIZATION_SUB_PAGE_ICONS, TAB_DISPLAY_NAMES, TAB_COLORS } from '../constants';
 import { User } from '../types';
-import { Search, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, LogOut, ChevronLeft, ChevronRight, Palette, Timer, Settings, Medal, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { Search, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, LogOut, ChevronLeft, ChevronRight, Palette, Timer, Settings, Medal, PanelLeftOpen, PanelLeftClose, Home, Monitor } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
 
 interface SidebarProps {
@@ -17,7 +17,9 @@ interface SidebarProps {
 }
 
 const iconMap: { [key: string]: React.ElementType } = {
+    [TABS.LANDING]: Home,
     [TABS.DASHBOARD]: LayoutDashboard,
+    [TABS.PROJECTOR]: Monitor,
     [TABS.GENERAL_SETTINGS]: Settings,
     [TABS.TEAMS_CATEGORIES]: INITIALIZATION_SUB_PAGE_ICONS['Teams & Categories'],
     [TABS.ITEMS]: INITIALIZATION_SUB_PAGE_ICONS['Items'],
@@ -51,21 +53,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     setActiveTab(tab);
   };
   
-  // Sticky Mode logic
   const isStickyMode = isMobile && state?.settings.mobileSidebarMode === 'sticky';
   
-  // Toggle between modes
   const toggleMobileMode = () => {
       const newMode = isStickyMode ? 'floating' : 'sticky';
       updateSettings({ mobileSidebarMode: newMode });
   };
 
-  // Determine width class based on mode
   let widthClass = isExpanded ? 'w-72' : 'w-[88px]';
-  
-  // If in Sticky Mode on Mobile, override styling
   if (isStickyMode) {
-      widthClass = 'w-[50px]'; // Ultra slim for mobile sticky
+      widthClass = 'w-[50px]'; 
   }
   
   const mobileTransform = isMobile 
@@ -84,10 +81,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     <aside className={containerClasses}>
       <div className={innerContainerClasses}>
         
-        {/* Header Section */}
         {!isStickyMode && (
             <div className={`flex items-center ${isExpanded ? 'px-6 py-6' : 'justify-center py-6'} transition-all duration-300 min-h-[88px]`}>
-                 <div className="relative flex items-center justify-center">
+                 <div className="relative flex items-center justify-center cursor-pointer" onClick={() => handleTabClick(TABS.LANDING)}>
                     <div className="absolute inset-0 bg-emerald-500/20 dark:bg-emerald-500/10 blur-lg rounded-full"></div>
                     <div className={`absolute left-0 transition-all duration-300 ease-in-out ${isExpanded ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-10 scale-90 pointer-events-none'}`}>
                         <h1 className="text-2xl font-black font-serif tracking-tight text-amazio-primary dark:text-white drop-shadow-sm whitespace-nowrap">
@@ -105,14 +101,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {isStickyMode && (
-            <div className="py-4 flex justify-center border-b border-zinc-100 dark:border-white/5">
+            <div className="py-4 flex justify-center border-b border-zinc-100 dark:border-white/5 cursor-pointer" onClick={() => handleTabClick(TABS.LANDING)}>
                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-700 dark:from-emerald-600 dark:to-emerald-900 rounded-lg flex items-center justify-center font-serif text-sm font-bold text-white shadow-md">
                     A
                 </div>
             </div>
         )}
 
-        {/* Search Section */}
         {!isStickyMode && (
             <div className="px-3 mb-2 relative">
                 <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -152,7 +147,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 if (visibleTabsInGroup.length === 0) return null;
 
-                // Group-level color accents
                 const groupColor = gIdx === 0 ? 'text-sky-500' : gIdx === 1 ? 'text-emerald-500' : 'text-amber-500';
 
                 return (
@@ -171,7 +165,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 const colorKey = TAB_COLORS[tab] || 'emerald';
                                 const displayName = TAB_DISPLAY_NAMES[tab] || tab;
 
-                                // Generate Tailwind dynamic class names
                                 const textClass = isActive ? `text-${colorKey}-600 dark:text-${colorKey}-400` : `group-hover:text-${colorKey}-500`;
                                 const bgClass = `bg-${colorKey}-500/5`;
                                 const barClass = `bg-${colorKey}-500`;
@@ -245,7 +238,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
 
                 <div className={`flex items-center ${isStickyMode ? 'flex-col gap-3 w-full' : 'gap-1'}`}>
-                    {/* Toggle Mobile Mode Button */}
                     {isMobile && (
                         <button 
                             onClick={toggleMobileMode}

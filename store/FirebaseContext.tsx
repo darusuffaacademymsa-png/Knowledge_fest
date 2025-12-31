@@ -3,7 +3,7 @@ import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firesto
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
 import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType } from '../types';
-import { DEFAULT_PAGE_PERMISSIONS, TABS } from '../constants';
+import { DEFAULT_PAGE_PERMISSIONS, TABS, GUEST_PERMISSIONS } from '../constants';
 
 // --- Default State Template ---
 const defaultState: AppState = {
@@ -349,7 +349,11 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     deleteUser: async (id) => writeDoc('users', state!.users.filter(u => u.id !== id)),
     updatePermissions: async ({ role, pages }) => writeDoc('permissions', { ...state?.permissions, [role]: pages }),
     updateInstruction: async ({ page, text }) => writeDoc('settings', { ...state?.settings, instructions: { ...state?.settings.instructions, [page]: text } }),
-    hasPermission: (tab) => state?.permissions[currentUser!.role].includes(tab) || false,
+    hasPermission: (tab) => {
+        if (GUEST_PERMISSIONS.includes(tab)) return true;
+        if (!currentUser) return false;
+        return state?.permissions[currentUser.role]?.includes(tab) || false;
+    },
     backupData: () => {
         const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='artfest.json'; a.click();

@@ -14,7 +14,7 @@ import DashboardPage from './pages/Dashboard';
 import CreativeStudio from './pages/CreativeStudio'; 
 import ItemTimerPage from './pages/ItemTimer';
 import ProjectorView from './pages/ProjectorView'; 
-import LandingPage from './pages/LandingPage'; // Updated: Changed from LoginPage to LandingPage
+import LandingPage from './pages/LandingPage';
 import InstructionDisplay from './components/InstructionDisplay';
 import FloatingNavRail from './components/FloatingNavRail';
 import GlobalFontManager from './components/GlobalFontManager';
@@ -40,7 +40,7 @@ const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>(() => {
     const hash = decodeURIComponent(window.location.hash.substring(1));
-    return hash && Object.values(TABS).includes(hash) ? hash : TABS.DASHBOARD;
+    return hash && Object.values(TABS).includes(hash) ? hash : TABS.LANDING;
   });
 
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -50,7 +50,6 @@ const App: React.FC = () => {
   const isProjectorMode = activeTab === TABS.PROJECTOR;
 
   useEffect(() => {
-    // Reset filters and search when switching tabs to ensure a clean state
     setGlobalFilters({
         teamId: currentUser?.role === UserRole.TEAM_LEADER && currentUser?.teamId ? [currentUser.teamId] : [],
         categoryId: [],
@@ -72,9 +71,9 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('theme') as Theme;
-        return stored || 'dark'; 
+        return stored || 'system'; 
     }
-    return 'dark';
+    return 'system';
   });
 
   useEffect(() => {
@@ -94,21 +93,25 @@ const App: React.FC = () => {
             effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         
-        if (!root.classList.contains(effectiveTheme)) {
-            root.classList.remove('light', 'dark');
-            root.classList.add(effectiveTheme);
-        }
+        root.classList.remove('light', 'dark');
+        root.classList.add(effectiveTheme);
 
         if (metaThemeColor) {
-            const hexColor = effectiveTheme === 'dark' ? '#0F1210' : '#FAF8F3';
-            if (metaThemeColor.getAttribute('content') !== hexColor) {
-                metaThemeColor.setAttribute('content', hexColor);
-            }
+            const hexColor = effectiveTheme === 'dark' ? '#0F1210' : '#FAF9F6';
+            metaThemeColor.setAttribute('content', hexColor);
         }
     };
 
     applyTheme(theme);
     localStorage.setItem('theme', theme);
+
+    // Listen for system theme changes if 'system' is selected
+    if (theme === 'system') {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = () => applyTheme('system');
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
+    }
   }, [theme]);
 
   const toggleTheme = (newTheme: Theme) => {
@@ -145,6 +148,8 @@ const App: React.FC = () => {
       const hash = decodeURIComponent(window.location.hash.substring(1));
       if (hash && Object.values(TABS).includes(hash) && hasPermission(hash)) {
         setActiveTab(hash);
+      } else if (!hash) {
+        setActiveTab(TABS.LANDING);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -159,10 +164,8 @@ const App: React.FC = () => {
     }
   };
 
-  // --- Sub-navigation Mapping for 2-finger Swipes ---
   const navigateSubView = useCallback((direction: 'next' | 'prev') => {
     const delta = direction === 'next' ? 1 : -1;
-    
     switch(activeTab) {
       case TABS.DATA_ENTRY: {
         const views: ('ITEMS' | 'PARTICIPANTS')[] = ['ITEMS', 'PARTICIPANTS'];
@@ -202,7 +205,6 @@ const App: React.FC = () => {
     }
   }, [activeTab, dataEntryView, itemsSubView, gradeSubView, judgesSubView, settingsSubView, setDataEntryView, setItemsSubView, setGradeSubView, setJudgesSubView, setSettingsSubView]);
 
-  // --- Main Navigation Mapping for 3-finger Swipes ---
   const navigateMainTab = useCallback((direction: 'next' | 'prev') => {
     const flatTabs = SIDEBAR_GROUPS.flatMap(g => g.tabs).filter(t => hasPermission(t));
     const idx = flatTabs.indexOf(activeTab);
@@ -211,52 +213,33 @@ const App: React.FC = () => {
     handleSetActiveTab(flatTabs[nextIdx]);
   }, [activeTab, hasPermission, handleSetActiveTab]);
 
-  // Unified Multi-finger Gesture Listener
   useEffect(() => {
     if (!isMobile) return;
-
-    let startX = 0;
-    let startY = 0;
-    let fingerCount = 0;
-
+    let startX = 0; let startY = 0; let fingerCount = 0;
     const handleTouchStart = (e: TouchEvent) => {
       fingerCount = e.touches.length;
-      // We only care about horizontal gestures for these triggers
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     };
-
     const handleTouchEnd = (e: TouchEvent) => {
       const endX = e.changedTouches[0].clientX;
       const endY = e.changedTouches[0].clientY;
       const deltaX = endX - startX;
       const deltaY = endY - startY;
-
-      // Ensure it's mostly a horizontal movement
       if (Math.abs(deltaY) > Math.abs(deltaX) || Math.abs(deltaX) < 50) return;
-
       if (fingerCount === 1) {
-        // Feature 1: Swipe right anywhere to show sidebar
-        if (!isSidebarExpanded && deltaX > 70) {
-          setIsSidebarExpanded(true);
-        }
-        // Swipe left to close sidebar
-        else if (isSidebarExpanded && deltaX < -70) {
-          setIsSidebarExpanded(false);
-        }
+        if (!isSidebarExpanded && deltaX > 70) setIsSidebarExpanded(true);
+        else if (isSidebarExpanded && deltaX < -70) setIsSidebarExpanded(false);
       } 
       else if (fingerCount === 2) {
-        // Feature 2: Two finger swipe for sections
         if (deltaX < -70) navigateSubView('next');
         else if (deltaX > 70) navigateSubView('prev');
       }
       else if (fingerCount === 3) {
-        // Feature 3: Three finger swipe for main pages
         if (deltaX < -70) navigateMainTab('next');
         else if (deltaX > 70) navigateMainTab('prev');
       }
     };
-
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
     return () => {
@@ -265,44 +248,25 @@ const App: React.FC = () => {
     };
   }, [isMobile, isSidebarExpanded, navigateSubView, navigateMainTab]);
 
-  const toggleSidebarExpansion = () => {
-      setIsSidebarExpanded(prev => !prev);
-  };
-
-  const handleBackdropClick = () => {
-      setIsSidebarExpanded(false);
-  };
+  const toggleSidebarExpansion = () => setIsSidebarExpanded(prev => !prev);
+  const handleBackdropClick = () => setIsSidebarExpanded(false);
 
   const handleMainScroll = (e: React.UIEvent<HTMLElement>) => {
     if (!isMobile) return;
-    
     const currentScrollY = e.currentTarget.scrollTop;
     const deltaY = currentScrollY - lastScrollY.current;
-
-    // Responsive Header: Hide on Scroll Down, Show on Scroll Up
     if (currentScrollY > 60) {
-        if (deltaY > 10) {
-            // Scrolling down - hide header
-            if (isHeaderVisible) setIsHeaderVisible(false);
-        } else if (deltaY < -10) {
-            // Scrolling up - show header
-            if (!isHeaderVisible) setIsHeaderVisible(true);
-        }
-    } else {
-        // Near top - always show header
-        if (!isHeaderVisible) setIsHeaderVisible(true);
-    }
-    
+        if (deltaY > 10) { if (isHeaderVisible) setIsHeaderVisible(false); }
+        else if (deltaY < -10) { if (!isHeaderVisible) setIsHeaderVisible(true); }
+    } else { if (!isHeaderVisible) setIsHeaderVisible(true); }
     lastScrollY.current = currentScrollY;
   };
 
   const handleContentClick = (e: React.MouseEvent) => {
     if (!isMobile) return;
-
     const target = e.target as HTMLElement;
     const interactive = target.closest('button, a, input, select, textarea, [role="button"]');
     if (interactive) return;
-
     setIsHeaderVisible(prev => !prev);
   };
 
@@ -315,8 +279,8 @@ const App: React.FC = () => {
         </div>
       );
     }
-    
     switch (activeTab) {
+      case TABS.LANDING: return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
       case TABS.GENERAL_SETTINGS: return <GeneralSettings />;
       case TABS.TEAMS_CATEGORIES: return <TeamsAndCategories />;
       case TABS.ITEMS: return <ItemsManagement />;
@@ -331,7 +295,7 @@ const App: React.FC = () => {
       case TABS.CREATIVE_STUDIO: return <CreativeStudio isMobile={isMobile} />;
       case TABS.PROJECTOR: return <ProjectorView onNavigate={handleSetActiveTab} />;
       case TABS.DASHBOARD: return <DashboardPage setActiveTab={handleSetActiveTab} />;
-      default: return <DashboardPage setActiveTab={handleSetActiveTab} />;
+      default: return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
     }
   };
 
@@ -350,8 +314,13 @@ const App: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
-    // Updated: Changed from LoginPage to LandingPage
+  // --- REFINED AUTH GATE ---
+  if (activeTab === TABS.LANDING) {
+     return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
+  }
+
+  const isHashExplicitlyGuest = window.location.hash && hasPermission(activeTab);
+  if (!currentUser && (!isHashExplicitlyGuest || !hasPermission(activeTab))) {
     return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
   }
 
@@ -368,69 +337,22 @@ const App: React.FC = () => {
 
   return (
     <div className="relative min-h-screen flex font-sans overflow-hidden text-amazio-primary dark:text-zinc-100">
-      
       <GlobalFontManager />
-
-      {isMobile && state.settings.enableFloatingNav !== false && !isSidebarExpanded && !isMobileSticky && (
-        <FloatingNavRail 
-            activeTab={activeTab} 
-            setActiveTab={handleSetActiveTab} 
-            hasPermission={hasPermission} 
-        />
+      {currentUser && isMobile && state.settings.enableFloatingNav !== false && !isSidebarExpanded && !isMobileSticky && (
+        <FloatingNavRail activeTab={activeTab} setActiveTab={handleSetActiveTab} hasPermission={hasPermission} />
       )}
-
-      {isMobile && !isMobileSticky && (
-        <div 
-          className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[998] transition-opacity duration-500 ease-in-out ${
-            isSidebarExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-          onClick={handleBackdropClick}
-          aria-hidden="true"
-        />
+      {currentUser && isMobile && !isMobileSticky && (
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[998] transition-opacity duration-500 ease-in-out ${isSidebarExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={handleBackdropClick} aria-hidden="true" />
       )}
-
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={handleSetActiveTab} 
-        isExpanded={isSidebarExpanded}
-        isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebarExpansion}
-        isMobile={isMobile}
-        handleLogout={logout}
-        currentUser={currentUser}
-        hasPermission={hasPermission}
-      />
-
-      <div className={`
-        flex-1 flex flex-col h-screen max-w-full overflow-hidden relative transition-all duration-500 ease-in-out
-        ${state.settings.enableFloatingNav !== false && isMobile && !isSidebarExpanded && !isMobileSticky ? 'pl-0' : ''}
-        ${isMobileSticky ? 'pl-[50px]' : ''}
-      `}>
-        <Header 
-            pageTitle={activeTab} 
-            onMenuClick={toggleSidebarExpansion}
-            handleLogout={logout}
-            currentUser={currentUser}
-            theme={theme}
-            toggleTheme={toggleTheme}
-            isVisible={isHeaderVisible}
-        />
-        <main 
-            ref={mainContentRef} 
-            onScroll={handleMainScroll}
-            onClick={handleContentClick}
-            className={`flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar ${activeTab === TABS.CREATIVE_STUDIO ? 'p-0' : 'px-2 py-0 sm:px-4 sm:py-3 lg:p-4'} transition-all duration-300`}
-        >
-            <div className={`
-                ${activeTab === TABS.CREATIVE_STUDIO ? 'flex-1 h-full flex flex-col' : 'max-w-7xl mx-auto md:space-y-4 sm:space-y-6'}
-                transition-all
-            `}>
-                {/* Header spacer for fixed position on mobile */}
-                <div className="md:hidden">
-                    <div className="h-[env(safe-area-inset-top)]"></div>
-                    <div className="h-14"></div>
-                </div>
-
+      {/* SIDEBAR ONLY RENDERS FOR SIGNED IN USERS */}
+      {currentUser && (
+        <Sidebar activeTab={activeTab} setActiveTab={handleSetActiveTab} isExpanded={isSidebarExpanded} isOpen={isSidebarOpen} toggleSidebar={toggleSidebarExpansion} isMobile={isMobile} handleLogout={logout} currentUser={currentUser} hasPermission={hasPermission} />
+      )}
+      <div className={`flex-1 flex flex-col h-screen max-w-full overflow-hidden relative transition-all duration-500 ease-in-out ${currentUser && state.settings.enableFloatingNav !== false && isMobile && !isSidebarExpanded && !isMobileSticky ? 'pl-0' : ''} ${currentUser && isMobileSticky ? 'pl-[50px]' : ''}`}>
+        <Header pageTitle={activeTab} onMenuClick={toggleSidebarExpansion} handleLogout={logout} currentUser={currentUser} theme={theme} toggleTheme={toggleTheme} isVisible={isHeaderVisible} onTitleClick={() => handleSetActiveTab(TABS.LANDING)} />
+        <main ref={mainContentRef} onScroll={handleMainScroll} onClick={handleContentClick} className={`flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar ${activeTab === TABS.CREATIVE_STUDIO ? 'p-0' : 'px-2 py-0 sm:px-4 sm:py-3 lg:p-4'} transition-all duration-300`}>
+            <div className={`${activeTab === TABS.CREATIVE_STUDIO ? 'flex-1 h-full flex flex-col' : 'max-w-7xl mx-auto md:space-y-4 sm:space-y-6'} transition-all`}>
+                <div className="md:hidden"><div className="h-[env(safe-area-inset-top)]"></div><div className="h-14"></div></div>
                 {activeTab !== TABS.CREATIVE_STUDIO && <InstructionDisplay pageTitle={activeTab} />}
                 {renderContent()}
             </div>
