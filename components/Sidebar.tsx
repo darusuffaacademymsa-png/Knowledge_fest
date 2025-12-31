@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { TABS, SIDEBAR_GROUPS, INITIALIZATION_SUB_PAGE_ICONS, TAB_DISPLAY_NAMES, TAB_COLORS } from '../constants';
 import { User } from '../types';
@@ -92,12 +91,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="absolute inset-0 bg-emerald-500/20 dark:bg-emerald-500/10 blur-lg rounded-full"></div>
                     <div className={`absolute left-0 transition-all duration-300 ease-in-out ${isExpanded ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-10 scale-90 pointer-events-none'}`}>
                         <h1 className="text-2xl font-black font-serif tracking-tight text-amazio-primary dark:text-white drop-shadow-sm whitespace-nowrap">
-                            AMAZIO <span className="text-emerald-500">.</span>
+                            AMAZIO <span className="text-emerald-500">2026.</span>
                         </h1>
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-600/70 dark:text-emerald-500/60 font-bold mt-1 whitespace-nowrap">The Rooted Tree</p>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-600/70 dark:text-emerald-500/60 font-bold mt-1 whitespace-nowrap">Knowledge Fest Edition</p>
                     </div>
                     <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}`}>
-                        <div className="relative z-10 w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 dark:from-emerald-600 dark:to-emerald-900 rounded-xl border border-white/10 flex items-center justify-center font-serif text-xl font-bold text-white shadow-lg">
+                        <div className="relative z-10 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-700 dark:from-emerald-600 dark:to-emerald-900 rounded-xl border border-white/10 flex items-center justify-center font-serif text-xl font-bold text-white shadow-lg">
                             A
                         </div>
                     </div>
@@ -107,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {isStickyMode && (
             <div className="py-4 flex justify-center border-b border-zinc-100 dark:border-white/5">
-                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-700 dark:from-emerald-600 dark:to-emerald-900 rounded-lg flex items-center justify-center font-serif text-sm font-bold text-white shadow-md">
+                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-700 dark:from-emerald-600 dark:to-emerald-900 rounded-lg flex items-center justify-center font-serif text-sm font-bold text-white shadow-md">
                     A
                 </div>
             </div>

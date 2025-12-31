@@ -1,8 +1,7 @@
-
 {
-  "short_name": "Art Fest",
-  "name": "Art Fest Manager",
-  "description": "A comprehensive web application to manage all aspects of an Art Fest, from initialization and participant entry to scheduling, tabulation, results, and reporting.",
+  "short_name": "Amazio 2026",
+  "name": "Amazio Knowledge Fest 2026",
+  "description": "Official management terminal for the Amazio Knowledge Fest 2026 Edition.",
   "icons": [
     {
       "src": "/icon.svg",

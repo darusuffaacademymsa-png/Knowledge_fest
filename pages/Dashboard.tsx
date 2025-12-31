@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Award, Calendar, ClipboardList, Clock, Crown, ExternalLink, Flag, Monitor, Sparkles, TrendingUp, Trophy, Users, CheckCircle2, Circle, ListFilter } from 'lucide-react';
+import { Activity, ArrowRight, Award, Calendar, ClipboardList, Clock, Crown, ExternalLink, Flag, Monitor, Sparkles, TrendingUp, Trophy, Users, CheckCircle2, Circle, ListFilter, BookOpen } from 'lucide-react';
 import React, { useMemo } from 'react';
 import Card from '../components/Card';
 import { TABS } from '../constants';
@@ -109,16 +109,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
               <div className="lg:col-span-7 flex flex-col items-start gap-3">
                   <div className="flex items-center gap-2.5 px-3 py-1 bg-white/40 dark:bg-white/5 backdrop-blur-md rounded-full border border-amazio-primary/10 dark:border-white/10 shadow-sm">
                      <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
-                     <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amazio-primary/80 dark:text-zinc-400">Registry Online</span>
+                     <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amazio-primary/80 dark:text-zinc-400">Amazio Registry Active</span>
                   </div>
                   <div className="py-1">
                       {state?.settings.branding?.typographyUrl ? (
                           <img src={state.settings.branding.typographyUrl} alt={state.settings.heading} className="h-auto max-h-24 sm:max-h-28 w-auto object-contain filter drop-shadow-xl" />
                       ) : (
-                          <h1 className="text-4xl sm:text-5xl font-black font-serif tracking-tighter leading-tight text-amazio-primary dark:text-white uppercase">{state?.settings.heading || 'AMAZIO'}</h1>
+                          <h1 className="text-4xl sm:text-5xl font-black font-serif tracking-tighter leading-tight text-amazio-primary dark:text-white uppercase">{state?.settings.heading || 'AMAZIO 2026'}</h1>
                       )}
                   </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-500 font-bold italic tracking-wide max-w-lg">"{state?.settings.description || "Knowledge Fest Terminal"}"</p>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-500 font-bold italic tracking-wide max-w-lg">"{state?.settings.description || "Amazio Knowledge Fest 2026 Edition Terminal"}"</p>
                   <div className="mt-4 flex flex-wrap gap-3">
                      <button onClick={() => setActiveTab(TABS.SCHEDULE)} className="flex items-center gap-2 px-6 py-3 bg-amazio-primary text-white font-black rounded-xl shadow-xl hover:scale-[1.05] transition-all text-xs uppercase tracking-widest">Live Schedule <ArrowRight size={16}/></button>
                      <button onClick={() => setActiveTab(TABS.PROJECTOR)} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-xl hover:scale-[1.05] transition-all text-xs uppercase tracking-widest">Projector <Monitor size={16}/></button>
@@ -127,7 +127,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
               <div className="lg:col-span-5 flex justify-center lg:justify-end">
                   <div className="relative group cursor-default">
                       <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full border border-amazio-primary/10 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-xl flex flex-col items-center justify-center transition-all group-hover:scale-105">
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400 mb-1">Items</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400 mb-1">Disciplines</p>
                           <p className="text-5xl font-black text-amazio-primary dark:text-white leading-none tracking-tighter">{stats.items}</p>
                           <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-amazio-secondary text-white rounded-full flex items-center justify-center shadow-lg"><Activity size={16} /></div>
                       </div>
@@ -137,9 +137,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard icon={Users} title="Census" value={stats.participants} onClick={() => setActiveTab(TABS.DATA_ENTRY)} />
+          <StatCard icon={Users} title="Delegates" value={stats.participants} onClick={() => setActiveTab(TABS.DATA_ENTRY)} />
           <StatCard icon={Flag} title="Units" value={stats.teams} onClick={() => setActiveTab(TABS.TEAMS_CATEGORIES)} delay={100} />
-          <StatCard icon={Award} title="Events" value={stats.items} onClick={() => setActiveTab(TABS.ITEMS)} delay={200} />
+          <StatCard icon={BookOpen} title="Events" value={stats.items} onClick={() => setActiveTab(TABS.ITEMS)} delay={200} />
           <StatCard icon={Trophy} title="Declared" value={stats.resultsDeclared} onClick={() => setActiveTab(TABS.SCORING_RESULTS)} delay={300} />
       </div>
 
@@ -167,7 +167,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
               </Card>
 
               {/* Debug Points Ledger for Transparency */}
-              <Card title="Live Points Ledger" action={<div className="text-[10px] font-black uppercase text-zinc-400">Audit Mode</div>}>
+              <Card title="Live Points Ledger" action={<div className="text-[10px] font-black uppercase text-zinc-400">Amazio Audit</div>}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400">
@@ -211,7 +211,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
               </Card>
           </div>
           <div className="lg:col-span-1 space-y-8">
-               <Card title="Recent Verdict">
+               <Card title="Recent Amazio Verdict">
                 {recentResult ? (
                   <div className="space-y-4">
                     <div className="text-center mb-6">
@@ -232,6 +232,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
                 ) : <div className="text-center py-12 opacity-30 italic text-xs uppercase font-bold">Awaiting Declaration</div>}
               </Card>
           </div>
+      </div>
+      <div className="text-center pt-10">
+          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em]">© 2026 AMAZIO KNOWLEDGE FEST • 2026 EDITION</p>
       </div>
     </div>
   );

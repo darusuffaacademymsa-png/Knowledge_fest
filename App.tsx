@@ -15,7 +15,7 @@ import DashboardPage from './pages/Dashboard';
 import CreativeStudio from './pages/CreativeStudio'; 
 import ItemTimerPage from './pages/ItemTimer';
 import ProjectorView from './pages/ProjectorView'; 
-import LoginPage from './pages/LoginPage';
+import LandingPage from './pages/LandingPage'; // Updated: Changed from LoginPage to LandingPage
 import InstructionDisplay from './components/InstructionDisplay';
 import FloatingNavRail from './components/FloatingNavRail';
 import GlobalFontManager from './components/GlobalFontManager';
@@ -347,7 +347,8 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <LoginPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
+    // Updated: Changed from LoginPage to LandingPage
+    return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
   }
 
   if (isProjectorMode) {

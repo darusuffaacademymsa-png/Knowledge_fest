@@ -1,3 +1,4 @@
+
 import { AlertTriangle, ArrowLeft, Award, Calculator, CheckCircle2, ChevronDown, ClipboardEdit, Clock, Edit3, Eye, FileText, Filter, LayoutGrid, Lock, LockOpen, Medal, Megaphone, Save, Search, ShieldAlert, Tag, Trash2, Trophy, UserCheck, Users, User, Star, RefreshCw } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Card from '../components/Card';
@@ -155,12 +156,13 @@ const ScoringTable: React.FC<{
     participants: ScoredParticipant[];
     judgeIds: string[];
     isDeclared: boolean;
+    isDraft: boolean;
     isJudge: boolean;
     isManager: boolean;
     currentJudgeId?: string;
     onMarkChange: (pid: string, jid: string, val: string) => void;
     state: any;
-}> = ({ participants, judgeIds, isDeclared, isJudge, isManager, currentJudgeId, onMarkChange, state }) => {
+}> = ({ participants, judgeIds, isDeclared, isDraft, isJudge, isManager, currentJudgeId, onMarkChange, state }) => {
     return (
         <div className={`bg-white dark:bg-[#121412] rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-glass-light dark:shadow-2xl overflow-hidden animate-in fade-in duration-500`}>
             <div className="overflow-x-auto custom-scrollbar">
@@ -168,8 +170,9 @@ const ScoringTable: React.FC<{
                     <thead>
                         <tr className="bg-zinc-50/80 dark:bg-black/40 backdrop-blur-md border-b border-zinc-100 dark:border-white/5">
                             <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center w-24">Entry</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 w-24">Chest#</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Identity</th>
+                            {!isJudge && <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 w-24">Chest#</th>}
+                            {!isJudge && <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Identity</th>}
+                            {isJudge && <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Anonymous Entry Reference</th>}
                             {judgeIds.map(jid => (
                                 <th key={jid} className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center w-32">
                                     {jid === MANUAL_OVERRIDE_ID ? 'Admin Override' : (state.judges.find((j: Judge)=>j.id===jid)?.name || 'Judge')}
@@ -187,14 +190,22 @@ const ScoringTable: React.FC<{
                                         <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tighter">{sp.codeLetter}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
-                                    <span className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-[11px] font-mono font-black text-zinc-500 dark:text-zinc-400">
-                                        #{sp.chestNumber}
-                                    </span>
-                                </td>
+                                {!isJudge && (
+                                    <td className="px-6 py-4">
+                                        <span className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-[11px] font-mono font-black text-zinc-500 dark:text-zinc-400">
+                                            #{sp.chestNumber}
+                                        </span>
+                                    </td>
+                                )}
                                 <td className="px-6 py-4 min-w-[200px]">
-                                    <div className="font-black text-sm uppercase text-amazio-primary dark:text-zinc-100 truncate">{sp.participantName}</div>
-                                    <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest truncate">{sp.teamName}</div>
+                                    {!isJudge ? (
+                                        <>
+                                            <div className="font-black text-sm uppercase text-amazio-primary dark:text-zinc-100 truncate">{sp.participantName}</div>
+                                            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest truncate">{sp.teamName}</div>
+                                        </>
+                                    ) : (
+                                        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Registry ID: {sp.codeLetter}</div>
+                                    )}
                                 </td>
                                 {judgeIds.map(jid => (
                                     <td key={jid} className="px-4 py-4">
@@ -203,10 +214,10 @@ const ScoringTable: React.FC<{
                                                 type="number"
                                                 inputMode="decimal"
                                                 min="0" max="100" step="0.1"
-                                                disabled={(isDeclared && !isManager) || (isJudge && jid !== currentJudgeId)}
+                                                disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== currentJudgeId)}
                                                 value={sp.marks[jid] ?? ''}
                                                 onChange={e => onMarkChange(sp.participantId, jid, e.target.value)}
-                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
+                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
                                                 placeholder="--"
                                             />
                                         </div>
@@ -254,6 +265,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const selectedItem = useMemo(() => state?.items.find(i => i.id === selectedItemId), [state, selectedItemId]);
     const selectedItemResult = useMemo(() => state?.results.find(r => r.itemId === selectedItemId), [state, selectedItemId]);
     const isDeclared = selectedItemResult?.status === ResultStatus.DECLARED;
+    const isDraft = selectedItemResult?.status === ResultStatus.UPLOADED;
 
     const filteredItems = useMemo(() => {
         if (!state) return [];
@@ -312,7 +324,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             const validMarks = Object.values(marks).filter(m => m !== null) as number[];
             const finalMark = validMarks.length > 0 ? validMarks.reduce((a,b) => a+b,0) / validMarks.length : 0;
             const grade = gradesConfig.find(g => finalMark >= g.lowerLimit && finalMark <= g.upperLimit);
-            // Fix: Added parentheses to resolve ambiguity between ?? and ||
             const gradePoints = grade ? (item.gradePointsOverride?.[grade.id] ?? (grade.points || 0)) : 0;
             return {
                 participantId: entity.id,
@@ -354,7 +365,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     }, [selectedItem, state, getScoringForItem]);
 
     const handleMarkChange = async (participantId: string, judgeKey: string, val: string) => {
-        if (!selectedItem || (isDeclared && !isManager)) return;
+        if (!selectedItem || (isDeclared && !isManager) || (isDraft && isJudge)) return;
         const mark = val === '' ? null : parseFloat(val);
         if (mark !== null && (mark < 0 || mark > 100)) return;
         const entryId = `${selectedItem.id}-${participantId}`;
@@ -367,13 +378,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             finalMark: null, position: null, gradeId: null
         };
 
-        // 1. Update Tabulation
         await updateTabulationEntry(nextTab);
 
-        // 2. If already declared, re-calculate and re-save results immediately to keep points in sync
         if (isDeclared && isManager && state) {
             const simulatedTabs = state.tabulation.map(t => t.id === entryId ? nextTab : t);
-            // Defensive Check
             const foundInSim = simulatedTabs.find(t => t.id === entryId);
             if (foundInSim) foundInSim.marks = marks;
 
@@ -388,6 +396,11 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const handleSaveDraft = async (itemOverride?: Item) => {
         const item = itemOverride || selectedItem;
         if (!item || !state) return;
+        
+        if (isJudge && !confirm("⚠️ CAUTION: Once you 'Save and Draft', you will NOT be able to modify these marks again. Please double-check all entries. Proceed?")) {
+            return;
+        }
+
         const scoring = itemOverride ? getScoringForItem(itemOverride, state.tabulation) : scoredParticipants;
         setIsSaving(true);
         try {
@@ -395,7 +408,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
             }));
             await saveResult({ itemId: item.id, categoryId: item.categoryId, status: ResultStatus.UPLOADED, winners });
-            if (!itemOverride) alert("Results saved as draft.");
+            if (!itemOverride) alert(isJudge ? "Results submitted and locked." : "Results saved as draft.");
         } catch (e) { alert("Failed to save draft."); }
         finally { setIsSaving(false); }
     };
@@ -426,7 +439,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             await saveResult({ 
                 itemId: item.id, 
                 categoryId: item.categoryId, 
-                status: ResultStatus.UPLOADED, 
+                status: ResultStatus.NOT_UPLOADED, 
                 winners: existingResult?.winners || [] 
             });
             alert("Result unlocked for editing.");
@@ -456,27 +469,36 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border" style={{ backgroundColor: getPerformanceColor(selectedItem.performanceType) + '15', color: getPerformanceColor(selectedItem.performanceType), borderColor: getPerformanceColor(selectedItem.performanceType) + '40' }}>{selectedItem.performanceType}</span>
                         </div>
                     </div>
-                    {!isJudge && (
-                        <div className="flex gap-2 w-full sm:w-auto">
-                             {isDeclared ? (
-                                <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={16}/> Unlock for Correction</button>
-                             ) : (
-                                <>
-                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all disabled:opacity-50"><Save size={18}/> {isSaving ? '...' : 'Save Draft'}</button>
-                                    <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={18} strokeWidth={3}/> {isSaving ? 'Finalizing...' : 'Declare Verdict'}</button>
-                                </>
-                             )}
-                        </div>
-                    )}
+                    
+                    <div className="flex gap-2 w-full sm:w-auto">
+                         {isDeclared ? (
+                            !isJudge && <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={16}/> Unlock for Correction</button>
+                         ) : (
+                            <>
+                                {(isManager || (isJudge && !isDraft)) && (
+                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
+                                        <Save size={18}/> {isSaving ? '...' : (isJudge ? 'Save and Draft' : 'Save Draft')}
+                                    </button>
+                                )}
+                                {isManager && (
+                                    <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={18} strokeWidth={3}/> {isSaving ? 'Finalizing...' : 'Declare Verdict'}</button>
+                                )}
+                            </>
+                         )}
+                    </div>
                 </div>
-                {isDeclared && (
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 rounded-2xl flex items-center gap-3 shadow-sm">
-                        <CheckCircle2 size={20} className="shrink-0" />
-                        <p className="text-xs font-bold leading-tight">Live Points Active. Modifications by Managers will sync in real-time. Judges cannot edit once declared.</p>
+                
+                {(isDeclared || (isDraft && isJudge)) && (
+                    <div className={`p-4 border rounded-2xl flex items-center gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
+                        {isDeclared ? <CheckCircle2 size={20} className="shrink-0" /> : <Lock size={20} className="shrink-0" />}
+                        <p className="text-xs font-bold leading-tight">
+                            {isDeclared ? 'Live Points Active. Modifications by Managers will sync in real-time. Judges cannot edit once declared.' : 'Results Drafted. Your marks are now locked and submitted for review. Please contact a manager for corrections.'}
+                        </p>
                     </div>
                 )}
+
                 {!isMobile ? (
-                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
+                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isDraft={isDraft} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
                 ) : (
                     <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4`}>
                         {scoredParticipants.map(sp => (
@@ -486,16 +508,22 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                         <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tighter">{sp.codeLetter}</span>
                                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Entry Ref</span>
                                     </div>
-                                    <div className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] font-mono font-black">#{sp.chestNumber}</div>
+                                    {!isJudge && <div className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] font-mono font-black">#{sp.chestNumber}</div>}
                                 </div>
                                 <div className="p-6 space-y-6">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="min-w-0 flex-1">
-                                            <h4 className="font-black text-amazio-primary dark:text-white uppercase tracking-tight text-lg leading-tight truncate">{sp.participantName}</h4>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                {sp.isGroup ? <Users size={12} className="text-zinc-400" /> : <User size={12} className="text-zinc-400" />}
-                                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide truncate">{sp.teamName}</p>
-                                            </div>
+                                            {!isJudge ? (
+                                                <>
+                                                    <h4 className="font-black text-amazio-primary dark:text-white uppercase tracking-tight text-lg leading-tight truncate">{sp.participantName}</h4>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {sp.isGroup ? <Users size={12} className="text-zinc-400" /> : <User size={12} className="text-zinc-400" />}
+                                                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide truncate">{sp.teamName}</p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <h4 className="font-black text-zinc-400 uppercase tracking-widest text-sm italic">Anonymous Entry</h4>
+                                            )}
                                         </div>
                                         <div className="text-right shrink-0">
                                             <div className="text-3xl font-black text-zinc-900 dark:text-white leading-none tabular-nums">{sp.finalMark.toFixed(1)}%</div>
@@ -506,7 +534,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                         {activeJudgeInputs.map(jid => (
                                             <div key={jid} className="relative">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase text-zinc-400 pointer-events-none">{jid === MANUAL_OVERRIDE_ID ? 'Adm' : state.judges.find((j: Judge)=>j.id===jid)?.name.substring(0,3) || 'Jdg'}</div>
-                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isDeclared && !isManager) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-14 pl-12 pr-4 text-right font-black rounded-2xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
+                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-14 pl-12 pr-4 text-right font-black rounded-2xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
                                             </div>
                                         ))}
                                     </div>

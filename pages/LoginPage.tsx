@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { User, Lock, Sun, Moon, Laptop, ArrowRight, LogOut, AlertCircle } from 'lucide-react';
+import { User, Lock, Sun, Moon, Laptop, ArrowRight, LogOut, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
 import { Settings } from '../types';
 
@@ -13,6 +12,7 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(true);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
         setError('');
         setLoading(true);
         try {
-            await login(username, password, rememberMe);
+            await login(username, password);
         } catch (err: any) {
             setError(err.message || 'Login failed. Please check your credentials.');
         } finally {
@@ -91,7 +91,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                         ) : (
                             <div className="relative">
                                 <h1 className="relative text-4xl sm:text-5xl font-black font-serif text-center leading-tight text-amazio-primary tracking-tighter drop-shadow-sm uppercase">
-                                    {settings.heading || 'AMAZIO'}
+                                    {settings.heading || 'AMAZIO 2026'}
                                 </h1>
                             </div>
                         )}
@@ -108,7 +108,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                         <h3 className="font-bold text-lg text-zinc-800 mb-1">Access Pending</h3>
                         <p className="text-sm text-zinc-700 leading-relaxed mb-4">
                             You are authenticated as <br/><strong className="font-mono bg-white/50 px-1 rounded">{firebaseUser?.email}</strong>
-                            <br/>but this user has not been assigned a role in this application yet.
+                            <br/>but this user has not been assigned a role for Amazio 2026 yet.
                         </p>
                         <p className="text-xs text-zinc-600 mb-4 px-2">
                             Please ask an Administrator to add the username <strong>"{firebaseUser?.email?.split('@')[0]}"</strong> in General Settings {'>'} Users.
@@ -150,14 +150,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                                 <input
                                     id="password"
                                     name="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     autoComplete="current-password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/80 border border-white/50 text-zinc-900 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amazio-primary/20 focus:border-transparent transition-all backdrop-blur-sm"
+                                    className="block w-full pl-11 pr-12 py-3.5 rounded-2xl bg-white/80 border border-white/50 text-zinc-900 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amazio-primary/20 focus:border-transparent transition-all backdrop-blur-sm"
                                     placeholder="Password"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-amazio-primary transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
                         </div>
                         
@@ -216,7 +223,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                                 </>
                             ) : (
                                 <>
-                                    <span>Enter Portal</span>
+                                    <span>Enter Console</span>
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </>
                             )}
@@ -227,7 +234,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                 {/* Footer Watermark */}
                 <div className="mt-8 text-center">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold opacity-70">
-                        Secure System • v3.0
+                        Amazio 2026 Edition • Secure System
                     </p>
                 </div>
             </div>
