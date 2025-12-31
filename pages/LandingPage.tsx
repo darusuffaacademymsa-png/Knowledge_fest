@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
-    Sparkles, ArrowRight, ShieldCheck, Trophy, Palette, 
-    Monitor, Users, Zap, ChevronDown, Lock, User, 
+    Sparkles, ArrowRight, Trophy, Palette, 
+    Monitor, Users, ChevronDown, Lock, User, 
     Sun, Moon, Laptop, Eye, EyeOff, LogOut, AlertCircle,
-    Flag, Layers, Calendar, Gavel, BookOpen
+    Flag, Layers, Calendar, Gavel, BookOpen, Trees, TreePine, Leaf,
+    CheckCircle2, Star, Shapes, Lightbulb, Mic
 } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
-import { Settings, PerformanceType } from '../types';
+import { Settings, ItemType } from '../types';
 
 interface LandingPageProps {
     theme: string;
@@ -16,13 +16,13 @@ interface LandingPageProps {
 }
 
 const FeatureCard = ({ icon: Icon, title, description, color }: { icon: any, title: string, description: string, color: string }) => (
-    <div className="group relative p-8 rounded-[2.5rem] bg-white/60 dark:bg-white/5 border border-amazio-primary/5 dark:border-white/10 hover:border-amazio-primary/20 dark:hover:border-white/20 transition-all duration-500 hover:-translate-y-2 backdrop-blur-md shadow-glass-light dark:shadow-none">
-        <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${color}`}></div>
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg ${color} text-white`}>
-            <Icon size={28} />
+    <div className="group relative p-10 rounded-[3.5rem] bg-white/60 dark:bg-[#1A2312] border border-[#283618]/10 dark:border-white/5 hover:border-[#9AAD59]/50 transition-all duration-500 hover:-translate-y-2 backdrop-blur-md shadow-xl dark:shadow-none overflow-hidden">
+        <div className={`absolute -right-4 -top-4 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${color}`}></div>
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg ${color} text-white`}>
+            <Icon size={32} strokeWidth={1.5} />
         </div>
-        <h3 className="text-2xl font-black font-serif text-amazio-primary dark:text-white mb-3 uppercase tracking-tighter">{title}</h3>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed font-medium">{description}</p>
+        <h3 className="text-2xl font-black font-slab text-[#283618] dark:text-white mb-4 uppercase tracking-tight">{title}</h3>
+        <p className="text-[#606C38] dark:text-[#9AAD59] text-sm leading-relaxed font-normal">{description}</p>
     </div>
 );
 
@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
         try {
             await login(username, password, true);
         } catch (err: any) {
-            setError('Authentication failed. Check credentials.');
+            setError('Authentication failed. Check handle and access key.');
         } finally {
             setLoading(false);
         }
@@ -63,183 +63,258 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
     };
 
     return (
-        <div className="min-h-screen bg-amazio-light-bg dark:bg-amazio-bg text-amazio-primary dark:text-white selection:bg-amazio-accent selection:text-amazio-bg overflow-x-hidden font-sans transition-colors duration-500">
+        <div className="min-h-screen bg-[#F1F5DC] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">
             
-            {/* Ambient Background */}
+            {/* Style Guide Patterns Overlay */}
+            <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-[0.04] dark:opacity-[0.07]">
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                {/* Simulated Wavy Lines Pattern (Page 11) */}
+                <div className="absolute top-0 w-full h-32 border-b-2 border-[#283618] opacity-20"></div>
+                <div className="absolute top-4 w-full h-32 border-b-2 border-[#283618] opacity-20"></div>
+                <div className="absolute bottom-0 w-full h-32 border-t-2 border-[#283618] opacity-20"></div>
+                <div className="absolute bottom-4 w-full h-32 border-t-2 border-[#283618] opacity-20"></div>
+            </div>
+
+            {/* Ambient Lighting */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-amazio-secondary/10 dark:bg-amazio-primary/20 rounded-full blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-amazio-accent/15 dark:bg-amazio-accent/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.05] mix-blend-overlay"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-[#283618]/10 dark:bg-[#283618]/30 rounded-full blur-[160px] animate-pulse"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[#9AAD59]/20 dark:bg-[#9AAD59]/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '3s' }}></div>
             </div>
 
             {/* Navigation */}
-            <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-white/80 dark:bg-amazio-bg/80 backdrop-blur-xl border-b border-amazio-primary/5 dark:border-white/5 py-4' : 'bg-transparent py-8'}`}>
+            <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-[#F1F5DC]/90 dark:bg-[#0F1210]/90 backdrop-blur-2xl border-b border-[#283618]/5 dark:border-white/5 py-4' : 'bg-transparent py-10'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amazio-primary to-amazio-secondary dark:from-amazio-accent dark:to-amazio-secondary flex items-center justify-center font-serif text-xl font-black shadow-lg text-white">A</div>
-                        <span className="text-2xl font-black font-serif tracking-tighter uppercase hidden sm:block text-amazio-primary dark:text-white">AMAZIO <span className="text-amazio-secondary dark:text-amazio-accent">2026.</span></span>
+                    <div className="flex items-center gap-4">
+                        {settings.branding?.typographyUrl ? (
+                            <img src={settings.branding.typographyUrl} alt="AMAZIO" className="h-10 w-auto object-contain transition-all" />
+                        ) : (
+                            <>
+                                <div className="w-12 h-12 rounded-2xl bg-[#283618] flex items-center justify-center font-slab text-2xl font-black shadow-2xl text-white transform rotate-3">A</div>
+                                <span className="text-3xl font-black tracking-tighter uppercase hidden sm:block text-[#283618] dark:text-white">
+                                    AMAZIO <span className="text-[#9AAD59] block text-[10px] tracking-[0.6em] mt-1 font-bold">THE ROOTED TREE</span>
+                                </span>
+                            </>
+                        )}
                     </div>
                     
-                    <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="flex items-center gap-4 sm:gap-8">
                         <button 
                             onClick={() => toggleTheme(theme === 'dark' ? 'light' : 'dark')}
-                            className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-amazio-primary dark:hover:text-white transition-all"
+                            className="p-3 rounded-full hover:bg-[#283618]/5 dark:hover:bg-white/5 text-[#606C38] dark:text-zinc-400 hover:text-[#283618] dark:hover:text-white transition-all"
                         >
                             {getThemeIcon()}
                         </button>
-                        <a href="#portal" className="px-6 py-2.5 bg-amazio-primary dark:bg-white text-white dark:text-black rounded-full text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-amazio-primary/20 dark:shadow-white/10">
-                            Portal Access
+                        <a href="#portal" className="px-8 py-3 bg-[#283618] dark:bg-white text-white dark:text-[#283618] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-[#283618]/30 dark:shadow-white/10">
+                            Access Portal
                         </a>
                     </div>
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <section className="relative z-10 pt-48 pb-32 px-6">
+            <section className="relative z-10 pt-60 pb-32 px-6">
                 <div className="max-w-7xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amazio-secondary/10 dark:bg-amazio-accent/10 rounded-full border border-amazio-secondary/20 dark:border-amazio-accent/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <Sparkles size={14} className="text-amazio-secondary dark:text-amazio-accent" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amazio-secondary dark:text-amazio-accent">Knowledge Fest 2026 Edition</span>
-                    </div>
-                    
-                    <h1 className="text-5xl md:text-8xl lg:text-[120px] font-black font-serif leading-[0.9] tracking-tighter uppercase mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                        <span className="text-amazio-primary dark:text-white">Amazio</span> <br/> 
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-amazio-secondary via-amazio-primary to-amazio-secondary dark:from-amazio-accent dark:via-white dark:to-amazio-secondary">Knowledge Fest.</span>
-                    </h1>
-                    
-                    <p className="max-w-2xl mx-auto text-zinc-600 dark:text-zinc-400 text-lg md:text-xl font-medium mb-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                        The ultimate management terminal for the 2026 edition of Amazio. Custom-engineered for orchestrating intelligence, talent, and competition.
-                    </p>
-
-                    <div className="flex flex-wrap justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-                        <a href="#portal" className="px-10 py-5 bg-amazio-primary dark:bg-amazio-accent text-white dark:text-amazio-bg rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-amazio-primary/20 dark:shadow-amazio-accent/20">
-                            Enter Console <ArrowRight size={18} />
-                        </a>
-                        <a href="#features" className="px-10 py-5 bg-white/80 dark:bg-white/5 border border-amazio-primary/10 dark:border-white/10 text-amazio-primary dark:text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white dark:hover:bg-white/10 transition-all shadow-sm">
-                            Feature Highlights
-                        </a>
-                    </div>
-                </div>
-            </section>
-
-            {/* Live Stats Bar */}
-            <section className="relative z-10 max-w-7xl mx-auto px-6 mb-32">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 rounded-[3rem] bg-white/60 dark:bg-white/5 border border-amazio-primary/5 dark:border-white/5 backdrop-blur-3xl shadow-glass-light dark:shadow-none animate-in fade-in zoom-in duration-1000">
-                    {[
-                        { label: 'Delegates', value: state?.participants.length || 0, icon: Users, color: 'text-blue-500 dark:text-blue-400' },
-                        { label: 'Units', value: state?.teams.length || 0, icon: Flag, color: 'text-emerald-500 dark:text-emerald-400' },
-                        { label: 'Disciplines', value: state?.items.length || 0, icon: BookOpen, color: 'text-amber-500 dark:text-amber-400' },
-                        { label: 'Timeline', value: state?.schedule.length || 0, icon: Calendar, color: 'text-rose-500 dark:text-rose-400' },
-                    ].map((stat, i) => (
-                        <div key={i} className="text-center md:border-r last:border-0 border-amazio-primary/10 dark:border-white/10 px-4">
-                            <stat.icon className={`mx-auto mb-3 opacity-70 ${stat.color}`} size={20} />
-                            <div className="text-3xl font-black font-inter leading-none mb-1 text-amazio-primary dark:text-white">{stat.value}</div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-500">{stat.label}</div>
+                    <div className="inline-flex flex-col items-center animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <div className="inline-flex items-center gap-3 px-6 py-2 bg-[#283618]/5 dark:bg-[#9AAD59]/10 rounded-full border border-[#283618]/10 dark:border-[#9AAD59]/20 mb-6">
+                            <TreePine size={18} className="text-[#283618] dark:text-[#9AAD59]" />
+                            <span className="text-[12px] font-black uppercase tracking-[0.5em] text-[#283618] dark:text-[#9AAD59]">The Authentic Path</span>
                         </div>
-                    ))}
+                        
+                        {/* New Primary Title */}
+                        <h2 className="text-2xl md:text-4xl font-light font-slab text-[#606C38] dark:text-[#9AAD59] uppercase tracking-[0.3em] mb-4">
+                            The Rooted Tree
+                        </h2>
+
+                        {/* Brand Typography / Name */}
+                        <div className="relative mb-6">
+                            {settings.branding?.typographyUrl ? (
+                                <img 
+                                    src={settings.branding.typographyUrl} 
+                                    alt="AMAZIO" 
+                                    className="h-auto max-h-48 md:max-h-64 lg:max-h-72 w-auto object-contain filter drop-shadow-2xl hover:scale-[1.02] transition-all duration-700 select-none" 
+                                />
+                            ) : (
+                                <h1 className="text-7xl md:text-9xl font-black leading-none tracking-tighter uppercase text-[#283618] dark:text-white drop-shadow-xl select-none">
+                                    AMAZIO
+                                </h1>
+                            )}
+                        </div>
+
+                        {/* Specific 2026 Edition Badge */}
+                        <div className="inline-block px-8 py-3 bg-[#9AAD59] text-[#283618] rounded-full text-sm font-black uppercase tracking-[0.4em] shadow-lg mb-12 animate-in zoom-in-95 duration-1000 delay-500">
+                            2026 Edition
+                        </div>
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                        <p className="text-[#283618] dark:text-[#9AAD59] text-xl md:text-3xl font-bold italic tracking-tight leading-snug">
+                            "Where Knowledge and Art Amaze"
+                        </p>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed opacity-80">
+                            Nourished by prophetic wisdom, reaching towards excellence. A modern management ecosystem designed to orchestrate talent and intelligence.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-6 mt-16 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
+                        <a href="#portal" className="px-10 py-5 bg-[#283618] dark:bg-[#9AAD59] text-white dark:text-[#283618] rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-[#283618]/40 dark:shadow-[#9AAD59]/30">
+                            Enter Console <ArrowRight size={20} />
+                        </a>
+                        <a href="#ecosystem" className="px-10 py-5 bg-white/40 dark:bg-white/5 border border-[#283618]/20 dark:border-white/10 text-[#283618] dark:text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xl">
+                            The Ecosystem
+                        </a>
+                    </div>
                 </div>
             </section>
 
-            {/* Features Grid */}
-            <section id="features" className="relative z-10 max-w-7xl mx-auto px-6 py-32 border-t border-amazio-primary/5 dark:border-white/5">
-                <div className="text-center mb-20">
-                    <h2 className="text-4xl md:text-6xl font-black font-serif uppercase tracking-tighter mb-4 text-amazio-primary dark:text-white">The Amazio Ecosystem</h2>
-                    <p className="text-zinc-600 dark:text-zinc-500 font-medium text-lg">Integrated modules purpose-built for the 2026 Knowledge Fest.</p>
+            {/* Ecosystem Information Grid */}
+            <section id="ecosystem" className="relative z-10 max-w-7xl mx-auto px-6 py-32 border-t border-[#283618]/5 dark:border-white/5">
+                <div className="text-center mb-24">
+                    <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 text-[#283618] dark:text-white">The Anatomy</h2>
+                    <p className="text-[#606C38] dark:text-[#9AAD59] font-bold text-lg uppercase tracking-widest opacity-60 italic">Integrated Units of the Rooted Tree</p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <FeatureCard 
-                        icon={Users} 
-                        title="Census Control" 
-                        description="Streamlined delegate registration with strict category enforcement and unit mapping." 
-                        color="bg-indigo-600"
-                    />
-                    <FeatureCard 
-                        icon={Gavel} 
-                        title="Adjudication" 
-                        description="The official scoring terminal for judges featuring real-time Mean % calculations." 
-                        color="bg-rose-600"
-                    />
-                    <FeatureCard 
-                        icon={Palette} 
-                        title="Output Studio" 
-                        description="Instant generation of posters and digital certificates for Amazio winners." 
-                        color="bg-emerald-600"
-                    />
-                    <FeatureCard 
-                        icon={Monitor} 
-                        title="Broadcast" 
-                        description="Cinematic projector mode for live leaderboard races and event results." 
-                        color="bg-amber-600"
-                    />
+                    {/* Teams / Units Info */}
+                    <div className="group p-10 rounded-[3.5rem] bg-white/60 dark:bg-[#1A2312] border border-[#283618]/10 dark:border-white/5 hover:border-[#283618]/30 transition-all duration-500 shadow-xl">
+                        <div className="w-14 h-14 bg-[#283618] text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+                            <Users size={28} />
+                        </div>
+                        <h3 className="text-2xl font-black font-slab text-[#283618] dark:text-white mb-4 uppercase tracking-tight">Units</h3>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] text-xs font-black uppercase tracking-widest mb-4">Organizational Houses</p>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
+                            Distinct collectives where teamwork meets strategy. Each unit operates as a main branch of the festival tree.
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-[#283618] dark:text-[#9AAD59] uppercase tracking-widest">
+                            <span className="w-2 h-2 rounded-full bg-[#9AAD59]"></span>
+                            {state?.teams.length || 0} Registered Units
+                        </div>
+                    </div>
+
+                    {/* Categories / Scopes Info */}
+                    <div className="group p-10 rounded-[3.5rem] bg-white/60 dark:bg-[#1A2312] border border-[#283618]/10 dark:border-white/5 hover:border-[#606C38]/30 transition-all duration-500 shadow-xl">
+                        <div className="w-14 h-14 bg-[#606C38] text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+                            <Layers size={28} />
+                        </div>
+                        <h3 className="text-2xl font-black font-slab text-[#283618] dark:text-white mb-4 uppercase tracking-tight">Scopes</h3>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] text-xs font-black uppercase tracking-widest mb-4">Participation Levels</p>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
+                            Defined rings of competition. From Sub-Juniors to Seniors, ensuring fair and leveled intellectual challenges.
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-[#283618] dark:text-[#9AAD59] uppercase tracking-widest">
+                            <span className="w-2 h-2 rounded-full bg-[#9AAD59]"></span>
+                            {state?.categories.length || 0} Growth Scopes
+                        </div>
+                    </div>
+
+                    {/* Items / Disciplines Info */}
+                    <div className="group p-10 rounded-[3.5rem] bg-white/60 dark:bg-[#1A2312] border border-[#283618]/10 dark:border-white/5 hover:border-[#9AAD59]/30 transition-all duration-500 shadow-xl">
+                        <div className="w-14 h-14 bg-[#9AAD59] text-[#283618] rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+                            <BookOpen size={28} />
+                        </div>
+                        <h3 className="text-2xl font-black font-slab text-[#283618] dark:text-white mb-4 uppercase tracking-tight">Disciplines</h3>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] text-xs font-black uppercase tracking-widest mb-4">Competitions</p>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
+                            A curated selection of literary, stage, and artistic items. The blossoms that manifest from the rooted tree.
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-[#283618] dark:text-[#9AAD59] uppercase tracking-widest">
+                            <span className="w-2 h-2 rounded-full bg-[#9AAD59]"></span>
+                            {state?.items.length || 0} Registered Items
+                        </div>
+                    </div>
+
+                    {/* Registry / Statistics */}
+                    <div className="group p-10 rounded-[3.5rem] bg-[#283618] border border-white/5 transition-all duration-500 shadow-2xl">
+                        <div className="w-14 h-14 bg-white/10 text-[#9AAD59] rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+                            <CheckCircle2 size={28} />
+                        </div>
+                        <h3 className="text-2xl font-black font-slab text-white mb-4 uppercase tracking-tight">Registry</h3>
+                        <p className="text-[#9AAD59] text-xs font-black uppercase tracking-widest mb-4">Live Statistics</p>
+                        <div className="space-y-4 pt-2">
+                            <div className="flex justify-between items-center text-white/60 text-[10px] font-bold uppercase tracking-wider">
+                                <span>Total Delegates</span>
+                                <span className="text-white font-black">{state?.participants.length || 0}</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1">
+                                <div className="bg-[#9AAD59] h-full rounded-full" style={{ width: '85%' }}></div>
+                            </div>
+                            <div className="flex justify-between items-center text-white/60 text-[10px] font-bold uppercase tracking-wider">
+                                <span>Results Declared</span>
+                                <span className="text-white font-black">{state?.results.filter(r => r.status === 'Declared').length || 0}</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1">
+                                <div className="bg-[#9AAD59] h-full rounded-full" style={{ width: '45%' }}></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             {/* Portal Section */}
             <section id="portal" className="relative z-10 max-w-7xl mx-auto px-6 py-48 text-center flex flex-col items-center">
                 <div className="max-w-md w-full">
-                    <div className="mb-12">
-                        <h2 className="text-4xl font-black font-serif uppercase tracking-tighter mb-4 text-amazio-primary dark:text-white">Fest Portal</h2>
-                        <p className="text-zinc-500 font-medium uppercase tracking-[0.2em] text-[10px]">Identity & Access Management</p>
+                    <div className="mb-16">
+                        <div className="w-16 h-1 w-16 bg-[#9AAD59] mx-auto mb-6 rounded-full shadow-[0_0_15px_rgba(154,168,106,0.5)]"></div>
+                        <h2 className="text-5xl font-black uppercase tracking-tighter mb-4 text-[#283618] dark:text-white">The Console</h2>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] font-bold uppercase tracking-[0.3em] text-[10px]">Secure Identity Verification</p>
                     </div>
 
                     {isUnassigned ? (
-                        <div className="p-10 rounded-[3rem] bg-white dark:bg-white/5 border border-amazio-primary/5 dark:border-white/10 backdrop-blur-3xl shadow-xl animate-in zoom-in duration-500">
-                             <AlertCircle size={48} className="mx-auto mb-6 text-amber-500" />
-                             <h3 className="text-xl font-bold mb-2 text-amazio-primary dark:text-white">Access Pending</h3>
-                             <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8 leading-relaxed">
-                                You are authenticated as <strong className="text-amazio-primary dark:text-white">{firebaseUser?.email}</strong> but haven't been assigned an Amazio role yet.
+                        <div className="p-12 rounded-[3.5rem] bg-white dark:bg-[#1A2312] border border-[#283618]/10 dark:border-white/10 backdrop-blur-3xl shadow-2xl animate-in zoom-in duration-500">
+                             <AlertCircle size={56} className="mx-auto mb-8 text-amber-600" />
+                             <h3 className="text-2xl font-black mb-4 text-[#283618] dark:text-white uppercase tracking-tight">Access Pending</h3>
+                             <p className="text-[#606C38] dark:text-[#9AAD59] text-sm mb-10 leading-relaxed font-medium">
+                                Authenticated as <strong className="text-[#283618] dark:text-white">{firebaseUser?.email}</strong>. <br/>Awaiting registry assignment.
                              </p>
-                             <button onClick={logout} className="w-full py-4 bg-amazio-primary dark:bg-white text-white dark:text-black rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg">
-                                <LogOut size={16} /> Sign Out
+                             <button onClick={logout} className="w-full py-5 bg-[#283618] dark:bg-white text-white dark:text-[#283618] rounded-3xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all">
+                                <LogOut size={18} /> Relinquish Handle
                              </button>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="p-10 rounded-[3rem] bg-white/80 dark:bg-white/5 border border-amazio-primary/5 dark:border-white/10 backdrop-blur-3xl shadow-2xl animate-in slide-in-from-bottom-12 duration-1000">
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                        <form onSubmit={handleSubmit} className="p-12 rounded-[3.5rem] bg-white/90 dark:bg-[#121412]/80 border-2 border-[#283618]/5 dark:border-white/5 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-12 duration-1000">
+                            <div className="space-y-5">
+                                <div className="relative group">
+                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-[#606C38] dark:text-zinc-500 group-focus-within:text-[#9AAD59] transition-colors" size={20} />
                                     <input 
                                         type="text" 
-                                        placeholder="Username" 
+                                        placeholder="Registry Handle" 
                                         required 
                                         value={username}
                                         onChange={e => setUsername(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-zinc-50 dark:bg-white/5 border border-amazio-primary/5 dark:border-white/10 focus:border-amazio-secondary/50 dark:focus:border-amazio-accent/50 outline-none transition-all font-bold text-sm text-amazio-primary dark:text-white"
+                                        className="w-full pl-14 pr-6 py-5 rounded-3xl bg-[#F1F5DC]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
                                     />
                                 </div>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                                <div className="relative group">
+                                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-[#606C38] dark:text-zinc-500 group-focus-within:text-[#9AAD59] transition-colors" size={20} />
                                     <input 
                                         type={showPassword ? "text" : "password"} 
-                                        placeholder="Password" 
+                                        placeholder="Access Key" 
                                         required 
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-4 rounded-2xl bg-zinc-50 dark:bg-white/5 border border-amazio-primary/5 dark:border-white/10 focus:border-amazio-secondary/50 dark:focus:border-amazio-accent/50 outline-none transition-all font-bold text-sm text-amazio-primary dark:text-white"
+                                        className="w-full pl-14 pr-14 py-5 rounded-3xl bg-[#F1F5DC]/50 dark:bg-white/5 border border-[#283618]/10 dark:border-white/10 focus:border-[#9AAD59] outline-none transition-all font-bold text-sm text-[#283618] dark:text-white placeholder-[#606C38]/40"
                                     />
                                     <button 
                                         type="button" 
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-amazio-primary dark:hover:text-white"
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-[#283618] dark:hover:text-white transition-colors"
                                     >
-                                        {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                                        {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
                                     </button>
                                 </div>
                             </div>
 
-                            {error && <div className="mt-4 text-rose-500 text-xs font-bold uppercase tracking-wider">{error}</div>}
+                            {error && <div className="mt-6 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest animate-pulse">{error}</div>}
 
                             <button 
                                 type="submit" 
                                 disabled={loading}
-                                className="w-full py-5 bg-gradient-to-r from-amazio-primary to-amazio-secondary dark:from-amazio-accent dark:to-amazio-secondary text-white dark:text-amazio-bg rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-amazio-primary/20 dark:shadow-amazio-accent/20 mt-8 active:scale-95 transition-all disabled:opacity-50"
+                                className="w-full py-6 bg-[#283618] dark:bg-[#9AAD59] text-white dark:text-[#283618] rounded-3xl font-black uppercase tracking-[0.4em] text-xs shadow-2xl shadow-[#283618]/40 dark:shadow-[#9AAD59]/20 mt-10 active:scale-95 transition-all disabled:opacity-50"
                             >
-                                {loading ? 'Validating...' : 'Enter Console'}
+                                {loading ? 'Synthesizing...' : 'Authorize Access'}
                             </button>
                             
-                            <p className="mt-6 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">
-                                AMAZIO 2026 PERSONNEL ONLY
+                            <p className="mt-8 text-[9px] font-black text-[#606C38] dark:text-zinc-600 uppercase tracking-[0.5em]">
+                                Authentication Suite v3.2
                             </p>
                         </form>
                     )}
@@ -247,12 +322,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             </section>
 
             {/* Footer */}
-            <footer className="relative z-10 py-12 border-t border-amazio-primary/5 dark:border-white/5">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <p className="text-zinc-400 dark:text-zinc-600 text-xs font-bold uppercase tracking-[0.3em]">© 2026 AMAZIO KNOWLEDGE FEST • 2026 EDITION</p>
-                    <div className="flex items-center gap-6">
-                        <a href="#" className="text-zinc-400 hover:text-amazio-primary dark:text-zinc-600 dark:hover:text-white text-xs font-black uppercase tracking-widest transition-colors">Orchestration Guide</a>
-                        <a href="#" className="text-zinc-400 hover:text-amazio-primary dark:text-zinc-600 dark:hover:text-white text-xs font-black uppercase tracking-widest transition-colors">Infrastructure</a>
+            <footer className="relative z-10 py-20 border-t border-[#283618]/5 dark:border-white/5">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
+                    <div className="space-y-2">
+                        <p className="text-[#283618] dark:text-white text-lg font-black uppercase tracking-tighter">AMAZIO 2026</p>
+                        <p className="text-[#606C38] dark:text-[#9AAD59] text-[10px] font-black uppercase tracking-[0.4em]">The Rooted Tree • Knowledge Fest Edition</p>
+                    </div>
+                    <div className="flex flex-wrap justify-center items-center gap-10">
+                        <a href="#" className="text-[#606C38] dark:text-zinc-500 hover:text-[#283618] dark:hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors">Visual identity</a>
+                        <a href="#" className="text-[#606C38] dark:text-zinc-500 hover:text-[#283618] dark:hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors">Registry Specs</a>
+                        <a href="#" className="text-[#606C38] dark:text-zinc-500 hover:text-[#283618] dark:hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors">Core Infrastructure</a>
                     </div>
                 </div>
             </footer>
@@ -260,8 +339,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             <style>{`
                 html { scroll-behavior: smooth; }
                 .ease-out-expo { transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1); }
-                @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
-                .animate-shimmer { animation: shimmer 2s infinite linear; }
+                @keyframes shimmer-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+                .animate-shimmer { animation: shimmer-sweep 2s infinite ease-in-out; }
             `}</style>
         </div>
     );
