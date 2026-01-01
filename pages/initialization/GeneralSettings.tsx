@@ -8,11 +8,10 @@ import {
     ShieldAlert, Award, Edit2, Save, Type, CheckCircle, CheckCircle2, ClipboardList, Plus, FileText, 
     MoreHorizontal, Settings, Palette, Calendar, SlidersHorizontal, MousePointer2, 
     UserCheck, Shield, LayoutDashboard, UserPlus, Medal, Gavel, Timer, Monitor,
-    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles
+    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw
 } from 'lucide-react';
 import { User, UserRole, AppState, FontConfig, GeneralFontConfig } from '../../types';
 import { TABS, TAB_DISPLAY_NAMES } from '../../constants';
-import { CollapsibleCard } from '../../components/CollapsibleCard'; 
 
 // --- Helper Component: Image Upload ---
 interface ImageUploadProps {
@@ -25,69 +24,80 @@ interface ImageUploadProps {
 
 const ImageUpload: React.FC<ImageUploadProps> = ({ label, description, currentValue, onChange, disabled }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 500 * 1024) {
-                alert("File size too large! Please upload an image smaller than 500KB.");
+            if (file.size > 800 * 1024) {
+                alert("File size too large! Please upload an image smaller than 800KB for system stability.");
                 return;
             }
+            setIsProcessing(true);
             const reader = new FileReader();
             reader.onloadend = () => {
                 onChange(reader.result as string);
+                setIsProcessing(false);
             };
             reader.readAsDataURL(file);
         }
     };
 
     return (
-        <div className={`h-full flex flex-col justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 bg-zinc-50/50 dark:bg-black/20 ${disabled ? 'opacity-60 pointer-events-none' : 'hover:border-indigo-500/30 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors'}`}>
+        <div className={`h-full flex flex-col justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 bg-zinc-50/50 dark:bg-black/20 ${disabled ? 'opacity-60 pointer-events-none' : 'hover:border-indigo-500/30 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all duration-300'}`}>
             <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">{label}</label>
             <div className="flex-grow flex flex-col items-center justify-center gap-4">
                 {currentValue ? (
-                    <div className="relative w-full aspect-video bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden p-2 group">
-                        <img src={currentValue} alt={label} className="max-w-full max-h-full object-contain" />
+                    <div className="relative w-full aspect-video bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden p-2 group shadow-sm">
+                        <img src={currentValue} alt={label} className="max-w-full max-h-full object-contain transition-transform group-hover:scale-105 duration-500" />
                         {!disabled && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                <span className="text-white text-xs font-bold flex items-center gap-2"><Upload size={14}/> Replace</span>
+                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <Upload size={20} className="text-white mb-2" />
+                                <span className="text-white text-[10px] font-black uppercase tracking-widest">Replace Asset</span>
                             </div>
                         )}
                         {!disabled && (
                              <button 
                                 onClick={(e) => { e.stopPropagation(); onChange(''); }} 
-                                className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:scale-110"
+                                className="absolute top-2 right-2 p-2 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 active:scale-95"
+                                title="Remove Image"
                             >
-                                <Trash2 size={12}/>
+                                <Trash2 size={14}/>
                             </button>
                         )}
                     </div>
                 ) : (
                     <div 
                         onClick={() => !disabled && fileInputRef.current?.click()}
-                        className="w-full aspect-video bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center gap-3 cursor-pointer group"
+                        className={`w-full aspect-video bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center gap-3 transition-all ${!disabled ? 'cursor-pointer hover:border-indigo-500/50 hover:shadow-md' : ''} group`}
                     >
-                        <div className="p-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
-                            <ImageIcon size={24} />
-                        </div>
-                        <span className="text-[10px] font-bold text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">Click to Upload</span>
+                        {isProcessing ? (
+                            <RefreshCw className="animate-spin text-indigo-500" size={24} />
+                        ) : (
+                            <>
+                                <div className="p-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 dark:group-hover:bg-indigo-900/20 transition-colors">
+                                    <ImageIcon size={24} />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">Choose Graphic</span>
+                            </>
+                        )}
                     </div>
                 )}
-                <p className="text-[10px] text-zinc-400 text-center max-w-[200px] leading-relaxed">{description}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 text-center max-w-[180px] leading-relaxed opacity-60">{description}</p>
                 <input 
                     type="file" 
                     ref={fileInputRef}
                     accept="image/png, image/jpeg, image/svg+xml"
                     className="hidden"
                     onChange={handleFileChange}
-                    disabled={disabled}
+                    disabled={disabled || isProcessing}
                 />
             </div>
         </div>
     );
 };
 
-// --- Helper Component: New Language Font Card ---
+// --- Helper Component: Language Font Card ---
 const LanguageFontCard = ({
     title,
     subtitle,
@@ -101,18 +111,20 @@ const LanguageFontCard = ({
     language: 'malayalam' | 'arabic' | 'english';
     currentFont?: FontConfig;
     previewText: string;
-    onSave: (font: FontConfig) => void;
+    onSave: (font: FontConfig) => Promise<void>;
 }) => {
     const fileInputRef = useRef<HTMLDivElement>(null);
     const [tempFont, setTempFont] = useState<FontConfig | undefined>(currentFont);
     const [isDirty, setIsDirty] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     useEffect(() => {
-        setTempFont(currentFont);
-        setIsDirty(false);
-    }, [currentFont]);
+        if (!isDirty && !isSaving) {
+            setTempFont(currentFont);
+        }
+    }, [currentFont, isDirty, isSaving]);
 
-    // Inject temporary style for live preview
     useEffect(() => {
         if (tempFont?.url && tempFont.family) {
             const styleId = `preview-font-${language}`;
@@ -135,7 +147,7 @@ const LanguageFontCard = ({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            if (file.size > 2 * 1024 * 1024) { 
                 alert("Font file too large! Please upload a file smaller than 2MB.");
                 return;
             }
@@ -149,15 +161,30 @@ const LanguageFontCard = ({
                 };
                 setTempFont(newFont);
                 setIsDirty(true);
+                setSaveSuccess(false);
             };
             reader.readAsDataURL(file);
             e.target.value = ''; 
         }
     };
 
+    const handleApply = async () => {
+        if (!tempFont) return;
+        setIsSaving(true);
+        try {
+            await onSave(tempFont);
+            setIsDirty(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        } catch (err) {
+            alert("Failed to save font configuration.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
-        <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 flex flex-col gap-6 relative overflow-hidden group shadow-sm md:shadow-xl">
-             {/* Header */}
+        <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 flex flex-col gap-6 relative overflow-hidden group shadow-sm md:shadow-xl">
              <div className="flex items-start gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-900/20 shadow-inner">
                     <Type size={24} />
@@ -168,18 +195,16 @@ const LanguageFontCard = ({
                 </div>
              </div>
 
-             {/* Upload Button */}
              <div className="mt-2">
                 <button 
                     onClick={() => (fileInputRef.current as any)?.click()} 
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
                 >
-                    <Upload size={14} /> Upload Font
+                    <Upload size={14} /> {tempFont ? 'Change Font' : 'Upload Font'}
                 </button>
                 <input type="file" ref={fileInputRef as any} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
              </div>
 
-             {/* Preview */}
              <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
                 <span className="absolute top-5 left-6 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Live Rendering</span>
                 <p className="text-3xl text-amazio-primary dark:text-white text-center leading-relaxed" style={{ fontFamily: tempFont ? `'${tempFont.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
@@ -187,13 +212,13 @@ const LanguageFontCard = ({
                 </p>
              </div>
 
-             {/* Footer Action */}
              <button
-                onClick={() => tempFont && onSave(tempFont)}
-                disabled={!isDirty}
-                className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${isDirty ? 'bg-emerald-700 text-white hover:bg-emerald-600 shadow-emerald-900/20 transform hover:-translate-y-0.5' : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-zinc-200 dark:border-zinc-800'}`}
+                onClick={handleApply}
+                disabled={!isDirty || isSaving}
+                className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${saveSuccess ? 'bg-emerald-600 text-white' : isDirty ? 'bg-emerald-700 text-white hover:bg-emerald-600 shadow-emerald-900/20 transform hover:-translate-y-0.5' : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-zinc-200 dark:border-zinc-800'}`}
              >
-                {isDirty ? <CheckCircle size={16} /> : <CheckCircle size={16} className="opacity-20"/>} Apply Registry
+                {isSaving ? <RefreshCw className="animate-spin" size={16} /> : saveSuccess ? <CheckCircle2 size={16} /> : <CheckCircle size={16} />} 
+                {isSaving ? 'Uploading...' : saveSuccess ? 'Registry Applied' : 'Apply Registry'}
              </button>
         </div>
     );
@@ -275,7 +300,7 @@ const UserFormModal: React.FC<{
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
-                    <button onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
+                    <button handleSave={() => {}} onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
                 </div>
             </div>
         </div>,
@@ -335,7 +360,6 @@ const GeneralSettings: React.FC = () => {
     const [instData, setInstData] = useState(state?.settings.institutionDetails || { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' });
     const [isEditingOrg, setIsEditingOrg] = useState(false);
     
-    // Improved data initialization for branding
     const [orgData, setOrgData] = useState({ 
         organizingTeam: state?.settings.organizingTeam || '', 
         heading: state?.settings.heading || '', 
@@ -344,17 +368,41 @@ const GeneralSettings: React.FC = () => {
         branding: state?.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
     });
     
-    // User Modal State
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
 
     useEffect(() => { if (!isEditingInst && state?.settings.institutionDetails) setInstData(state.settings.institutionDetails); }, [state?.settings.institutionDetails, isEditingInst]);
-    useEffect(() => { if (!isEditingOrg && state?.settings) setOrgData({ organizingTeam: state.settings.organizingTeam, heading: state.settings.heading, description: state.settings.description, eventDates: state.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } }); }, [state?.settings, isEditingOrg]);
+    useEffect(() => { 
+        if (!isEditingOrg && state?.settings) {
+            setOrgData({ 
+                organizingTeam: state.settings.organizingTeam, 
+                heading: state.settings.heading, 
+                description: state.settings.description, 
+                eventDates: state.settings.eventDates || [], 
+                branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
+            }); 
+        }
+    }, [state?.settings, isEditingOrg]);
 
     if (!state) return <div>Loading...</div>;
 
     const handleSaveInst = async () => { await updateSettings({ institutionDetails: instData }); setIsEditingInst(false); };
-    const handleSaveOrg = async () => { await updateSettings({ organizingTeam: orgData.organizingTeam, heading: orgData.heading, description: orgData.description, eventDates: orgData.eventDates, branding: orgData.branding }); setIsEditingOrg(false); };
+    
+    // Explicitly handle empty logo strings on save as requested
+    const handleSaveOrg = async () => { 
+        await updateSettings({ 
+            organizingTeam: orgData.organizingTeam, 
+            heading: orgData.heading, 
+            description: orgData.description, 
+            eventDates: orgData.eventDates, 
+            branding: {
+                ...orgData.branding,
+                typographyUrlLight: orgData.branding?.typographyUrlLight || '',
+                typographyUrlDark: orgData.branding?.typographyUrlDark || ''
+            } 
+        }); 
+        setIsEditingOrg(false); 
+    };
 
     const handlePermissionChange = (role: UserRole, tab: string, checked: boolean) => {
         const pages = checked ? Array.from(new Set([...(state.permissions[role] || []), tab])) : (state.permissions[role] || []).filter(p => p !== tab);
@@ -371,7 +419,6 @@ const GeneralSettings: React.FC = () => {
         setEditingUser(undefined);
     };
 
-    // --- Font Management Handlers ---
     const handleUpdateCustomFont = async (lang: 'malayalam' | 'arabic' | 'english', font: FontConfig | undefined) => {
         const currentFonts = state.settings.customFonts || {};
         await updateSettings({
@@ -536,7 +583,7 @@ const GeneralSettings: React.FC = () => {
                                             <ImageUpload 
                                                 label="" 
                                                 description="Logo displayed during Light Theme mode." 
-                                                currentValue={isEditingOrg ? orgData.branding?.typographyUrlLight : (orgData.branding?.typographyUrlLight || orgData.branding?.typographyUrl)} 
+                                                currentValue={orgData.branding?.typographyUrlLight || ''} 
                                                 onChange={v => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), typographyUrlLight: v}}))} 
                                                 disabled={!isEditingOrg}
                                             />
@@ -550,7 +597,7 @@ const GeneralSettings: React.FC = () => {
                                             <ImageUpload 
                                                 label="" 
                                                 description="Logo displayed during Dark Theme mode." 
-                                                currentValue={orgData.branding?.typographyUrlDark} 
+                                                currentValue={orgData.branding?.typographyUrlDark || ''} 
                                                 onChange={v => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), typographyUrlDark: v}}))} 
                                                 disabled={!isEditingOrg}
                                             />
@@ -642,17 +689,11 @@ const GeneralSettings: React.FC = () => {
                                         <tr>
                                             <th className="px-6 py-4">Account Handle</th>
                                             <th className="px-6 py-4">Role Priority</th>
-                                            <th className="px-6 py-4">Assigned Entity</th>
                                             <th className="px-6 py-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-zinc-50 dark:divide-white/5">
                                         {state.users.map(u => {
-                                            const team = state.teams.find(t => t.id === u.teamId);
-                                            const judge = state.judges.find(j => j.id === u.judgeId);
-                                            const entityName = u.role === UserRole.TEAM_LEADER ? team?.name : u.role === UserRole.JUDGE ? judge?.name : '--';
-                                            
-                                            // Role Badges
                                             const roleStyle = u.role === UserRole.MANAGER 
                                                 ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300'
                                                 : u.role === UserRole.JUDGE
@@ -669,7 +710,6 @@ const GeneralSettings: React.FC = () => {
                                                             {u.role}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-xs font-bold text-zinc-500 dark:text-zinc-400">{entityName || '--'}</td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button onClick={() => { setEditingUser(u); setIsUserModalOpen(true); }} className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors"><Edit2 size={16}/></button>
@@ -681,7 +721,7 @@ const GeneralSettings: React.FC = () => {
                                         })}
                                         {state.users.length === 0 && (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-8 text-center text-[10px] uppercase font-bold text-zinc-400">No operators configured</td>
+                                                <td colSpan={3} className="px-6 py-8 text-center text-[10px] uppercase font-bold text-zinc-400">No operators configured</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -765,7 +805,7 @@ const GeneralSettings: React.FC = () => {
                                 {Object.values(TABS).map(tab => {
                                     const Icon = TAB_ICON_MAP[tab] || Info;
                                     return (
-                                        <div key={tab} className="group flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-200 dark:border-white/5 shadow-glass-light dark:shadow-2xl overflow-hidden transition-all duration-300 hover:border-indigo-500/30">
+                                        <div key={tab} className="group flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 shadow-glass-light dark:shadow-2xl overflow-hidden transition-all duration-300 hover:border-indigo-500/30">
                                             <div className="p-6 border-b border-zinc-100 dark:border-white/5 flex items-center gap-4 bg-zinc-50/50 dark:bg-white/[0.01]">
                                                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
                                                     <Icon size={20} strokeWidth={2.5} />
@@ -833,7 +873,7 @@ const GeneralSettings: React.FC = () => {
                             <div className="group relative flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-300 hover:border-rose-500/30 hover:-translate-y-1">
                                 <div className="p-8 pb-4">
                                     <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-6 shadow-inner group-hover:scale-110 transition-transform">
-                                        <RotateCcw size={32} />
+                                        <RefreshCw className="animate-spin" size={16} />
                                     </div>
                                     <h3 className="text-2xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">System Restore</h3>
                                     <p className="text-xs text-zinc-500 mt-2 leading-relaxed">Overwrite the existing database with data from a previously generated snapshot. <span className="text-rose-500 font-bold uppercase">This action is irreversible.</span></p>

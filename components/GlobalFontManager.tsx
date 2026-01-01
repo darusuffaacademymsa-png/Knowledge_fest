@@ -7,7 +7,7 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
 
     const MALAYALAM_RANGE = "U+0D00-0D7F";
     const ARABIC_RANGE = "U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF";
-    const LATIN_RANGE = "U+0000-00FF, U+0100-017F, U+0180-024F";
+    const LATIN_RANGE = "U+0000-007F, U+0080-00FF, U+0100-017F, U+0180-024F"; // Expanded basic & extended latin
     
     let fontFaces = '';
 
@@ -64,9 +64,21 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
         return `
             ${fontFaces}
             
-            /* Apply GlobalAutoFont first so it catches the ranges */
-            body, .font-sans, .font-serif, h1, h2, h3, h4, h5, h6, p, span, div, a, input, button, textarea, select, table, td, th {
+            /* Apply GlobalAutoFont across the entire application ecosystem */
+            body, html, 
+            .font-sans, .font-serif, .font-slab, .font-mono,
+            h1, h2, h3, h4, h5, h6, 
+            p, span, div, a, li, blockquote,
+            input, button, textarea, select, 
+            table, td, th, thead, tbody, 
+            label, legend,
+            [class*="text-"], [class*="font-"] {
                 font-family: 'GlobalAutoFont', 'Inter', 'Roboto Slab', system-ui, -apple-system, sans-serif !important;
+            }
+            
+            /* Special handling for form elements which often ignore inheritance */
+            input::placeholder, textarea::placeholder {
+                font-family: 'GlobalAutoFont', sans-serif !important;
             }
             
             /* Helper classes for manual override if needed */

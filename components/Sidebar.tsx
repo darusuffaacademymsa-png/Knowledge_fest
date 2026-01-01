@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {!isStickyMode && (
-            <div className="px-3 mb-2 relative">
+            <div className="px-3 mb-2 relative" onClick={(e) => e.stopPropagation()}>
                 <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-12 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="relative group px-2">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors" />
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {isStickyMode && (
-             <div className="py-2 flex justify-center">
+             <div className="py-2 flex justify-center" onClick={(e) => e.stopPropagation()}>
                  <button className="p-2 text-zinc-400 hover:text-emerald-500 transition-colors">
                      <Search className="h-4 w-4" />
                  </button>

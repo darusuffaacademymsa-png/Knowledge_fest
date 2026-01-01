@@ -46,6 +46,7 @@ const App: React.FC = () => {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
   const mainContentRef = useRef<HTMLElement>(null);
+  const lastWidth = useRef(window.innerWidth);
 
   const isProjectorMode = activeTab === TABS.PROJECTOR;
 
@@ -124,17 +125,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
+      const height = window.innerHeight;
       const mobile = width < 768;
       
-      // Update mobile state
+      // CRITICAL FIX: Only act if width changes. Height changes are usually keyboard events on mobile.
+      if (width === lastWidth.current) return;
+      lastWidth.current = width;
+
       setIsMobile(mobile);
       
       if (width >= 1024) {
           if (!isSidebarExpanded) setIsSidebarExpanded(true);
-      } else if (width < 768) {
-          // BUG FIX: Removed auto-collapse on mobile resize. 
-          // Mobile keyboard triggers resize events, which was closing the sidebar.
-          // The sidebar should only close if the user explicitly swipes or taps outside.
+      } else if (mobile) {
+          // Prevent auto-closing if an input is focused (e.g. searching)
+          if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+              return;
+          }
       }
     };
     window.addEventListener('resize', handleResize);
@@ -260,7 +266,11 @@ const App: React.FC = () => {
   }, [isMobile, isSidebarExpanded, navigateSubView, navigateMainTab]);
 
   const toggleSidebarExpansion = () => setIsSidebarExpanded(prev => !prev);
-  const handleBackdropClick = () => setIsSidebarExpanded(false);
+  const handleBackdropClick = () => {
+      // Prevent closing if we are currently searching
+      if (document.activeElement?.tagName === 'INPUT') return;
+      setIsSidebarExpanded(false);
+  };
 
   const handleMainScroll = (e: React.UIEvent<HTMLElement>) => {
     if (!isMobile) return;
