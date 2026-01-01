@@ -240,7 +240,7 @@ const ParticipantFormModal: React.FC<{
 }> = ({ isOpen, onClose, editingParticipant, currentUser }) => {
     const { state, addParticipant, updateParticipant } = useFirebase();
     const [formData, setFormData] = useState<Partial<Participant>>({
-        name: '', chestNumber: '', teamId: '', categoryId: '', itemIds: []
+        name: '', chestNumber: '', teamId: '', categoryId: '', itemIds: [], role: undefined
     });
 
     useEffect(() => {
@@ -261,7 +261,7 @@ const ParticipantFormModal: React.FC<{
 
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white dark:bg-[#121412] rounded-[2.5rem] shadow-2xl w-full max-lg flex flex-col max-h-[90vh] overflow-hidden border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#121412] rounded-[2.5rem] shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden border border-zinc-200 dark:border-white/10" onClick={e => e.stopPropagation()}>
                 <div className="p-7 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
                     <div>
                         <h3 className="font-serif font-black text-2xl text-amazio-primary dark:text-white uppercase tracking-tighter leading-none">{editingParticipant ? 'Edit Profile' : 'Register Delegate'}</h3>
@@ -303,6 +303,15 @@ const ParticipantFormModal: React.FC<{
                                     {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-2 ml-1">Registry Role</label>
+                            <select value={formData.role || ''} onChange={e => setFormData({...formData, role: (e.target.value || undefined) as any})} className="w-full p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none">
+                                <option value="">Standard Delegate</option>
+                                <option value="leader">Team Leader</option>
+                                <option value="assistant">Assistant Leader</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -533,7 +542,8 @@ const ItemsManagement: React.FC = () => {
                     
                     // Only show "G1" etc if multiple groups from same team exist for same item
                     const suffix = activeGroupsIndices.length > 1 ? ` (G${gIdx})` : '';
-                    const groupDisplayName = `${team.name} - ${item.name}${suffix}`;
+                    // REFINED: Don't show team name here, just item name and optional group index
+                    const groupDisplayName = `${item.name}${suffix}`;
                     
                     entries.push({
                         id: `group_${item.id}_${team.id}_${gIdx}`, itemId: item.id, teamId: team.id, groupIndex: gIdx,
@@ -689,10 +699,10 @@ const ItemsManagement: React.FC = () => {
                                                         <div className="flex flex-wrap gap-1">
                                                             <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border flex items-center gap-1 ${isGroup ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>{isGroup ? <Users size={10} strokeWidth={3}/> : <UserIcon size={10} strokeWidth={3}/>} {isGroup ? 'Group Entry' : 'Delegate'}</div>
                                                             {entry.role === 'leader' && (
-                                                                <div className="px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-gradient-to-r from-[#2d6a4f] to-[#1d9488] text-white shadow-sm shadow-emerald-500/20 border border-white/10 backdrop-blur-sm"><Crown size={10} strokeWidth={3} className="text-yellow-300 drop-shadow-sm"/> Leader</div>
+                                                                <div className="px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-gradient-to-r from-[#2d6a4f] to-[#1d9488] text-white shadow-md border border-white/20 backdrop-blur-md ring-1 ring-white/10"><Crown size={10} strokeWidth={3} className="text-yellow-300 drop-shadow-sm"/> Leader</div>
                                                             )}
                                                             {entry.role === 'assistant' && (
-                                                                <div className="px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-gradient-to-r from-[#006994] to-[#80deea] text-white shadow-sm shadow-blue-500/20 border border-white/10 backdrop-blur-sm"><ShieldCheck size={10} strokeWidth={3} className="text-white drop-shadow-sm"/> Asst. Leader</div>
+                                                                <div className="px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-gradient-to-r from-[#006994] to-[#1d9488] text-white shadow-md border border-white/20 backdrop-blur-md ring-1 ring-white/10"><ShieldCheck size={10} strokeWidth={3} className="text-white drop-shadow-sm"/> Asst. Leader</div>
                                                             )}
                                                         </div>
                                                     </div>
@@ -708,7 +718,7 @@ const ItemsManagement: React.FC = () => {
                                                     </span>
                                                     <span 
                                                         className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border" 
-                                                        style={{ backgroundColor: `${ART_FEST_PALETTE.SOFT_BLUE}10`, color: '#006994', borderColor: `${ART_FEST_PALETTE.SOFT_BLUE}30` }}
+                                                        style={{ backgroundColor: `${ART_FEST_PALETTE.SOFT_BLUE}10`, color: ART_FEST_PALETTE.OCEAN_BLUE, borderColor: `${ART_FEST_PALETTE.SOFT_BLUE}30` }}
                                                     >
                                                         {entry.displayCategory}
                                                     </span>
