@@ -175,7 +175,7 @@ const ItemPointOverrideModal: React.FC<{
 
                 <div className="p-7 border-t border-white/5 bg-zinc-50 dark:bg-white/[0.02] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Cancel</button>
-                    <button onClick={handleSave} disabled={isSaving} className="px-10 py-4 bg-amazio-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amazio-primary/20 active:scale-95 transition-all">
+                    <button onClick={handleSave} disabled={isSaving} className="px-10 py-4 bg-amazio-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amazio-primary/20 active:scale-95 transition-all">
                         {isSaving ? 'Saving...' : 'Apply Overrides'}
                     </button>
                 </div>
@@ -334,16 +334,16 @@ const LotMachine: React.FC = () => {
                         <SectionTitle title="Logic Mapping" icon={Layers} color="emerald" />
                         <div className="space-y-4">
                             <div className="relative">
-                                <select value={selectedCategoryId} onChange={e => setSelectedCategoryId(e.target.value)} className="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer">
-                                    <option value="">All Categories</option>
-                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                <select value={selectedCategoryId} onChange={e => setSelectedCategoryId(e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                                    <option value="" className="dark:bg-zinc-900">All Categories</option>
+                                    {categories.map(c => <option key={c.id} value={c.id} className="dark:bg-zinc-900">{c.name}</option>)}
                                 </select>
                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={16} />
                             </div>
                             <div className="relative">
-                                <select value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)} className="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer">
-                                    <option value="">-- Choose Item --</option>
-                                    {availableItems.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                                <select value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                                    <option value="" className="dark:bg-zinc-900">-- Choose Item --</option>
+                                    {availableItems.map(i => <option key={i.id} value={i.id} className="dark:bg-zinc-900">{i.name}</option>)}
                                 </select>
                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={16} />
                             </div>

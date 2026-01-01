@@ -1,4 +1,3 @@
-
 import { AlertTriangle, ArrowLeft, Award, Calculator, CheckCircle2, ChevronDown, ClipboardEdit, Clock, Edit3, Eye, FileText, Filter, LayoutGrid, Lock, LockOpen, Medal, Megaphone, Save, Search, ShieldAlert, Tag, Trash2, Trophy, UserCheck, Users, User, Star, RefreshCw } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Card from '../components/Card';
@@ -61,17 +60,17 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     const getStatusInfo = () => {
         if (isDeclared) return {
             label: 'Declared',
-            icon: <CheckCircle2 size={12} strokeWidth={3} />,
+            icon: <CheckCircle2 size={10} sm:size={12} strokeWidth={3} />,
             class: 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
         };
         if (isDraft) return {
             label: 'Drafted',
-            icon: <ClipboardEdit size={12} strokeWidth={3} />,
+            icon: <ClipboardEdit size={10} sm:size={12} strokeWidth={3} />,
             class: 'bg-amber-500 text-white border-amber-400 shadow-amber-500/20'
         };
         return {
-            label: 'Not Uploaded',
-            icon: <Clock size={12} strokeWidth={3} />,
+            label: 'Pending',
+            icon: <Clock size={10} sm:size={12} strokeWidth={3} />,
             class: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700'
         };
     };
@@ -79,46 +78,42 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     const statusInfo = getStatusInfo();
 
     return (
-        <div className={`group relative flex flex-col h-full rounded-[2.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/30' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
-            
-            {/* Status Header */}
-            <div className="p-6 pb-2 flex justify-between items-start">
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 transition-all duration-300 ${statusInfo.class}`}>
+        <div className={`group relative flex flex-col h-full rounded-[1.2rem] sm:rounded-[2.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/30' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
+            <div className="p-4 sm:p-6 pb-1 sm:pb-2 flex justify-between items-start">
+                <div className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest border flex items-center gap-1 sm:gap-1.5 transition-all duration-300 ${statusInfo.class}`}>
                     {statusInfo.icon}
                     {statusInfo.label}
                 </div>
                 {isDeclared && onUnlock && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onUnlock(item); }} 
-                        className="p-3 rounded-xl text-amber-500 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1.5"
-                        title="Modify Results"
+                        className="p-2 sm:p-3 rounded-lg sm:rounded-xl text-amber-500 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1.5"
                     >
-                        <LockOpen size={14} strokeWidth={3} />
-                        <span className="text-[9px] font-black uppercase">Edit</span>
+                        <LockOpen size={12} sm:size={14} strokeWidth={3} />
+                        <span className="text-[8px] sm:text-[9px] font-black uppercase">Unlock</span>
                     </button>
                 )}
             </div>
 
-            {/* Item Details */}
-            <div className="p-6 pt-2 flex-grow flex flex-col">
-                <div className="mb-4">
-                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 transition-colors`} style={{ color: catColor }}>
+            <div className="p-4 sm:p-6 pt-1 sm:pt-2 flex-grow flex flex-col">
+                <div className="mb-2 sm:mb-4">
+                    <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-1 transition-colors`} style={{ color: catColor }}>
                         {categoryName}
                     </p>
-                    <h3 className="text-2xl font-black font-serif uppercase tracking-tighter leading-tight text-amazio-primary dark:text-zinc-100">
+                    <h3 className="text-lg sm:text-2xl font-black font-serif uppercase tracking-tighter leading-tight text-amazio-primary dark:text-zinc-100 line-clamp-2">
                         {item.name}
                     </h3>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-auto">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-auto">
                     <span 
-                        className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all"
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[7px] sm:text-[9px] font-black uppercase tracking-widest border transition-all"
                         style={{ backgroundColor: perfColor + '15', color: perfColor, borderColor: perfColor + '40' }}
                     >
                         {item.performanceType}
                     </span>
                     <span 
-                        className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all"
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[7px] sm:text-[9px] font-black uppercase tracking-widest border transition-all"
                         style={{ backgroundColor: typeColor + '15', color: typeColor, borderColor: typeColor + '40' }}
                     >
                         {item.type}
@@ -126,23 +121,21 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
                 </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="p-6 pt-0 mt-2 border-t border-zinc-50 dark:border-white/5 pt-6">
+            <div className="p-4 sm:p-6 pt-0 mt-1 sm:mt-2 border-t border-zinc-50 dark:border-white/5 pt-4 sm:pt-6">
                 <div className="flex gap-2">
                     <button 
                         onClick={onEdit}
-                        className="flex-grow py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 bg-amazio-primary text-white shadow-amazio-primary/20"
+                        className="flex-grow py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[8px] sm:text-[10px] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 bg-amazio-primary text-white shadow-amazio-primary/20"
                     >
-                        {isDeclared ? <Eye size={14}/> : <Edit3 size={14}/>}
-                        {isDeclared ? 'View Summary' : 'Score Item'}
+                        {isDeclared ? <Eye size={12} sm:size={14}/> : <Edit3 size={12} sm:size={14}/>}
+                        {isDeclared ? 'Details' : 'Score'}
                     </button>
                     {isDraft && onDeclare && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDeclare(item); }}
-                            className="w-14 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
-                            title="Declare Final"
+                            className="w-10 h-10 sm:w-14 sm:h-12 bg-amber-500 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
                         >
-                            <Megaphone size={18} strokeWidth={3} />
+                            <Megaphone size={16} sm:size={18} strokeWidth={3} />
                         </button>
                     )}
                 </div>
@@ -151,7 +144,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     );
 };
 
-// --- ScoringTable Component ---
+// --- ScoringTable Component (Table view for large screens) ---
 const ScoringTable: React.FC<{
     participants: ScoredParticipant[];
     judgeIds: string[];
@@ -396,11 +389,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const handleSaveDraft = async (itemOverride?: Item) => {
         const item = itemOverride || selectedItem;
         if (!item || !state) return;
-        
-        if (isJudge && !confirm("⚠️ CAUTION: Once you 'Save and Draft', you will NOT be able to modify these marks again. Please double-check all entries. Proceed?")) {
-            return;
-        }
-
+        if (isJudge && !confirm("Results will be submitted for review. Proceed?")) return;
         const scoring = itemOverride ? getScoringForItem(itemOverride, state.tabulation) : scoredParticipants;
         setIsSaving(true);
         try {
@@ -408,7 +397,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
             }));
             await saveResult({ itemId: item.id, categoryId: item.categoryId, status: ResultStatus.UPLOADED, winners });
-            if (!itemOverride) alert(isJudge ? "Results submitted and locked." : "Results saved as draft.");
         } catch (e) { alert("Failed to save draft."); }
         finally { setIsSaving(false); }
     };
@@ -416,7 +404,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const handleDeclare = async (itemOverride?: Item) => {
         const item = itemOverride || selectedItem;
         if (!item || !state) return;
-        if (!confirm(`Finalize results for ${item.name}? This will update global standings.`)) return;
+        if (!confirm(`Declare results for ${item.name}?`)) return;
         const scoring = itemOverride ? getScoringForItem(itemOverride, state.tabulation) : scoredParticipants;
         setIsSaving(true);
         try {
@@ -424,15 +412,14 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
             }));
             await saveResult({ itemId: item.id, categoryId: item.categoryId, status: ResultStatus.DECLARED, winners });
-            alert("Results declared successfully!");
-        } catch (e) { alert("Failed to declare results."); }
+        } catch (e) { alert("Failed to declare."); }
         finally { setIsSaving(false); }
     };
 
     const handleUnlock = async (itemOverride?: Item) => {
         const item = itemOverride || selectedItem;
         if (!item || !state) return;
-        if (!confirm(`Unlock ${item.name}? This will allow mark modifications while keeping existing data.`)) return;
+        if (!confirm(`Unlock ${item.name}?`)) return;
         setIsSaving(true);
         try {
             const existingResult = state.results.find(r => r.itemId === item.id);
@@ -442,12 +429,11 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 status: ResultStatus.NOT_UPLOADED, 
                 winners: existingResult?.winners || [] 
             });
-            alert("Result unlocked for editing.");
         } catch (e) { alert("Failed to unlock."); }
         finally { setIsSaving(false); }
     };
 
-    if (!state) return <div className="p-12 text-center text-zinc-500">Loading scoring modules...</div>;
+    if (!state) return <div className="p-8 text-center text-zinc-500">Loading scoring modules...</div>;
 
     if (selectedItemId && selectedItem) {
         const category = state.categories.find(c => c.id === selectedItem.categoryId);
@@ -457,31 +443,31 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         const activeJudgeInputs = isJudge ? [judgeId!] : [...assignedJudges, MANUAL_OVERRIDE_ID];
 
         return (
-            <div className="space-y-6 animate-in slide-in-from-right duration-500 pb-24">
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-right duration-500 pb-24">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
                     <div>
-                        <button onClick={() => setSelectedItemId(null)} className="flex items-center gap-2 text-zinc-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest mb-4">
-                            <ArrowLeft size={16} /> Back to Overview
+                        <button onClick={() => setSelectedItemId(null)} className="flex items-center gap-2 text-zinc-400 hover:text-indigo-600 font-bold text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-4">
+                            <ArrowLeft size={14} /> Back
                         </button>
-                        <h2 className="text-2xl md:text-3xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">{selectedItem.name}</h2>
-                        <div className="flex items-center gap-3 mt-1">
-                            <span className="px-2.5 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black text-zinc-500 uppercase tracking-widest border border-zinc-200 dark:border-zinc-700">{category?.name}</span>
-                            <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border" style={{ backgroundColor: getPerformanceColor(selectedItem.performanceType) + '15', color: getPerformanceColor(selectedItem.performanceType), borderColor: getPerformanceColor(selectedItem.performanceType) + '40' }}>{selectedItem.performanceType}</span>
+                        <h2 className="text-xl sm:text-3xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">{selectedItem.name}</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[8px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-widest border border-zinc-200 dark:border-zinc-700">{category?.name}</span>
+                            <span className="px-2 py-0.5 rounded-md text-[8px] sm:text-[10px] font-black uppercase tracking-widest border" style={{ backgroundColor: getPerformanceColor(selectedItem.performanceType) + '15', color: getPerformanceColor(selectedItem.performanceType), borderColor: getPerformanceColor(selectedItem.performanceType) + '40' }}>{selectedItem.performanceType}</span>
                         </div>
                     </div>
                     
                     <div className="flex gap-2 w-full sm:w-auto">
                          {isDeclared ? (
-                            !isJudge && <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={16}/> Unlock for Correction</button>
+                            !isJudge && <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-lg text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={14}/> Unlock</button>
                          ) : (
                             <>
                                 {(isManager || (isJudge && !isDraft)) && (
-                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
-                                        <Save size={18}/> {isSaving ? '...' : (isJudge ? 'Save and Draft' : 'Save Draft')}
+                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
+                                        <Save size={14}/> {isSaving ? '...' : (isJudge ? 'Submit' : 'Draft')}
                                     </button>
                                 )}
                                 {isManager && (
-                                    <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={18} strokeWidth={3}/> {isSaving ? 'Finalizing...' : 'Declare Verdict'}</button>
+                                    <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={14} strokeWidth={3}/> {isSaving ? '...' : 'Declare'}</button>
                                 )}
                             </>
                          )}
@@ -489,10 +475,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
                 
                 {(isDeclared || (isDraft && isJudge)) && (
-                    <div className={`p-4 border rounded-2xl flex items-center gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
-                        {isDeclared ? <CheckCircle2 size={20} className="shrink-0" /> : <Lock size={20} className="shrink-0" />}
-                        <p className="text-xs font-bold leading-tight">
-                            {isDeclared ? 'Live Points Active. Modifications by Managers will sync in real-time. Judges cannot edit once declared.' : 'Results Drafted. Your marks are now locked and submitted for review. Please contact a manager for corrections.'}
+                    <div className={`p-3 sm:p-4 border rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
+                        {isDeclared ? <CheckCircle2 size={16} className="shrink-0" /> : <Lock size={16} className="shrink-0" />}
+                        <p className="text-[10px] sm:text-xs font-bold leading-tight">
+                            {isDeclared ? 'Live Points Active. Modifications will sync in real-time.' : 'Results Drafted. Your marks are now locked for review.'}
                         </p>
                     </div>
                 )}
@@ -500,55 +486,48 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 {!isMobile ? (
                     <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isDraft={isDraft} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
                 ) : (
-                    <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4`}>
+                    <div className={`grid grid-cols-1 lg:grid-cols-2 gap-3`}>
                         {scoredParticipants.map(sp => (
-                            <div key={sp.participantId} className={`bg-white dark:bg-zinc-900 rounded-[2.5rem] border transition-all ${sp.rank === 1 ? 'border-amber-500 shadow-xl shadow-amber-500/10 ring-4 ring-amber-500/5' : 'border-zinc-100 dark:border-white/5 shadow-sm'}`}>
-                                <div className="p-4 border-b border-zinc-100 dark:border-white/8 flex justify-between items-center bg-zinc-50/50 dark:bg-black/20 rounded-t-[2.5rem]">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tighter">{sp.codeLetter}</span>
-                                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Entry Ref</span>
+                            <div key={sp.participantId} className={`bg-white dark:bg-zinc-900 rounded-[1.2rem] sm:rounded-[2.5rem] border transition-all ${sp.rank === 1 ? 'border-amber-500 shadow-xl ring-2 ring-amber-500/5' : 'border-zinc-100 dark:border-white/5 shadow-sm'}`}>
+                                <div className="p-3 border-b border-zinc-100 dark:border-white/8 flex justify-between items-center bg-zinc-50/50 dark:bg-black/20 rounded-t-[1.2rem]">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tighter">{sp.codeLetter}</span>
+                                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Entry</span>
                                     </div>
-                                    {!isJudge && <div className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[11px] font-mono font-black">#{sp.chestNumber}</div>}
+                                    {!isJudge && <div className="px-2 py-0.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[10px] font-mono font-black">#{sp.chestNumber}</div>}
                                 </div>
-                                <div className="p-6 space-y-6">
-                                    <div className="flex items-start justify-between gap-4">
+                                <div className="p-4 space-y-4">
+                                    <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0 flex-1">
                                             {!isJudge ? (
                                                 <>
-                                                    <h4 className="font-black text-amazio-primary dark:text-white uppercase tracking-tight text-lg leading-tight truncate">{sp.participantName}</h4>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        {sp.isGroup ? <Users size={12} className="text-zinc-400" /> : <User size={12} className="text-zinc-400" />}
-                                                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide truncate">{sp.teamName}</p>
-                                                    </div>
+                                                    <h4 className="font-black text-amazio-primary dark:text-white uppercase tracking-tight text-sm leading-tight truncate">{sp.participantName}</h4>
+                                                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-wide truncate mt-0.5">{sp.teamName}</p>
                                                 </>
                                             ) : (
-                                                <h4 className="font-black text-zinc-400 uppercase tracking-widest text-sm italic">Anonymous Entry</h4>
+                                                <h4 className="font-black text-zinc-400 uppercase tracking-widest text-xs italic">Anonymous Entry</h4>
                                             )}
                                         </div>
                                         <div className="text-right shrink-0">
-                                            <div className="text-3xl font-black text-zinc-900 dark:text-white leading-none tabular-nums">{sp.finalMark.toFixed(1)}%</div>
-                                            <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-1">Mean</div>
+                                            <div className="text-2xl font-black text-zinc-900 dark:text-white leading-none tabular-nums">{sp.finalMark.toFixed(1)}%</div>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                         {activeJudgeInputs.map(jid => (
                                             <div key={jid} className="relative">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase text-zinc-400 pointer-events-none">{jid === MANUAL_OVERRIDE_ID ? 'Adm' : state.judges.find((j: Judge)=>j.id===jid)?.name.substring(0,3) || 'Jdg'}</div>
-                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-14 pl-12 pr-4 text-right font-black rounded-2xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
+                                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[7px] font-black uppercase text-zinc-400 pointer-events-none">{jid === MANUAL_OVERRIDE_ID ? 'Adm' : state.judges.find((j: Judge)=>j.id===jid)?.name.substring(0,3) || 'Jdg'}</div>
+                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-10 pl-10 pr-3 text-right font-black rounded-lg border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="p-5 bg-zinc-50/50 dark:bg-black/20 rounded-b-[2.5rem] border-t border-zinc-100 dark:border-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        {sp.rank > 0 ? (
-                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : 'bg-orange-200 text-orange-800'}`}><Trophy size={14}/> Rank {sp.rank}</div>
-                                        ) : <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-4 py-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">Participated</div>}
-                                        {sp.grade && <div className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800 uppercase tracking-widest">Tier {sp.grade.name}</div>}
+                                <div className="p-3 bg-zinc-50/50 dark:bg-black/20 rounded-b-[1.2rem] border-t border-zinc-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        {sp.rank > 0 && <div className={`flex items-center gap-1 px-2 py-1 rounded-md font-black text-[8px] uppercase tracking-widest shadow-md ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : 'bg-orange-200 text-orange-800'}`}>Rank {sp.rank}</div>}
+                                        {sp.grade && <div className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-800 uppercase tracking-widest">Tier {sp.grade.name}</div>}
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">+{sp.totalPoints}</div>
-                                        <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Points Accumulation</div>
+                                        <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 tabular-nums">+{sp.totalPoints}</div>
                                     </div>
                                 </div>
                             </div>
@@ -560,14 +539,14 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     }
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-500 pb-24">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-500 pb-24">
             <div className="hidden md:flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div>
                     <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Scoring Terminal</h2>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">Manage competition verdicts and global standings.</p>
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filteredItems.map(item => (
                     <ResultCard 
                         key={item.id} item={item} result={state.results.find(r => r.itemId === item.id)}
@@ -579,7 +558,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     />
                 ))}
                 {filteredItems.length === 0 && (
-                    <div className="col-span-full py-24 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] opacity-30"><Award size={64} strokeWidth={1} className="mx-auto mb-4" /><p className="font-black uppercase tracking-[0.3em] text-xs">No matching events in queue</p></div>
+                    <div className="col-span-full py-16 sm:py-24 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[1.5rem] sm:rounded-[2rem] opacity-30"><Award size={48} sm:size={64} strokeWidth={1} className="mx-auto mb-4" /><p className="font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[10px] sm:text-xs">No matching events in queue</p></div>
                 )}
             </div>
         </div>

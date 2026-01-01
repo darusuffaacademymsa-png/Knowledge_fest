@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { 
-    Layout, Download, ChevronDown, 
-    Loader2, Image as ImageIcon, Palette, Globe,
-    Plus, Trash2, Check, Type, Award, Layers, User, MapPin, X,
-    Settings2, ChevronUp, ImagePlus, Leaf, Crown, Star, Trophy
+    Download, ChevronDown, 
+    Loader2, Image as ImageIcon, Palette, 
+    Plus, Check, Layers, X,
+    Settings2, Leaf
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { ResultStatus, ItemType, PerformanceType } from '../types';
+import { ResultStatus, ItemType } from '../types';
 
 // --- Utils ---
 
@@ -35,7 +35,7 @@ const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, q
 
 // --- Types ---
 
-type TemplateType = 'ROOTED_TREE' | 'CLASSIC' | 'MINIMAL' | 'HERITAGE';
+type TemplateType = 'ROOTED_TREE';
 
 interface PosterData {
     itemId: string;
@@ -62,136 +62,25 @@ const TEMPLATES: Record<TemplateType, { name: string; bg: string; text: string; 
         accent: 'text-[#606C38]',
         fontTitle: 'font-slab',
         fontBody: 'font-slab'
-    },
-    CLASSIC: {
-        name: 'Classic Paper',
-        bg: 'bg-[#F9F7F1]',
-        text: 'text-slate-900',
-        accent: 'text-amber-700',
-        fontTitle: 'font-serif',
-        fontBody: 'font-serif'
-    },
-    MINIMAL: {
-        name: 'Clean Minimal',
-        bg: 'bg-white',
-        text: 'text-zinc-900',
-        accent: 'text-zinc-500',
-        fontTitle: 'font-sans',
-        fontBody: 'font-sans'
-    },
-    HERITAGE: {
-        name: 'Heritage Sketch',
-        bg: 'bg-white',
-        text: 'text-black',
-        accent: 'text-zinc-800',
-        fontTitle: 'font-serif',
-        fontBody: 'font-sans'
     }
-};
-
-// --- Helper Functions ---
-
-const formatRankNum = (n: number) => {
-    if (isNaN(n) || n === 0) return { num: "--", suffix: "" };
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    const suffix = s[(v - 20) % 10] || s[v] || s[0];
-    return { num: n.toString().padStart(2, '0'), suffix };
 };
 
 // --- Components ---
 
 const PosterCanvas: React.FC<{ 
     data: PosterData; 
-    template: TemplateType; 
-    settings: any; 
     scale?: number;
     id?: string;
     customBg?: string | null;
-    showPoints?: boolean;
-}> = ({ data, template, settings, scale = 1, id, customBg, showPoints = true }) => {
-    const style = TEMPLATES[template];
-    
-    // --- RENDER LOGIC FOR ROOTED TREE TEMPLATE ---
-    if (template === 'ROOTED_TREE') {
-        const parts = data.categoryName.split(' ');
-        const prefix = parts[0] || '';
-        const suffix = parts.slice(1).join(' ');
+}> = ({ data, scale = 1, id, customBg }) => {
+    const parts = data.categoryName.split(' ');
+    const prefix = parts[0] || '';
+    const suffix = parts.slice(1).join(' ');
 
-        return (
-            <div 
-                id={id}
-                className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618] font-slab"
-                style={{ 
-                    width: '1080px', 
-                    height: '1080px', 
-                    transform: `scale(${scale})`, 
-                    transformOrigin: 'top left',
-                    flexShrink: 0 
-                }}
-            >
-                {/* Background Layer (Image B) */}
-                {customBg && (
-                    <img src={customBg} className="absolute inset-0 w-full h-full object-cover z-0" alt="Official Background" />
-                )}
-
-                {/* Dynamic Content Overlay - Strict Positioning based on Image A */}
-                <div className="relative z-10 w-full h-full flex flex-col p-0">
-                    
-                    {/* Header Zone: Category (Prefix/Suffix) & Item Name (#speech Mal) */}
-                    <div className="mt-[232px] ml-[82px] space-y-0">
-                        <div className="flex items-center gap-3">
-                             <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]">
-                                <span className="text-[#99AD59]">{prefix}</span>
-                                {suffix && <span className="text-[#606C38] ml-4">{suffix}</span>}
-                             </h2>
-                             <Leaf className="w-[62px] h-[62px] text-[#99AD59] fill-current -mt-4" />
-                        </div>
-                        <h3 className="text-[52px] font-bold tracking-tight text-[#4D5A2A] mt-[-10px] ml-2">
-                            #{data.itemName}
-                        </h3>
-                    </div>
-
-                    {/* Winners Zone: Precise alignment with background icons */}
-                    {/* mt reduced from 16px to 8px to lift names up by 0.2 cm. space-y reduced from 30px to 11px to reduce gap by 0.5 cm. */}
-                    <div className="mt-[8px] ml-[205px] space-y-[11px] pr-[110px]">
-                        {data.winners.slice(0, 3).map((winner, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-[40px] min-h-[120px]">
-                                
-                                {/* Identity Column (Name, Place, Team) */}
-                                <div className="flex-grow min-w-0 pt-0">
-                                    <h4 className="text-[52px] font-black uppercase tracking-tighter leading-[1] mb-0 text-[#283618]">
-                                        {winner.name}
-                                    </h4>
-                                    <p className="text-[24px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight mt-0.5">
-                                        {winner.place}
-                                    </p>
-                                    <p className="text-[20px] font-medium italic opacity-70 leading-tight mt-0.5">
-                                        {winner.team}
-                                    </p>
-                                </div>
-
-                                {/* Grade Column - Centered vertically with the row */}
-                                {winner.grade && (
-                                    <div className="shrink-0 flex items-center mb-6">
-                                        <div className="bg-[#9AAD59] text-[#283618] px-6 py-2 rounded-[4px] font-black text-[22px] shadow-sm whitespace-nowrap tracking-wider">
-                                            GRADE {winner.grade.toUpperCase()}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // --- DEFAULT RENDER LOGIC FOR OTHER TEMPLATES ---
     return (
         <div 
             id={id}
-            className={`relative flex flex-col overflow-hidden shadow-2xl ${style.fontBody} bg-white text-zinc-900`}
+            className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618] font-slab"
             style={{ 
                 width: '1080px', 
                 height: '1080px', 
@@ -200,62 +89,59 @@ const PosterCanvas: React.FC<{
                 flexShrink: 0 
             }}
         >
-            {/* Background Layer */}
-            {customBg ? (
-                <div className="absolute inset-0 z-0">
-                    <img src={customBg} className="w-full h-full object-cover" alt="Custom Background" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/40"></div>
-                </div>
-            ) : (
-                <div className={`absolute inset-0 z-0 ${style.bg}`}></div>
+            {/* Background Layer (Image B) */}
+            {customBg && (
+                <img src={customBg} className="absolute inset-0 w-full h-full object-cover z-0" alt="Official Background" />
             )}
-            
-            {/* Content Layer */}
-            <div className="relative z-10 flex flex-col h-full p-20">
+
+            {/* Dynamic Content Overlay */}
+            <div className="relative z-10 w-full h-full flex flex-col p-0">
                 
-                <div className="flex justify-between items-start mb-16">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full shadow-lg">
-                            <Layers size={16} />
-                            <span className="text-sm font-black uppercase tracking-[0.3em]">{data.categoryName}</span>
-                        </div>
-                        <h1 className={`text-8xl font-black uppercase tracking-tighter leading-none text-zinc-900 drop-shadow-sm ${style.fontTitle}`}>
-                            {data.itemName}
-                        </h1>
+                {/* Header Zone: Category (Prefix/Suffix) & Item Name */}
+                <div className="mt-[232px] ml-[82px] space-y-0">
+                    <div className="flex items-center gap-3">
+                         <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]">
+                            <span className="text-[#283618]">{prefix}</span>
+                            {suffix && <span className="text-[#99AD59] ml-4">{suffix}</span>}
+                         </h2>
+                         <Leaf className="w-[62px] h-[62px] text-[#99AD59] fill-current -mt-4" />
                     </div>
+                    <h3 className="text-[52px] font-bold tracking-tight text-[#4D5A2A] mt-[-10px] ml-2">
+                        #{data.itemName}
+                    </h3>
                 </div>
 
-                <div className="flex-grow flex flex-col justify-center space-y-12">
-                    {data.winners.map((winner, idx) => {
-                        const rankInfo = formatRankNum(winner.rank);
+                {/* Winners Zone */}
+                {/* mt-[14px] provides approximately 0.4 cm gap from the Item Name block */}
+                {/* space-y-[8px] slightly increased gap between winner rows to 8px (~0.2cm) */}
+                <div className="mt-[14px] ml-[205px] space-y-[8px] pr-[110px]">
+                    {data.winners.slice(0, 3).map((winner, idx) => (
+                        <div key={idx} className="flex items-center justify-start gap-[20px] min-h-[115px]">
+                            
+                            {/* Identity Column (Name, Place, Team) */}
+                            {/* w-[290px] preserves the shift of grade badges towards the right while keeping names in place. */}
+                            <div className="w-[290px] shrink-0 min-w-0 pt-0">
+                                <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1] mb-0 text-[#283618]">
+                                    {winner.name}
+                                </h4>
+                                <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight mt-0.5">
+                                    {winner.place}
+                                </p>
+                                <p className="text-[17px] font-medium italic opacity-70 leading-tight mt-0.5">
+                                    {winner.team}
+                                </p>
+                            </div>
 
-                        return (
-                            <div key={idx} className="flex items-center justify-between group animate-in slide-in-from-left duration-500" style={{ animationDelay: `${idx * 150}ms` }}>
-                                <div className="flex items-start gap-10">
-                                    <div className="flex items-start text-indigo-600">
-                                        <span className="text-8xl font-black leading-none tracking-tighter tabular-nums">{rankInfo.num}</span>
-                                        <span className="text-3xl font-bold mt-2 ml-0.5 uppercase">{rankInfo.suffix}</span>
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <h3 className="text-5xl font-black text-zinc-900 leading-none uppercase tracking-tight mb-3">
-                                            {winner.name}
-                                        </h3>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-2xl font-bold text-emerald-600 uppercase tracking-widest leading-none bg-emerald-50 px-3 py-1 rounded-lg">
-                                                {winner.team}
-                                            </span>
-                                            {winner.grade && (
-                                                <span className="text-lg font-black uppercase bg-zinc-800 text-white px-3 py-1 rounded-md border border-zinc-700">
-                                                    Grade {winner.grade}
-                                                </span>
-                                            )}
-                                        </div>
+                            {/* Grade Column - Centered vertically */}
+                            {winner.grade && (
+                                <div className="shrink-0 flex items-center">
+                                    <div className="bg-[#9AAD59] text-[#283618] px-6 py-2 rounded-[4px] font-black text-[20px] shadow-sm whitespace-nowrap tracking-wider">
+                                        GRADE {winner.grade.toUpperCase()}
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
@@ -265,7 +151,6 @@ const PosterCanvas: React.FC<{
 // --- Main Page Component ---
 const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const { state, updateSettings } = useFirebase();
-    const [template, setTemplate] = useState<TemplateType>('ROOTED_TREE');
     const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [selectedBgUrl, setSelectedBgUrl] = useState<string | null>(null);
     const [scale, setScale] = useState(0.5);
@@ -296,7 +181,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             clearTimeout(timerId);
             window.removeEventListener('resize', calculateScale);
         };
-    }, [selectedItemId, isMobile, selectedBgUrl, isControlsOpen, template]);
+    }, [selectedItemId, isMobile, selectedBgUrl, isControlsOpen]);
 
     const declaredItems = useMemo(() => {
         if (!state) return [];
@@ -387,7 +272,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const handleDeleteBg = async (idx: number) => {
         if (!state) return;
         const bgs = [...(state.settings.customBackgrounds || [])];
-        // FIX: Added 'const' to declare the 'removed' variable.
         const removed = bgs.splice(idx, 1)[0];
         if (selectedBgUrl === removed) setSelectedBgUrl(null);
         await updateSettings({ customBackgrounds: bgs });
@@ -482,7 +366,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                     onClick={() => setSelectedBgUrl(null)}
                                     className={`shrink-0 w-12 h-12 lg:w-auto lg:aspect-square rounded-lg border flex items-center justify-center transition-all ${!selectedBgUrl ? 'border-indigo-500 bg-indigo-50' : 'border-zinc-100 bg-zinc-50'}`}
                                 >
-                                    <Type size={14} className="text-zinc-400" />
+                                    <Layers size={14} className="text-zinc-400" />
                                 </button>
                                 {(state.settings.customBackgrounds || []).map((bg, idx) => (
                                     <div key={idx} className="relative shrink-0 w-12 h-12 lg:w-auto lg:aspect-square">
@@ -503,18 +387,10 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                         </div>
 
                         <div>
-                            <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3">Templates</h3>
-                            <div className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-x-visible pb-1 no-scrollbar">
-                                {(Object.keys(TEMPLATES) as TemplateType[]).map(t => (
-                                    <button 
-                                        key={t}
-                                        onClick={() => { setTemplate(t); if(isMobile) setIsControlsOpen(false); }}
-                                        className={`shrink-0 lg:w-full flex items-center justify-between px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${template === t ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-transparent text-zinc-500 border-zinc-100'}`}
-                                    >
-                                        <span className="truncate">{TEMPLATES[t].name}</span>
-                                        {template === t && <Check size={10} strokeWidth={3}/>}
-                                    </button>
-                                ))}
+                            <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3">Active Design</h3>
+                            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Rooted Tree Official</span>
+                                <Check size={12} strokeWidth={4} className="text-indigo-600 dark:text-indigo-400" />
                             </div>
                         </div>
                     </div>
@@ -534,8 +410,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 <div id="poster-canvas-el" className="w-full h-full">
                                     <PosterCanvas 
                                         data={posterData} 
-                                        template={template} 
-                                        settings={state.settings} 
                                         scale={scale} 
                                         customBg={selectedBgUrl}
                                     />

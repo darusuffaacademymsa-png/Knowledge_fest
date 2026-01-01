@@ -125,11 +125,16 @@ const App: React.FC = () => {
     const handleResize = () => {
       const width = window.innerWidth;
       const mobile = width < 768;
+      
+      // Update mobile state
       setIsMobile(mobile);
+      
       if (width >= 1024) {
           if (!isSidebarExpanded) setIsSidebarExpanded(true);
       } else if (width < 768) {
-          if (isSidebarExpanded) setIsSidebarExpanded(false);
+          // BUG FIX: Removed auto-collapse on mobile resize. 
+          // Mobile keyboard triggers resize events, which was closing the sidebar.
+          // The sidebar should only close if the user explicitly swipes or taps outside.
       }
     };
     window.addEventListener('resize', handleResize);

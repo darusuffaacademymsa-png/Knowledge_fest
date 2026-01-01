@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { Settings } from '../types';
@@ -9,6 +7,7 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
 
     const MALAYALAM_RANGE = "U+0D00-0D7F";
     const ARABIC_RANGE = "U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF";
+    const LATIN_RANGE = "U+0000-00FF, U+0100-017F, U+0180-024F";
     
     let fontFaces = '';
 
@@ -30,6 +29,17 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
                 font-family: 'GlobalAutoFont';
                 src: url('${settings.customFonts.arabic.url}');
                 unicode-range: ${ARABIC_RANGE};
+                font-display: swap;
+            }
+        `;
+    }
+
+    if (settings.customFonts?.english?.url) {
+        fontFaces += `
+            @font-face {
+                font-family: 'GlobalAutoFont';
+                src: url('${settings.customFonts.english.url}');
+                unicode-range: ${LATIN_RANGE};
                 font-display: swap;
             }
         `;
@@ -62,6 +72,7 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
             /* Helper classes for manual override if needed */
             .font-malayalam { font-family: 'GlobalAutoFont', sans-serif !important; }
             .font-arabic { font-family: 'GlobalAutoFont', serif !important; direction: rtl; }
+            .font-english { font-family: 'GlobalAutoFont', sans-serif !important; }
         `;
     }
     

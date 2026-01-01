@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Card from '../components/Card';
 import { useFirebase } from '../hooks/useFirebase';
@@ -7,12 +6,12 @@ import { ScheduledEvent, PerformanceType } from '../types';
 import { 
     Calendar as CalendarIcon, Clock, MapPin, Sparkles, X, Plus, 
     ChevronDown, AlertCircle, Trash2, Edit2, Search, ChevronUp, 
-    Check, RefreshCw, Layers, Settings2, CheckCircle2, ClipboardList
+    Check, RefreshCw, Layers, Settings2, CheckCircle2, ClipboardList,
+    AlertTriangle
 } from 'lucide-react';
 
 // --- Color Helpers ---
 
-// Requested Palette
 const CUSTOM_PALETTE = ['#006994', '#d4a574', '#1b5e20', '#80deea'];
 
 const getDynamicColor = (value: string) => {
@@ -20,15 +19,6 @@ const getDynamicColor = (value: string) => {
     let hash = 0;
     for (let i = 0; i < value.length; i++) hash = value.charCodeAt(i) + ((hash << 5) - hash);
     return CUSTOM_PALETTE[Math.abs(hash) % CUSTOM_PALETTE.length];
-};
-
-const getElementStyle = (value: string) => {
-    const color = getDynamicColor(value);
-    return {
-        color: color,
-        backgroundColor: `${color}15`, // ~8% opacity
-        borderColor: `${color}30` // ~20% opacity
-    };
 };
 
 const getCategoryColor = (name: string) => {
@@ -45,8 +35,6 @@ const getCategoryColor = (name: string) => {
     return colors[Math.abs(hash) % colors.length];
 };
 
-// --- Helper Components ---
-
 const SectionTitle = ({ title, icon: Icon, accentColor = "indigo" }: { title: string, icon?: any, accentColor?: 'indigo' | 'emerald' | 'amber' }) => {
     const barColors = {
         indigo: 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]',
@@ -55,12 +43,12 @@ const SectionTitle = ({ title, icon: Icon, accentColor = "indigo" }: { title: st
     };
 
     return (
-        <div className="flex items-center gap-3 mb-6">
-            <div className={`h-5 w-1.5 rounded-full ${barColors[accentColor]}`}></div>
-            <h3 className="text-xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className={`h-4 sm:h-5 w-1.5 rounded-full ${barColors[accentColor]}`}></div>
+            <h3 className="text-base sm:text-xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">
                 {title}
             </h3>
-            {Icon && <Icon className="text-zinc-400 ml-1" size={18} />}
+            {Icon && <Icon className="text-zinc-400 ml-1" size={16} />}
         </div>
     );
 };
@@ -117,31 +105,31 @@ const ChipInput: React.FC<ChipInputProps> = ({ label, description, values, onCha
 
     return (
         <div className="w-full" ref={containerRef}>
-            <div className="flex justify-between items-center mb-2 px-1">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 flex items-center gap-1.5">
-                    {Icon && <Icon size={12} />}
+            <div className="flex justify-between items-center mb-1.5 px-1">
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 flex items-center gap-1.5">
+                    {Icon && <Icon size={11} />}
                     {label}
                 </label>
                 {values.length > 0 && (
-                    <button onClick={() => onChange([])} className="text-[9px] font-black uppercase tracking-wider text-rose-500/60 hover:text-rose-500 transition-colors">
+                    <button onClick={() => onChange([])} className="text-[8px] font-black uppercase tracking-wider text-rose-500/60 hover:text-rose-500 transition-colors">
                         Clear
                     </button>
                 )}
             </div>
             <div 
-                className="relative flex flex-wrap items-center gap-2 p-3 min-h-[52px] rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-black/20 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/30 transition-all"
+                className="relative flex flex-wrap items-center gap-1.5 p-2.5 sm:p-3 min-h-[44px] sm:min-h-[52px] rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-black/20 transition-all"
                 onClick={() => inputRef.current?.focus()}
             >
                 {values.map((val, idx) => (
-                    <span key={idx} className={`inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full text-xs font-bold border shadow-sm animate-in zoom-in-95 duration-200 ${schemes[colorScheme].chip}`}>
+                    <span key={idx} className={`inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[10px] sm:text-xs font-bold border shadow-sm animate-in zoom-in-95 duration-200 ${schemes[colorScheme].chip}`}>
                         {val}
                         <button onClick={(e) => { e.stopPropagation(); onChange(values.filter((_, i) => i !== idx)); }} className="p-0.5 rounded-full hover:bg-black/5 transition-colors">
-                            <X size={12} />
+                            <X size={10} />
                         </button>
                     </span>
                 ))}
                 
-                <div className="flex-grow relative min-w-[100px]">
+                <div className="flex-grow relative min-w-[80px]">
                     <input
                         ref={inputRef}
                         type="text"
@@ -150,23 +138,21 @@ const ChipInput: React.FC<ChipInputProps> = ({ label, description, values, onCha
                         onKeyDown={e => e.key === 'Enter' && handleAdd(inputValue)}
                         onFocus={() => setShowSuggestions(true)}
                         placeholder={values.length === 0 ? placeholder : '...'}
-                        className="w-full bg-transparent outline-none text-sm font-bold text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
+                        className="w-full bg-transparent outline-none text-[11px] sm:text-sm font-bold text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
                     />
                 </div>
                 {showSuggestions && inputValue.trim() && !values.includes(inputValue.trim()) && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-20 p-1">
-                        <button onClick={() => handleAdd(inputValue)} className={`w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-2 ${schemes[colorScheme].add}`}>
-                            <Plus size={14} strokeWidth={3} /> Add "{inputValue}"
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-20 p-1">
+                        <button onClick={() => handleAdd(inputValue)} className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 ${schemes[colorScheme].add}`}>
+                            <Plus size={12} strokeWidth={3} /> Add "{inputValue}"
                         </button>
                     </div>
                 )}
             </div>
-            <p className="mt-2 text-[9px] text-zinc-400 font-medium px-1 tracking-tight">{description}</p>
+            <p className="mt-1.5 text-[8px] sm:text-[9px] text-zinc-400 font-medium px-1 tracking-tight">{description}</p>
         </div>
     );
 };
-
-// --- Main Schedule Page ---
 
 const SchedulePage: React.FC = () => {
     const { state, setSchedule, addScheduleEvent, globalFilters, updateSettings, globalSearchTerm } = useFirebase();
@@ -196,8 +182,6 @@ const SchedulePage: React.FC = () => {
     const processedSchedule = useMemo(() => {
         if (!state) return [];
         let data = [...state.schedule];
-        
-        // Use Global Filters
         if (globalFilters.stage.length > 0) data = data.filter(s => globalFilters.stage.includes(s.stage));
         if (globalFilters.date.length > 0) data = data.filter(s => globalFilters.date.includes(s.date));
         if (globalFilters.categoryId.length > 0) data = data.filter(s => globalFilters.categoryId.includes(s.categoryId));
@@ -210,7 +194,6 @@ const SchedulePage: React.FC = () => {
             });
         }
         
-        // Sort by Date then Time
         data.sort((a, b) => {
             const dateA = a.date;
             const dateB = b.date;
@@ -227,11 +210,11 @@ const SchedulePage: React.FC = () => {
         const eventStages = state.settings.stages || [];
         const eventTimes = state.settings.timeSlots || [];
         if (eventDays.length === 0 || eventStages.length === 0 || eventTimes.length === 0) { 
-            setError('Please finish Event Configuration (Days, Stages, Slots) first.'); return; 
+            setError('Please finish Event Configuration first.'); return; 
         }
         setIsLoading(true); setError('');
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Act as an event scheduler for a knowledge festival. Create a JSON schedule array: [{id, itemId, categoryId, date, time, stage}]. Days: ${eventDays.join(', ')}. Slots: ${eventTimes.join(', ')}. Stages: ${eventStages.join(', ')}. Items: ${state.items.map(i => `${i.name} (ID:${i.id}, Cat:${i.categoryId})`).join('; ')}`;
+        const prompt = `Create a schedule JSON array: [{id, itemId, categoryId, date, time, stage}]. Days: ${eventDays.join(', ')}. Slots: ${eventTimes.join(', ')}. Stages: ${eventStages.join(', ')}. Items: ${state.items.map(i => `${i.name} (ID:${i.id}, Cat:${i.categoryId})`).join('; ')}`;
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -246,7 +229,7 @@ const SchedulePage: React.FC = () => {
     const handleManualAdd = async () => {
         if (!state) return;
         const { itemId, date, time, stage } = manualEntry;
-        if (!itemId || !date || !time || !stage) { alert("Complete all required fields."); return; }
+        if (!itemId || !date || !time || !stage) { alert("Complete all fields."); return; }
         const item = state.items.find(i => i.id === itemId);
         await addScheduleEvent({ id: `sch_${Date.now()}`, itemId, categoryId: item?.categoryId || '', date, time, stage });
         setManualEntry(prev => ({ ...prev, itemId: '' }));
@@ -254,13 +237,13 @@ const SchedulePage: React.FC = () => {
 
     const handleEditSave = () => { if (!state || !editFormData) return; setSchedule(state.schedule.map(s => s.id === editFormData.id ? editFormData : s)); setEditingId(null); };
 
-    if (!state) return <div className="p-20 text-center italic text-zinc-500">Synchronizing timeline...</div>;
+    if (!state) return <div className="p-10 text-center italic text-zinc-500">Synchronizing timeline...</div>;
 
-    const selectClasses = "w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-amazio-surface py-2.5 px-4 text-sm font-bold text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-amazio-accent/30 focus:border-amazio-accent/50 outline-none transition-all appearance-none text-zinc-500 dark:text-amazio-cream font-black uppercase tracking-widest";
-    const labelClass = "block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1.5 ml-1";
+    const selectClasses = "w-full rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-amazio-surface py-2 sm:py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 focus:ring-2 outline-none transition-all appearance-none font-black uppercase tracking-widest";
+    const labelClass = "block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-zinc-400 mb-1 sm:mb-1.5 ml-1";
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-500 pb-24">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-500 pb-24">
             <div className="hidden md:flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                     <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Event Schedule</h2>
@@ -268,58 +251,49 @@ const SchedulePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* 1. Manual Entry */}
-            <div className="bg-white/60 dark:bg-zinc-900/60 rounded-[2.5rem] border border-amazio-primary/5 dark:border-white/5 p-8 shadow-glass-light dark:shadow-2xl">
-                <SectionTitle title="1. Manual Scheduling" icon={Layers} accentColor="emerald" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div className="bg-white/60 dark:bg-zinc-900/60 rounded-[1.5rem] sm:rounded-[2.5rem] border border-amazio-primary/5 dark:border-white/5 p-4 sm:p-8 shadow-glass-light dark:shadow-2xl">
+                <SectionTitle title="1. Manual Entry" icon={Layers} accentColor="emerald" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 items-end">
                     <div className="lg:col-span-1">
                         <label className={labelClass}>Category</label>
                         <div className="relative">
                             <select value={manualEntry.categoryId} onChange={e => setManualEntry({ ...manualEntry, categoryId: e.target.value, itemId: '' })} className={selectClasses}>
-                                <option value="" className="dark:bg-amazio-surface">All Categories</option>
-                                {state.categories.map(c => <option key={c.id} value={c.id} className="dark:bg-amazio-surface">{c.name}</option>)}
+                                <option value="">All Categories</option>
+                                {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
                     <div className="lg:col-span-1">
-                        <div className="flex justify-between items-center mb-1.5 px-1">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Target Item</label>
-                            <label className="flex items-center gap-1.5 cursor-pointer group">
-                                <input type="checkbox" checked={hideScheduled} onChange={e => setHideScheduled(e.target.value)} className="rounded border-zinc-300 dark:border-zinc-700 text-indigo-500 focus:ring-0 h-3 w-3" />
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider group-hover:text-zinc-600 transition-colors">Hide Scheduled</span>
+                        <div className="flex justify-between items-center mb-1 px-1">
+                            <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Target Item</label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                                <input type="checkbox" checked={hideScheduled} onChange={e => e.target.checked} className="rounded border-zinc-300 h-2.5 w-2.5" />
+                                <span className="text-[7px] sm:text-[9px] font-black text-zinc-400 uppercase tracking-wider">Hide</span>
                             </label>
                         </div>
                         <div className="relative">
-                            <select value={manualEntry.itemId} onChange={e => setManualEntry({ ...manualEntry, itemId: e.target.value })} className={selectClasses} disabled={state.items.length === 0}>
-                                <option value="" className="dark:bg-amazio-surface">-- Choose Item --</option>
-                                {manualItemsGrouped.onStage.length > 0 && (
-                                    <optgroup label="On Stage" className="bg-white dark:bg-amazio-surface text-zinc-400 font-bold uppercase text-[10px]">
-                                        {manualItemsGrouped.onStage.map(i => <option key={i.id} value={i.id} className="text-zinc-900 dark:text-zinc-100 font-normal dark:bg-amazio-surface">{i.name}</option>)}
-                                    </optgroup>
-                                )}
-                                {manualItemsGrouped.offStage.length > 0 && (
-                                    <optgroup label="Off Stage" className="bg-white dark:bg-amazio-surface text-zinc-400 font-bold uppercase text-[10px]">
-                                        {manualItemsGrouped.offStage.map(i => <option key={i.id} value={i.id} className="text-zinc-900 dark:text-zinc-100 font-normal dark:bg-amazio-surface">{i.name}</option>)}
-                                    </optgroup>
-                                )}
+                            <select value={manualEntry.itemId} onChange={e => setManualEntry({ ...manualEntry, itemId: e.target.value })} className={selectClasses}>
+                                <option value="">-- Choose Item --</option>
+                                {manualItemsGrouped.onStage.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                                {manualItemsGrouped.offStage.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                             </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+                    <div className="grid grid-cols-2 gap-2 lg:col-span-2">
                         <div>
                             <label className={labelClass}>Date</label>
                             <select value={manualEntry.date} onChange={e => setManualEntry({...manualEntry, date: e.target.value})} className={selectClasses}>
-                                <option value="" className="dark:bg-amazio-surface">Date</option>
-                                {(state.settings.eventDays || []).map(d => <option key={d} value={d} className="dark:bg-amazio-surface">{d}</option>)}
+                                <option value="">Date</option>
+                                {(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className={labelClass}>Time</label>
                             <select value={manualEntry.time} onChange={e => setManualEntry({...manualEntry, time: e.target.value})} className={selectClasses}>
-                                <option value="" className="dark:bg-amazio-surface">Time</option>
-                                {(state.settings.timeSlots || []).map(t => <option key={t} value={t} className="dark:bg-amazio-surface">{t}</option>)}
+                                <option value="">Time</option>
+                                {(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
                     </div>
@@ -327,23 +301,22 @@ const SchedulePage: React.FC = () => {
                         <div className="flex-grow">
                             <label className={labelClass}>Stage</label>
                             <select value={manualEntry.stage} onChange={e => setManualEntry({...manualEntry, stage: e.target.value})} className={selectClasses}>
-                                <option value="" className="dark:bg-amazio-surface">Stage</option>
-                                {(state.settings.stages || []).map(s => <option key={s} value={s} className="dark:bg-amazio-surface">{s}</option>)}
+                                <option value="">Stage</option>
+                                {(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
-                        <button onClick={handleManualAdd} className="h-[46px] px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"><Plus size={22} strokeWidth={3}/></button>
+                        <button onClick={handleManualAdd} className="h-[36px] sm:h-[46px] px-4 sm:px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95"><Plus size={18} sm:size={22} strokeWidth={3}/></button>
                     </div>
                 </div>
             </div>
 
-            {/* 2. Scheduled Items (Card View) */}
             <div className="space-y-4">
                 <div className="flex justify-between items-center px-2">
                     <SectionTitle title="2. Scheduled Events" icon={ClipboardList} accentColor="indigo" />
-                    <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{processedSchedule.length} Entries</div>
+                    <div className="text-[8px] sm:text-[10px] font-black uppercase text-zinc-400 tracking-widest">{processedSchedule.length} Entries</div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                     {processedSchedule.map((event) => {
                         const isEditing = editingId === event.id;
                         const item = state.items.find(i => i.id === event.itemId);
@@ -352,111 +325,78 @@ const SchedulePage: React.FC = () => {
                         const stageColor = getDynamicColor(event.stage);
 
                         return (
-                            <div key={event.id} className={`group relative bg-white dark:bg-[#151816] rounded-[2.5rem] border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isEditing ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200 dark:hover:border-zinc-700'}`}>
+                            <div key={event.id} className={`group relative bg-white dark:bg-[#151816] rounded-[1.2rem] sm:rounded-[2.5rem] border-2 transition-all duration-300 hover:-translate-y-1 ${isEditing ? 'border-indigo-500 shadow-md' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
                                 {isEditing && editFormData ? (
-                                    <div className="p-6 space-y-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">Editing Mode</span>
-                                            <div className="flex gap-2">
-                                                <button onClick={handleEditSave} className="p-2 bg-emerald-500 text-white rounded-xl shadow-lg hover:scale-105 transition-all"><Check size={16} strokeWidth={3}/></button>
-                                                <button onClick={() => setEditingId(null)} className="p-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-500 rounded-xl hover:bg-zinc-300 transition-all"><X size={16} strokeWidth={3}/></button>
+                                    <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-[8px] sm:text-[10px] font-black uppercase text-indigo-500 tracking-widest">Editing</span>
+                                            <div className="flex gap-1.5">
+                                                <button onClick={handleEditSave} className="p-1.5 bg-emerald-500 text-white rounded-lg shadow-sm"><Check size={14} strokeWidth={3}/></button>
+                                                <button onClick={() => setEditingId(null)} className="p-1.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-500 rounded-lg"><X size={14} strokeWidth={3}/></button>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-[9px] font-bold text-zinc-400 uppercase block mb-1">Date</label>
-                                                <select value={editFormData.date} onChange={e => setEditFormData({...editFormData, date: e.target.value})} className="w-full p-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold">
-                                                    {(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-bold text-zinc-400 uppercase block mb-1">Time</label>
-                                                <select value={editFormData.time} onChange={e => setEditFormData({...editFormData, time: e.target.value})} className="w-full p-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold">
-                                                    {(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <label className="text-[9px] font-bold text-zinc-400 uppercase block mb-1">Stage</label>
-                                                <select value={editFormData.stage} onChange={e => setEditFormData({...editFormData, stage: e.target.value})} className="w-full p-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold">
-                                                    {(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}
-                                                </select>
-                                            </div>
+                                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                            <select value={editFormData.date} onChange={e => setEditFormData({...editFormData, date: e.target.value})} className="w-full p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                            <select value={editFormData.time} onChange={e => setEditFormData({...editFormData, time: e.target.value})} className="w-full p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}</select>
+                                            <select value={editFormData.stage} onChange={e => setEditFormData({...editFormData, stage: e.target.value})} className="w-full col-span-2 p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}</select>
                                         </div>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="p-6 pb-0">
-                                            <div className="flex justify-between items-start mb-4">
+                                        <div className="p-4 sm:p-6 pb-0">
+                                            <div className="flex justify-between items-start mb-2 sm:mb-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter leading-none">{event.time}</span>
-                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{event.date}</span>
+                                                    <span className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter leading-none">{event.time}</span>
+                                                    <span className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 sm:mt-1">{event.date}</span>
                                                 </div>
-                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => { setEditingId(event.id); setEditFormData(event); }} className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"><Edit2 size={16}/></button>
-                                                    <button onClick={() => { if(confirm("Delete entry?")) setSchedule(state.schedule.filter(s => s.id !== event.id)); }} className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"><Trash2 size={16}/></button>
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => { setEditingId(event.id); setEditFormData(event); }} className="p-1.5 text-zinc-400 hover:text-indigo-600 transition-all"><Edit2 size={14}/></button>
+                                                    <button onClick={() => { if(confirm("Delete?")) setSchedule(state.schedule.filter(s => s.id !== event.id)); }} className="p-1.5 text-zinc-400 hover:text-rose-600 transition-all"><Trash2 size={14}/></button>
                                                 </div>
                                             </div>
-                                            
-                                            <div className="mb-4">
-                                                <h4 className="text-lg font-black text-amazio-primary dark:text-white uppercase tracking-tight leading-tight mb-2 line-clamp-2" title={item?.name}>
-                                                    {item?.name}
-                                                </h4>
-                                                <div className={`inline-block px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${catColor}`}>
-                                                    {category?.name}
-                                                </div>
+                                            <div className="mb-3 sm:mb-4">
+                                                <h4 className="text-sm sm:text-lg font-black text-amazio-primary dark:text-white uppercase tracking-tight leading-tight mb-1 sm:mb-2 line-clamp-1">{item?.name}</h4>
+                                                <div className={`inline-block px-2 py-0.5 rounded-md text-[7px] sm:text-[9px] font-black uppercase tracking-widest border ${catColor}`}>{category?.name}</div>
                                             </div>
                                         </div>
-
-                                        <div className="mt-auto p-6 pt-4 border-t border-zinc-50 dark:border-white/5 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <MapPin size={14} style={{ color: stageColor }} />
-                                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: stageColor }}>{event.stage}</span>
+                                        <div className="mt-auto p-4 sm:p-6 pt-3 sm:pt-4 border-t border-zinc-50 dark:border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-1.5">
+                                                <MapPin size={10} sm:size={14} style={{ color: stageColor }} />
+                                                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest" style={{ color: stageColor }}>{event.stage}</span>
                                             </div>
-                                            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
-                                                {item?.performanceType === PerformanceType.ON_STAGE ? 'On Stage' : 'Off Stage'}
-                                            </div>
+                                            <div className="text-[7px] sm:text-[9px] font-bold text-zinc-400 uppercase">{item?.performanceType === PerformanceType.ON_STAGE ? 'On' : 'Off'}</div>
                                         </div>
                                     </>
                                 )}
                             </div>
                         );
                     })}
-                    {processedSchedule.length === 0 && (
-                        <div className="col-span-full py-24 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] opacity-40">
-                            <CalendarIcon size={64} strokeWidth={1} className="mb-4 text-zinc-400" />
-                            <p className="font-black uppercase tracking-[0.3em] text-xs text-zinc-500">No scheduled events found</p>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* 3. AI Generator */}
-            <div className="bg-amber-50/30 dark:bg-zinc-900/30 rounded-[2.5rem] border border-dashed border-amber-200 dark:border-white/5 p-10">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
+            <div className="bg-amber-50/30 dark:bg-zinc-900/30 rounded-[1.5rem] sm:rounded-[2.5rem] border border-dashed border-amber-200 p-6 sm:p-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 sm:gap-10">
                     <div className="max-w-2xl">
-                        <SectionTitle title="AI Schedule Coordination" icon={Sparkles} accentColor="amber" />
-                        <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed italic">
-                            Automatically distribute items across your configured stages and time slots. Our heuristics optimize for participant logistics and grouping categories for maximum efficiency.
-                        </p>
+                        <SectionTitle title="AI Scheduler" icon={Sparkles} accentColor="amber" />
+                        <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-lg leading-relaxed italic">Optimize competition distribution across stages automatically.</p>
                     </div>
                     <button 
                         onClick={generateScheduleWithAI} 
                         disabled={isLoading} 
-                        className={`w-full lg:w-auto min-w-[240px] px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${isLoading ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-wait' : 'bg-amazio-primary text-white shadow-amazio-primary/30 hover:shadow-amazio-primary/50'}`}
+                        className={`w-full lg:w-auto px-6 py-4 sm:px-10 sm:py-5 rounded-xl sm:rounded-[1.5rem] font-black uppercase tracking-widest sm:tracking-[0.2em] text-[10px] sm:text-sm shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 ${isLoading ? 'bg-zinc-200 text-zinc-400' : 'bg-amazio-primary text-white shadow-amazio-primary/30'}`}
                     >
-                        {isLoading ? <RefreshCw className="animate-spin" /> : <Sparkles size={20} className="fill-current" />}
-                        {isLoading ? 'Optimizing...' : 'Compute Timeline'}
+                        {isLoading ? <RefreshCw className="animate-spin" size={16} /> : <Sparkles size={16} sm:size={20} />}
+                        {isLoading ? 'Computing...' : 'Auto Timeline'}
                     </button>
                 </div>
-                {error && <div className="mt-8 p-5 rounded-2xl bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-400 text-sm font-bold flex items-center gap-3 animate-in slide-in-from-top-2"><AlertCircle size={20}/> {error}</div>}
+                {error && <div className="mt-4 p-3 rounded-xl bg-rose-50 text-rose-600 text-[10px] font-bold flex items-center gap-2 animate-in slide-in-from-top-2"><AlertTriangle size={14}/> {error}</div>}
             </div>
 
-            {/* 4. Configuration */}
-            <div className="bg-white/60 dark:bg-zinc-900/60 rounded-[2.5rem] border border-amazio-primary/5 dark:border-white/5 p-8 shadow-glass-light dark:shadow-2xl">
-                <SectionTitle title="3. Event Configuration" icon={Settings2} />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="bg-white/60 dark:bg-zinc-900/60 rounded-[1.5rem] sm:rounded-[2.5rem] border border-amazio-primary/5 dark:border-white/5 p-4 sm:p-8 shadow-glass-light dark:shadow-2xl">
+                <SectionTitle title="3. Configuration" icon={Settings2} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
                     <ChipInput label="Competition Days" description="Define the festival dates." values={state.settings.eventDays || []} onChange={(d) => updateSettings({ eventDays: d })} icon={CalendarIcon} colorScheme="indigo" />
-                    <ChipInput label="Stages & Venues" description="Map the performance areas." values={state.settings.stages || []} onChange={(s) => updateSettings({ stages: s })} icon={MapPin} colorScheme="emerald" />
+                    <ChipInput label="Stages & Venues" description="Map performance areas." values={state.settings.stages || []} onChange={(s) => updateSettings({ stages: s })} icon={MapPin} colorScheme="emerald" />
                     <ChipInput label="Standard Slots" description="Time periods for sessions." values={state.settings.timeSlots || []} onChange={(t) => updateSettings({ timeSlots: t })} icon={Clock} colorScheme="amber" />
                 </div>
             </div>

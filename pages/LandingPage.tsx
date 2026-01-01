@@ -82,6 +82,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
         return typographyUrlLight || typographyUrl;
     }, [settings.branding, theme]);
 
+    const landingStats = useMemo(() => {
+        if (!state) return { participants: 0, declared: 0, items: 0, scheduled: 0 };
+        const activeItemIds = new Set(state.items.map(i => i.id));
+        return {
+            participants: state.participants.length,
+            items: state.items.length,
+            scheduled: state.schedule.length,
+            // Filtering out orphaned results
+            declared: state.results.filter(r => r.status === 'Declared' && activeItemIds.has(r.itemId)).length
+        };
+    }, [state]);
+
     return (
         <div className="min-h-screen bg-[#F1F5E9] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">
             
@@ -185,10 +197,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
 
             <section className="relative z-10 max-w-7xl mx-auto px-6 py-32 border-t border-[#283618]/5 dark:border-white/5">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <LandingStatCard icon={Users} title="Delegates" value={state?.participants.length || 0} colorClass="bg-emerald-500" />
-                    <LandingStatCard icon={Trophy} title="Declared" value={state?.results.filter(r => r.status === 'Declared').length || 0} colorClass="bg-rose-500" />
-                    <LandingStatCard icon={BookOpen} title="Events" value={state?.items.length || 0} colorClass="bg-amber-500" />
-                    <LandingStatCard icon={Calendar} title="Scheduled" value={state?.schedule.length || 0} colorClass="bg-indigo-500" />
+                    <LandingStatCard icon={Users} title="Delegates" value={landingStats.participants} colorClass="bg-emerald-500" />
+                    <LandingStatCard icon={Trophy} title="Declared" value={landingStats.declared} colorClass="bg-rose-500" />
+                    <LandingStatCard icon={BookOpen} title="Events" value={landingStats.items} colorClass="bg-amber-500" />
+                    <LandingStatCard icon={Calendar} title="Scheduled" value={landingStats.scheduled} colorClass="bg-indigo-500" />
                 </div>
             </section>
 

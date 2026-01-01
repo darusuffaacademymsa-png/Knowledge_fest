@@ -98,7 +98,7 @@ const LanguageFontCard = ({
 }: {
     title: string;
     subtitle: string;
-    language: 'malayalam' | 'arabic';
+    language: 'malayalam' | 'arabic' | 'english';
     currentFont?: FontConfig;
     previewText: string;
     onSave: (font: FontConfig) => void;
@@ -254,18 +254,18 @@ const UserFormModal: React.FC<{
                 <div className="p-8 space-y-6">
                     <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Account Handle</label>
-                        <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Username" />
+                        <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Username" />
                     </div>
                     <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Role Priority</label>
-                        <select value={role} onChange={e => { setRole(e.target.value as UserRole); setAssignedEntity(''); }} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none appearance-none cursor-pointer">
+                        <select value={role} onChange={e => { setRole(e.target.value as UserRole); setAssignedEntity(''); }} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 text-sm font-bold outline-none appearance-none cursor-pointer">
                             {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     {(role === UserRole.TEAM_LEADER || role === UserRole.JUDGE) && (
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Assigned Entity</label>
-                            <select value={assignedEntity} onChange={e => setAssignedEntity(e.target.value)} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none appearance-none cursor-pointer">
+                            <select value={assignedEntity} onChange={e => setAssignedEntity(e.target.value)} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 text-sm font-bold outline-none appearance-none cursor-pointer">
                                 <option value="">-- Select Entity --</option>
                                 {role === UserRole.TEAM_LEADER && teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                 {role === UserRole.JUDGE && judges.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
@@ -372,7 +372,7 @@ const GeneralSettings: React.FC = () => {
     };
 
     // --- Font Management Handlers ---
-    const handleUpdateCustomFont = async (lang: 'malayalam' | 'arabic', font: FontConfig | undefined) => {
+    const handleUpdateCustomFont = async (lang: 'malayalam' | 'arabic' | 'english', font: FontConfig | undefined) => {
         const currentFonts = state.settings.customFonts || {};
         await updateSettings({
             customFonts: {
@@ -567,7 +567,15 @@ const GeneralSettings: React.FC = () => {
                         {/* Language Fonts */}
                         <div>
                             <SectionTitle title="Typography & Assets" icon={Palette} color="purple"/>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <LanguageFontCard 
+                                    title="English Layout Font"
+                                    subtitle="Applied to Latin Glyphs"
+                                    language="english"
+                                    previewText="English Font Preview"
+                                    currentFont={state.settings.customFonts?.english}
+                                    onSave={(f) => handleUpdateCustomFont('english', f)}
+                                />
                                 <LanguageFontCard 
                                     title="Malayalam Layout Font"
                                     subtitle="Applied to Malayalam Glyphs"
@@ -738,7 +746,7 @@ const GeneralSettings: React.FC = () => {
                                     rows={6} 
                                     value={state.settings.generalInstructions || ''} 
                                     onChange={e => updateSettings({ generalInstructions: e.target.value })} 
-                                    className="w-full p-6 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] text-sm font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-zinc-400 resize-none shadow-inner"
+                                    className="w-full p-6 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] text-sm font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-zinc-400 resize-none shadow-inner"
                                     placeholder="Enter global rules, welcome messages, and master announcements here..."
                                 />
                             </div>

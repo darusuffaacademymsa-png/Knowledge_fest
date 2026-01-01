@@ -168,6 +168,7 @@ export interface Settings {
   customFonts?: {
       malayalam?: FontConfig;
       arabic?: FontConfig;
+      english?: FontConfig;
   };
   generalCustomFonts?: GeneralFontConfig[]; // New: For Creative Studio explicit font selection
   // Custom Templates for Creative Studio
