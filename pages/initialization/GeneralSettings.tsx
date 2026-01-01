@@ -111,9 +111,9 @@ const LanguageFontCard = ({
     language: 'malayalam' | 'arabic' | 'english';
     currentFont?: FontConfig;
     previewText: string;
-    onSave: (font: FontConfig) => Promise<void>;
+    onSave: (font: FontConfig | undefined) => Promise<void>;
 }) => {
-    const fileInputRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [tempFont, setTempFont] = useState<FontConfig | undefined>(currentFont);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -125,8 +125,10 @@ const LanguageFontCard = ({
         }
     }, [currentFont, isDirty, isSaving]);
 
+    // Inject styles for preview
     useEffect(() => {
-        if (tempFont?.url && tempFont.family) {
+        const fontToRender = tempFont || currentFont;
+        if (fontToRender?.url && fontToRender.family) {
             const styleId = `preview-font-${language}`;
             let style = document.getElementById(styleId) as HTMLStyleElement;
             if (!style) {
@@ -136,13 +138,13 @@ const LanguageFontCard = ({
             }
             style.textContent = `
                 @font-face {
-                    font-family: '${tempFont.family}_Preview';
-                    src: url('${tempFont.url}');
+                    font-family: '${fontToRender.family}_Preview';
+                    src: url('${fontToRender.url}');
                     font-display: swap;
                 }
             `;
         }
-    }, [tempFont, language]);
+    }, [tempFont, currentFont, language]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -169,7 +171,6 @@ const LanguageFontCard = ({
     };
 
     const handleApply = async () => {
-        if (!tempFont) return;
         setIsSaving(true);
         try {
             await onSave(tempFont);
@@ -183,31 +184,70 @@ const LanguageFontCard = ({
         }
     };
 
+    const handleRemove = async () => {
+        if (!confirm(`Are you sure you want to delete the custom ${language} font and revert to system default?`)) return;
+        setIsSaving(true);
+        try {
+            await onSave(undefined);
+            setTempFont(undefined);
+            setIsDirty(false);
+        } catch (err) {
+            alert("Failed to remove font.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 flex flex-col gap-6 relative overflow-hidden group shadow-sm md:shadow-xl">
              <div className="flex items-start gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-900/20 shadow-inner">
                     <Type size={24} />
                 </div>
-                <div>
+                <div className="flex-grow">
                     <h3 className="text-amazio-primary dark:text-white font-serif text-xl font-bold tracking-tight">{title}</h3>
                     <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mt-1.5">{subtitle}</p>
                 </div>
+                {currentFont && (
+                    <button 
+                        onClick={handleRemove}
+                        className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-all"
+                        title="Remove Custom Font"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                )}
              </div>
 
-             <div className="mt-2">
+             <div className="flex items-center justify-between gap-4">
+                <div className="flex-grow min-w-0">
+                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status</div>
+                    <div className="flex items-center gap-2">
+                        {currentFont ? (
+                            <>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300 truncate">{currentFont.name}</span>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+                                <span className="text-[11px] font-bold text-zinc-400">System Default</span>
+                            </>
+                        )}
+                    </div>
+                </div>
                 <button 
-                    onClick={() => (fileInputRef.current as any)?.click()} 
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-all shadow-sm"
                 >
-                    <Upload size={14} /> {tempFont ? 'Change Font' : 'Upload Font'}
+                    <Upload size={14} /> {tempFont ? 'Change File' : 'Upload File'}
                 </button>
-                <input type="file" ref={fileInputRef as any} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
+                <input type="file" ref={fileInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
              </div>
 
              <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
                 <span className="absolute top-5 left-6 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Live Rendering</span>
-                <p className="text-3xl text-amazio-primary dark:text-white text-center leading-relaxed" style={{ fontFamily: tempFont ? `'${tempFont.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
+                <p className="text-3xl text-amazio-primary dark:text-white text-center leading-relaxed" style={{ fontFamily: (tempFont || currentFont) ? `'${(tempFont || currentFont)?.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
                     {previewText}
                 </p>
              </div>
@@ -300,7 +340,7 @@ const UserFormModal: React.FC<{
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
-                    <button handleSave={() => {}} onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
+                    <button onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
                 </div>
             </div>
         </div>,
@@ -388,7 +428,6 @@ const GeneralSettings: React.FC = () => {
 
     const handleSaveInst = async () => { await updateSettings({ institutionDetails: instData }); setIsEditingInst(false); };
     
-    // Explicitly handle empty logo strings on save as requested
     const handleSaveOrg = async () => { 
         await updateSettings({ 
             organizingTeam: orgData.organizingTeam, 
