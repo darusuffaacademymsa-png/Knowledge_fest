@@ -107,6 +107,16 @@ export interface Template {
     };
 }
 
+export interface ProjectorSettings {
+    showResults: boolean;
+    showLeaderboard: boolean;
+    showStats: boolean;
+    showUpcoming: boolean;
+    resultsLimit: number;
+    pointsLimit: number; // Added: Limit for total points calculation
+    rotationSpeed: number; // ms per slide
+}
+
 export interface Settings {
   organizingTeam: string;
   heading: string;
@@ -130,6 +140,9 @@ export interface Settings {
   eventDays?: string[];
   stages?: string[];
   timeSlots?: string[];
+
+  // Projector Customization
+  projector?: ProjectorSettings;
 
   defaultPoints: {
     single: {

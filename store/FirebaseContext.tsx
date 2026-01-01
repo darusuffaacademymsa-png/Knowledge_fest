@@ -25,6 +25,15 @@ const defaultState: AppState = {
     eventDays: [],
     stages: [],
     timeSlots: [],
+    projector: {
+        showResults: true,
+        showLeaderboard: true,
+        showStats: true,
+        showUpcoming: true,
+        resultsLimit: 3,
+        pointsLimit: 10,
+        rotationSpeed: 12000
+    },
     defaultPoints: {
       single: { first: 5, second: 3, third: 1 },
       group: { first: 10, second: 7, third: 5 },

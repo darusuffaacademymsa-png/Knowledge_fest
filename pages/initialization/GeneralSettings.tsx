@@ -10,7 +10,7 @@ import {
     UserCheck, Shield, LayoutDashboard, UserPlus, Medal, Gavel, Timer, Monitor,
     BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw
 } from 'lucide-react';
-import { User, UserRole, AppState, FontConfig, GeneralFontConfig } from '../../types';
+import { User, UserRole, AppState, FontConfig, GeneralFontConfig, ProjectorSettings } from '../../types';
 import { TABS, TAB_DISPLAY_NAMES } from '../../constants';
 
 // --- Helper Component: Image Upload ---
@@ -237,12 +237,12 @@ const LanguageFontCard = ({
                     </div>
                 </div>
                 <button 
-                    onClick={() => fileInputRef.current?.click()} 
+                    onClick={() => (fileInputRef.current as any)?.click()} 
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-all shadow-sm"
                 >
                     <Upload size={14} /> {tempFont ? 'Change File' : 'Upload File'}
                 </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
+                <input type="file" ref={fileInputRef as any} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
              </div>
 
              <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
@@ -375,6 +375,18 @@ const ScopeItem: React.FC<{ label: string, isChecked: boolean, onChange: () => v
     </div>
 );
 
+const ToggleItem: React.FC<{ label: string, isChecked: boolean, onChange: (v: boolean) => void }> = ({ label, isChecked, onChange }) => (
+    <div className="flex items-center justify-between p-4 bg-zinc-50/50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5">
+        <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">{label}</span>
+        <button 
+            onClick={() => onChange(!isChecked)} 
+            className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isChecked ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+        >
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${isChecked ? 'left-7' : 'left-1'}`}></div>
+        </button>
+    </div>
+);
+
 // Tab icon map for instructions
 const TAB_ICON_MAP: Record<string, React.ElementType> = {
     [TABS.DASHBOARD]: LayoutDashboard,
@@ -477,6 +489,23 @@ const GeneralSettings: React.FC = () => {
 
     const handleRemoveEventDate = (date: string) => {
         setOrgData(prev => ({ ...prev, eventDates: prev.eventDates.filter(d => d !== date) }));
+    };
+
+    const handleProjectorUpdate = (payload: Partial<ProjectorSettings>) => {
+        updateSettings({
+            projector: {
+                ...(state.settings.projector || {
+                    showResults: true,
+                    showLeaderboard: true,
+                    showStats: true,
+                    showUpcoming: true,
+                    resultsLimit: 3,
+                    pointsLimit: 10,
+                    rotationSpeed: 12000
+                }),
+                ...payload
+            }
+        });
     };
 
     const renderTabContent = () => {
@@ -679,6 +708,108 @@ const GeneralSettings: React.FC = () => {
                                     onSave={(f) => handleUpdateCustomFont('arabic', f)}
                                 />
                             </div>
+                        </div>
+
+                        {/* Projector Configuration */}
+                        <div>
+                            <SectionTitle title="Projector Customization" icon={Monitor} color="amber" />
+                            <Card title="Live Screen Orchestration">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase text-zinc-400 mb-1 ml-1 block">Toggle Slides</label>
+                                        <div className="space-y-2">
+                                            <ToggleItem 
+                                                label="Declared Results" 
+                                                isChecked={state.settings.projector?.showResults !== false} 
+                                                onChange={(v) => handleProjectorUpdate({ showResults: v })} 
+                                            />
+                                            <ToggleItem 
+                                                label="Point Leaderboard" 
+                                                isChecked={state.settings.projector?.showLeaderboard !== false} 
+                                                onChange={(v) => handleProjectorUpdate({ showLeaderboard: v })} 
+                                            />
+                                            <ToggleItem 
+                                                label="Festival Stats" 
+                                                isChecked={state.settings.projector?.showStats !== false} 
+                                                onChange={(v) => handleProjectorUpdate({ showStats: v })} 
+                                            />
+                                            <ToggleItem 
+                                                label="Program Flow" 
+                                                isChecked={state.settings.projector?.showUpcoming !== false} 
+                                                onChange={(v) => handleProjectorUpdate({ showUpcoming: v })} 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Result Presentation Depth</label>
+                                            <div className="p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Results In Rotation</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <button 
+                                                            onClick={() => handleProjectorUpdate({ resultsLimit: Math.max(1, (state.settings.projector?.resultsLimit || 3) - 1) })}
+                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="w-8 text-center font-black text-indigo-600 dark:text-indigo-400">{state.settings.projector?.resultsLimit || 3}</span>
+                                                        <button 
+                                                            onClick={() => handleProjectorUpdate({ resultsLimit: Math.min(10, (state.settings.projector?.resultsLimit || 3) + 1) })}
+                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p className="text-[9px] text-zinc-400 leading-relaxed font-medium">Controls how many of the most recently declared results will be shown in the Live Projector rotation loop.</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Point Tally Limit</label>
+                                            <div className="p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Declared Results to Count</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <button 
+                                                            onClick={() => handleProjectorUpdate({ pointsLimit: Math.max(1, (state.settings.projector?.pointsLimit || 10) - 1) })}
+                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="w-8 text-center font-black text-indigo-600 dark:text-indigo-400">{state.settings.projector?.pointsLimit || 10}</span>
+                                                        <button 
+                                                            onClick={() => handleProjectorUpdate({ pointsLimit: Math.min(200, (state.settings.projector?.pointsLimit || 10) + 1) })}
+                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p className="text-[9px] text-zinc-400 leading-relaxed font-medium">Controls how many of the first declared results are counted towards the total points showing in the Live Projector tallies.</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Transition Cadence</label>
+                                            <div className="flex gap-2">
+                                                {[
+                                                    { l: 'Slow', v: 20000 },
+                                                    { l: 'Standard', v: 12000 },
+                                                    { l: 'Fast', v: 6000 }
+                                                ].map(opt => (
+                                                    <button 
+                                                        key={opt.l}
+                                                        onClick={() => handleProjectorUpdate({ rotationSpeed: opt.v })}
+                                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${state.settings.projector?.rotationSpeed === opt.v ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700 hover:border-indigo-400'}`}
+                                                    >
+                                                        {opt.l}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
                         </div>
 
                         {/* UX Preferences */}

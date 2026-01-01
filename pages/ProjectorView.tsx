@@ -5,7 +5,8 @@ import {
     MapPin, Sparkle, TrendingUp, ChevronUp, ChevronLeft, FastForward, Rewind,
     Timer, BarChart3, Presentation
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+// Added missing useCallback import
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { TABS } from '../constants';
 import { useFirebase } from '../hooks/useFirebase';
 import { ItemType, ResultStatus, PerformanceType } from '../types';
@@ -24,7 +25,7 @@ const SPEEDS = [
 const REVEAL_DELAY = 1500; 
 const RACE_DURATION = 4000; 
 
-type SlideType = 'RESULT' | 'LEADERBOARD' | 'STATS' | 'UPCOMING';
+type SlideType = string; // Using string to support dynamic 'RESULT_0', 'RESULT_1', etc.
 
 // --- Shared Components ---
 
@@ -149,7 +150,6 @@ const ResultSlide: React.FC<{ result: any; revealStep: number; isDark: boolean }
             </div>
 
             <div className="flex flex-col md:flex-row items-center md:items-end justify-center w-full max-w-[95vw] gap-4 md:gap-0 flex-1 relative z-20 pb-10">
-                {/* Responsive Order: On mobile, 1st is always top. On desktop, 2-1-3 podium. */}
                 <div className="order-2 md:order-1 flex justify-center w-full md:w-auto">
                     <RankCard rank={2} winner={rank2} isVisible={revealStep >= 2} />
                 </div>
@@ -288,7 +288,7 @@ const UpcomingSlide: React.FC<{ events: any[] }> = ({ events }) => (
                             <span className="px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-2xl bg-indigo-500 text-white text-[8px] md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.4em] shadow-lg">{ev.categoryName}</span>
                             <span className="text-xs md:text-2xl font-black text-zinc-500 flex items-center gap-1 md:gap-2 uppercase tracking-widest"><MapPin size={12} className="text-rose-500 md:w-6 md:h-6" /> {ev.stage}</span>
                         </div>
-                        <h3 className="text-xl md:text-7xl font-black font-serif uppercase tracking-tighter truncate leading-none text-white drop-shadow-lg">{ev.itemName}</h3>
+                        <h3 className="text-xl md:text-[70px] font-black font-serif uppercase tracking-tighter truncate leading-none text-white drop-shadow-lg">{ev.itemName}</h3>
                     </div>
                     <ChevronRight size={40} className="hidden md:block text-white opacity-10 group-hover:opacity-100 transition-all transform group-hover:translate-x-6 md:w-24 md:h-24" strokeWidth={4} />
                 </div>
@@ -312,64 +312,89 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-    const [slideTempo, setSlideTempo] = useState(SPEEDS[1]); // Standard
-    
+    const [slideTempo, setSlideTempo] = useState(SPEEDS[1]);
+
     const containerRef = useRef<HTMLDivElement>(null);
     const progressRef = useRef<number>(0);
     const lastTickRef = useRef<number>(Date.now());
 
-    const SLIDE_ORDER: SlideType[] = ['RESULT', 'LEADERBOARD', 'STATS', 'UPCOMING'];
+    // Helper to calculate score for an item
+    const calculateItemScores = useCallback((item: any, winners: any[]) => {
+        if (!state) return [];
+        const gradesConfig = item.type === ItemType.SINGLE ? (state.gradePoints?.single || []) : (state.gradePoints?.group || []);
+        
+        return winners.map(w => {
+            const p = state.participants.find(part => part.id === w.participantId);
+            const t = p ? state.teams.find(tm => tm.id === p.teamId) : null;
+            let pts = 0;
+            if (w.position === 1) pts += item.points.first || 0;
+            else if (w.position === 2) pts += item.points.second || 0;
+            else if (w.position === 3) pts += item.points.third || 0;
+            
+            if (w.gradeId) {
+                const grade = gradesConfig.find(g => g.id === w.gradeId);
+                if (grade) {
+                    pts += (item.gradePointsOverride?.[grade.id] ?? (grade.points || 0));
+                }
+            }
+            
+            return {
+                ...w,
+                participantName: item.type === ItemType.GROUP ? `${p?.name || '---'} & Party` : (p?.name || '---'),
+                teamId: p?.teamId,
+                teamName: t?.name || '---',
+                totalPoints: pts
+            };
+        });
+    }, [state]);
 
     const data = useMemo(() => {
         if (!state) return null;
         
         const declared = state.results.filter(r => r.status === ResultStatus.DECLARED);
-        const lastResult = declared[declared.length - 1];
-        let resultSlideData = null;
-        if (lastResult) {
-            const item = state.items.find(i => i.id === lastResult.itemId);
-            const category = state.categories.find(c => c.id === lastResult.categoryId);
-            const winners = lastResult.winners.map(w => {
-                const p = state.participants.find(part => part.id === w.participantId);
-                const t = p ? state.teams.find(team => team.id === p.teamId) : null;
-                let pts = 0;
-                if (w.position === 1) pts += item?.points.first || 0;
-                else if (w.position === 2) pts += item?.points.second || 0;
-                else if (w.position === 3) pts += item?.points.third || 0;
-                const gConfig = item?.type === ItemType.SINGLE ? state.gradePoints.single : state.gradePoints.group;
-                const g = w.gradeId ? gConfig.find(grade => grade.id === w.gradeId) : null;
-                if (g) pts += (item?.gradePointsOverride?.[g.id] ?? g.points);
-                return { ...w, participantName: item?.type === ItemType.GROUP ? `${p?.name} & Party` : (p?.name || '---'), place: p?.place, teamName: t?.name || '---', totalPoints: pts };
-            }).sort((a,b) => (a.position || 99) - (b.position || 99));
-            resultSlideData = { itemName: item?.name, categoryName: category?.name, winners };
-        }
+        const rotationLimit = state.settings.projector?.resultsLimit || 3;
+        const recentDeclared = declared.slice(-rotationLimit).reverse();
+
+        const resultsSlidesData = recentDeclared.map(r => {
+            const item = state.items.find(i => i.id === r.itemId);
+            const category = state.categories.find(c => c.id === item?.categoryId);
+            if (!item || !category) return null;
+            
+            return {
+                id: r.itemId,
+                itemName: item.name,
+                categoryName: category.name,
+                winners: calculateItemScores(item, r.winners).sort((a,b) => (a.position || 99) - (b.position || 99))
+            };
+        }).filter(Boolean);
+
+        // Tally logic based on pointsLimit (N first results)
+        const pointsTallyLimit = state.settings.projector?.pointsLimit || 10;
+        const resultsForTallies = declared.slice(0, pointsTallyLimit);
 
         const teamPointsMap: Record<string, number> = {};
         state.teams.forEach(t => teamPointsMap[t.id] = 0);
-        declared.forEach(r => {
+        
+        resultsForTallies.forEach(r => {
             const item = state.items.find(i => i.id === r.itemId);
-            r.winners.forEach(w => {
-                const p = state.participants.find(part => part.id === w.participantId);
-                if (!p) return;
-                let pts = 0;
-                if (w.position === 1) pts += item?.points.first || 0;
-                else if (w.position === 2) pts += item?.points.second || 0;
-                else if (w.position === 3) pts += item?.points.third || 0;
-                const gConfig = item?.type === ItemType.SINGLE ? state.gradePoints.single : state.gradePoints.group;
-                const g = w.gradeId ? gConfig.find(grade => grade.id === w.gradeId) : null;
-                if (g) pts += (item?.gradePointsOverride?.[g.id] ?? g.points);
-                teamPointsMap[p.teamId] = (teamPointsMap[p.teamId] || 0) + pts;
+            if (!item) return;
+            const winnersWithPoints = calculateItemScores(item, r.winners);
+            winnersWithPoints.forEach(w => {
+                if (w.teamId) {
+                    teamPointsMap[w.teamId] = (teamPointsMap[w.teamId] || 0) + w.totalPoints;
+                }
             });
         });
+
         const leaderboardData = state.teams.map(t => ({ ...t, points: teamPointsMap[t.id] })).sort((a,b) => b.points - a.points);
 
         return { 
-            result: resultSlideData, 
+            results: resultsSlidesData,
             leaderboard: leaderboardData, 
             stats: {
                 participants: state.participants.length,
                 items: state.items.length,
-                declared: declared.length,
+                declared: resultsForTallies.length,
                 categories: state.categories.length,
                 totalPoints: Object.values(teamPointsMap).reduce((a, b) => a + b, 0),
                 scheduled: state.schedule.length
@@ -380,7 +405,21 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                 categoryName: state.categories.find(c => c.id === ev.categoryId)?.name 
             }))
         };
-    }, [state]);
+    }, [state, calculateItemScores]);
+
+    const SLIDE_ORDER: SlideType[] = useMemo(() => {
+        const config = state?.settings.projector;
+        const slides: SlideType[] = [];
+        
+        if (config?.showResults !== false && data?.results) {
+            data.results.forEach((_, i) => slides.push(`RESULT_${i}`));
+        }
+        if (config?.showLeaderboard !== false) slides.push('LEADERBOARD');
+        if (config?.showStats !== false) slides.push('STATS');
+        if (config?.showUpcoming !== false) slides.push('UPCOMING');
+        
+        return slides.length > 0 ? slides : ['STATS'];
+    }, [state?.settings.projector, data?.results]);
 
     // Master Rotation Loop
     useEffect(() => {
@@ -394,7 +433,8 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             const delta = now - lastTickRef.current;
             lastTickRef.current = now;
 
-            progressRef.current += (delta / slideTempo.value) * 100;
+            const speed = slideTempo.value;
+            progressRef.current += (delta / speed) * 100;
 
             if (progressRef.current >= 100) {
                 progressRef.current = 0;
@@ -407,18 +447,18 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
         const interval = setInterval(tick, 30);
         return () => clearInterval(interval);
-    }, [isPaused, slideTempo, SLIDE_ORDER.length]);
+    }, [isPaused, slideTempo.value, SLIDE_ORDER.length]);
 
     // Handle Result Reveal Sequence
     useEffect(() => {
-        if (SLIDE_ORDER[currentSlideIndex] === 'RESULT') {
+        if (SLIDE_ORDER[currentSlideIndex]?.startsWith('RESULT')) {
             setRevealStep(0);
             const t3 = setTimeout(() => setRevealStep(1), REVEAL_DELAY);
             const t2 = setTimeout(() => setRevealStep(2), REVEAL_DELAY * 2);
             const t1 = setTimeout(() => setRevealStep(3), REVEAL_DELAY * 3);
             return () => { clearTimeout(t3); clearTimeout(t2); clearTimeout(t1); };
         }
-    }, [currentSlideIndex, data?.result?.itemName]);
+    }, [currentSlideIndex, SLIDE_ORDER]);
 
     const handleSkip = (direction: 'next' | 'prev') => {
         progressRef.current = 0;
@@ -438,7 +478,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
     if (!state || !data) return null;
 
-    const currentSlide = SLIDE_ORDER[currentSlideIndex];
+    const currentSlideKey = SLIDE_ORDER[currentSlideIndex];
 
     return (
         <div ref={containerRef} className={`h-screen w-screen overflow-hidden relative font-sans select-none transition-colors duration-1000 ${theme === 'dark' ? 'bg-[#030403] text-white' : 'bg-[#FAF8F4] text-zinc-900'}`}>
@@ -452,18 +492,45 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
             {/* Slide Layer */}
             <main className="relative z-10 h-full w-full overflow-hidden">
-                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentSlide === 'RESULT' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-                   {data.result ? <ResultSlide result={data.result} revealStep={revealStep} isDark={theme === 'dark'} /> : <StatsSlide stats={data.stats} />}
-                </div>
-                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentSlide === 'LEADERBOARD' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32 pointer-events-none'}`}>
-                    <LeaderboardSlide teams={data.leaderboard} active={currentSlide === 'LEADERBOARD'} />
-                </div>
-                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentSlide === 'STATS' ? 'opacity-100 scale-100' : 'opacity-0 scale-110 pointer-events-none'}`}>
-                    <StatsSlide stats={data.stats} />
-                </div>
-                <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentSlide === 'UPCOMING' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none'}`}>
-                    <UpcomingSlide events={data.upcoming} />
-                </div>
+                {SLIDE_ORDER.map((key, index) => {
+                    const isActive = index === currentSlideIndex;
+                    
+                    if (key.startsWith('RESULT_')) {
+                        const resultIdx = parseInt(key.split('_')[1]);
+                        const result = data.results[resultIdx];
+                        return (
+                            <div key={key} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                                {result ? <ResultSlide result={result} revealStep={revealStep} isDark={theme === 'dark'} /> : <StatsSlide stats={data.stats} />}
+                            </div>
+                        );
+                    }
+
+                    if (key === 'LEADERBOARD') {
+                        return (
+                            <div key={key} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32 pointer-events-none'}`}>
+                                <LeaderboardSlide teams={data.leaderboard} active={isActive} />
+                            </div>
+                        );
+                    }
+
+                    if (key === 'STATS') {
+                        return (
+                            <div key={key} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-110 pointer-events-none'}`}>
+                                <StatsSlide stats={data.stats} />
+                            </div>
+                        );
+                    }
+
+                    if (key === 'UPCOMING') {
+                        return (
+                            <div key={key} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${isActive ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none'}`}>
+                                <UpcomingSlide events={data.upcoming} />
+                            </div>
+                        );
+                    }
+
+                    return null;
+                })}
             </main>
 
             {/* --- Control Console Overlay --- */}
@@ -489,7 +556,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                                     onClick={() => { setCurrentSlideIndex(i); progressRef.current = 0; }}
                                     className={`px-3 py-2 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${currentSlideIndex === i ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
                                 >
-                                    {s}
+                                    {s.startsWith('RESULT') ? 'Result' : s}
                                 </button>
                              ))}
                         </div>
