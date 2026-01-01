@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { TABS, SIDEBAR_GROUPS, INITIALIZATION_SUB_PAGE_ICONS, TAB_DISPLAY_NAMES, TAB_COLORS, TAB_SEARCH_INDEX } from '../constants';
 import { User } from '../types';
 import { Search, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, LogOut, ChevronLeft, ChevronRight, Palette, Timer, Settings, Medal, PanelLeftOpen, PanelLeftClose, Home, Monitor } from 'lucide-react';
@@ -16,6 +17,7 @@ interface SidebarProps {
   hasPermission: (tab: string) => boolean;
 }
 
+// Fixed: Added React import to resolve namespace errors.
 const iconMap: { [key: string]: React.ElementType } = {
     [TABS.LANDING]: Home,
     [TABS.DASHBOARD]: LayoutDashboard,
@@ -34,6 +36,7 @@ const iconMap: { [key: string]: React.ElementType } = {
     [TABS.ITEM_TIMER]: Timer,
 };
 
+// Fixed: Added React import to resolve namespace errors.
 const Sidebar: React.FC<SidebarProps> = ({ 
     activeTab, 
     setActiveTab, 
@@ -118,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             placeholder="Find features..." 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/40 dark:bg-black/20 border border-amazio-primary/5 dark:border-white/5 rounded-xl py-2.5 pl-9 pr-3 text-sm text-zinc-800 dark:text-zinc-300 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 dark:focus:border-emerald-400/50 focus:bg-white/60 dark:focus:bg-black/40 transition-all"
+                            className="w-full bg-white/40 dark:bg-black/20 border border-amazio-primary/5 dark:border-white/5 rounded-xl py-2 pl-9 pr-3 text-sm text-zinc-800 dark:text-zinc-300 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 dark:focus:border-emerald-400/50 focus:bg-white/60 dark:focus:bg-black/40 transition-all"
                         />
                     </div>
                 </div>
@@ -138,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
              </div>
         )}
 
-        <nav className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${isStickyMode ? 'px-1 py-2 space-y-4' : 'px-3 py-2 space-y-6'} scrollbar-hide overflow-x-hidden`}>
+        <nav className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${isStickyMode ? 'px-1 py-2 space-y-3' : 'px-3 py-2 space-y-4'} scrollbar-hide overflow-x-hidden`}>
              {SIDEBAR_GROUPS.map((group, gIdx) => {
                 const visibleTabsInGroup = group.tabs.filter(tab => {
                     if (!hasPermission(tab)) return false;
@@ -147,7 +150,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     const display = (TAB_DISPLAY_NAMES[tab] || tab).toLowerCase();
                     const keywords = TAB_SEARCH_INDEX[tab] || [];
                     
-                    // Check tab name OR any keywords associated with its subpages/content
                     return display.includes(lowerCaseSearchTerm) || 
                            keywords.some(k => k.toLowerCase().includes(lowerCaseSearchTerm));
                 });
@@ -159,13 +161,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 return (
                     <div key={group.title} className={isStickyMode ? 'flex flex-col gap-1 items-center' : ''}>
                         {!isStickyMode && (
-                            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-8 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'}`}>
-                                <h3 className={`px-4 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap opacity-60 ${groupColor}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-8 opacity-100 mb-1.5' : 'max-h-0 opacity-0 mb-0'}`}>
+                                <h3 className={`pl-7 pr-4 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap opacity-60 ${groupColor}`}>
                                     {group.title}
                                 </h3>
                             </div>
                         )}
-                        <div className={`space-y-1 ${isStickyMode ? 'w-full flex flex-col items-center' : ''}`}>
+                        <div className={`space-y-0.5 ${isStickyMode ? 'w-full flex flex-col items-center' : ''}`}>
                             {visibleTabsInGroup.map(tab => {
                                 const Icon = iconMap[tab];
                                 const isActive = activeTab === tab;
@@ -181,15 +183,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         key={tab}
                                         onClick={() => handleTabClick(tab)}
                                         title={(!isExpanded || isStickyMode) ? displayName : ''}
-                                        className={`group relative flex items-center w-full p-3 rounded-xl transition-all duration-200 ease-out overflow-hidden
+                                        className={`group relative flex items-center w-full p-2.5 rounded-xl transition-all duration-200 ease-out overflow-hidden
                                             ${isActive 
                                                 ? 'text-amazio-primary dark:text-white shadow-sm bg-white/60 dark:bg-white/5' 
                                                 : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-white/5'}
-                                            ${(!isExpanded || isStickyMode) ? 'justify-center !p-2.5 !w-9 !h-9 !rounded-lg' : ''}
+                                            ${(!isExpanded || isStickyMode) ? 'justify-center !p-2 !w-9 !h-9 !rounded-lg' : ''}
                                         `}
                                     >
                                         {isActive && !isStickyMode && (
-                                            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full shadow-sm ${barClass}`}></div>
+                                            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full shadow-sm ${barClass}`}></div>
                                         )}
                                         {isActive && isStickyMode && (
                                             <div className={`absolute inset-0 rounded-lg border border-${colorKey}-500/30 bg-${colorKey}-500/10`}></div>
@@ -198,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         {Icon && (
                                             <div className={`transition-all duration-300 flex-shrink-0 ${isExpanded && !isStickyMode ? 'mr-3' : 'mr-0'}`}>
                                                 <Icon 
-                                                    className={`h-5 w-5 transition-transform duration-300 ${textClass} ${isActive ? 'scale-110' : ''} ${isStickyMode ? 'h-4 w-4' : ''}`} 
+                                                    className={`h-4.5 w-4.5 transition-transform duration-300 ${textClass} ${isActive ? 'scale-110' : ''} ${isStickyMode ? 'h-4 w-4' : ''}`} 
                                                     strokeWidth={isActive ? 2.5 : 2}
                                                 />
                                             </div>
