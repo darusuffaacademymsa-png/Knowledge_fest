@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TABS, SIDEBAR_GROUPS, INITIALIZATION_SUB_PAGE_ICONS, TAB_DISPLAY_NAMES, TAB_COLORS } from '../constants';
+import { TABS, SIDEBAR_GROUPS, INITIALIZATION_SUB_PAGE_ICONS, TAB_DISPLAY_NAMES, TAB_COLORS, TAB_SEARCH_INDEX } from '../constants';
 import { User } from '../types';
 import { Search, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, LogOut, ChevronLeft, ChevronRight, Palette, Timer, Settings, Medal, PanelLeftOpen, PanelLeftClose, Home, Monitor } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { state, updateSettings } = useFirebase();
   const [searchTerm, setSearchTerm] = useState('');
-  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+  const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
@@ -115,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors" />
                         <input 
                             type="text" 
-                            placeholder="Search..." 
+                            placeholder="Find features..." 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full bg-white/40 dark:bg-black/20 border border-amazio-primary/5 dark:border-white/5 rounded-xl py-2.5 pl-9 pr-3 text-sm text-zinc-800 dark:text-zinc-300 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 dark:focus:border-emerald-400/50 focus:bg-white/60 dark:focus:bg-black/40 transition-all"
@@ -141,8 +141,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar ${isStickyMode ? 'px-1 py-2 space-y-4' : 'px-3 py-2 space-y-6'} scrollbar-hide overflow-x-hidden`}>
              {SIDEBAR_GROUPS.map((group, gIdx) => {
                 const visibleTabsInGroup = group.tabs.filter(tab => {
-                    const display = TAB_DISPLAY_NAMES[tab] || tab;
-                    return hasPermission(tab) && display.toLowerCase().includes(lowerCaseSearchTerm);
+                    if (!hasPermission(tab)) return false;
+                    if (!lowerCaseSearchTerm) return true;
+
+                    const display = (TAB_DISPLAY_NAMES[tab] || tab).toLowerCase();
+                    const keywords = TAB_SEARCH_INDEX[tab] || [];
+                    
+                    // Check tab name OR any keywords associated with its subpages/content
+                    return display.includes(lowerCaseSearchTerm) || 
+                           keywords.some(k => k.toLowerCase().includes(lowerCaseSearchTerm));
                 });
 
                 if (visibleTabsInGroup.length === 0) return null;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Sparkles, ArrowRight, Trophy, Palette, 
     Monitor, Users, Lock, User, 
@@ -74,6 +74,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
         else toggleTheme('light');
     };
 
+    const isDark = useMemo(() => document.documentElement.classList.contains('dark'), [theme]);
+    const logoUrl = useMemo(() => {
+        if (!settings.branding) return null;
+        const { typographyUrl, typographyUrlLight, typographyUrlDark } = settings.branding;
+        if (isDark) return typographyUrlDark || typographyUrl;
+        return typographyUrlLight || typographyUrl;
+    }, [settings.branding, isDark]);
+
     return (
         <div className="min-h-screen bg-[#F1F5E9] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">
             
@@ -91,8 +99,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-[#F1F5E9]/90 dark:bg-[#0F1210]/90 backdrop-blur-2xl border-b border-[#283618]/5 dark:border-white/5 py-4' : 'bg-transparent py-10'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
                     <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                        {settings.branding?.typographyUrl ? (
-                            <img src={settings.branding.typographyUrl} alt="AMAZIO" className="h-10 w-auto object-contain transition-all" />
+                        {logoUrl ? (
+                            <img src={logoUrl} alt="AMAZIO" className="h-10 w-auto object-contain transition-all" />
                         ) : (
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-2xl bg-[#283618] flex items-center justify-center font-slab text-xl font-black shadow-2xl text-white transform rotate-3">A</div>
@@ -131,9 +139,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                         </div>
                         
                         <div className="relative mb-8">
-                            {settings.branding?.typographyUrl ? (
+                            {logoUrl ? (
                                 <img 
-                                    src={settings.branding.typographyUrl} 
+                                    src={logoUrl} 
                                     alt="AMAZIO" 
                                     className="h-auto max-h-48 md:max-h-72 w-auto object-contain filter drop-shadow-2xl hover:scale-[1.02] transition-all duration-700 select-none" 
                                 />

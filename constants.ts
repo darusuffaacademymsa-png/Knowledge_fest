@@ -19,6 +19,34 @@ export const TABS = {
   CREATIVE_STUDIO: 'E-Poster & Certificate',
 };
 
+// Search keywords for sub-pages and deep content
+export const TAB_SEARCH_INDEX: { [key: string]: string[] } = {
+    [TABS.DASHBOARD]: ['overview', 'stats', 'summary', 'latest', 'recent', 'terminal status', 'recent verdict'],
+    [TABS.PROJECTOR]: ['live', 'display', 'screen', 'broadcast', 'scoreboard', 'cinematic', 'announcement'],
+    [TABS.GENERAL_SETTINGS]: [
+        'event details', 'display', 'layout', 'users', 'access', 'instructions', 'data', 'continuity', 
+        'backup', 'restore', 'institution', 'logo', 'fonts', 'malayalam', 'arabic', 'permissions', 
+        'branding', 'typography', 'export', 'import', 'reset'
+    ],
+    [TABS.TEAMS_CATEGORIES]: ['houses', 'levels', 'groups', 'scopes', 'categories', 'team leader', 'assistant coordinator'],
+    [TABS.ITEMS]: ['registry', 'participants', 'list', 'disciplines', 'entries', 'enrollment', 'performance type', 'medium', 'duration'],
+    [TABS.GRADE_POINTS]: [
+        'codes', 'grades', 'lots', 'mapping', 'results logic', 'prizes', 'scoring rules', 
+        'lot machine', 'spin', 'batch assign', 'overrides', 'point tiers', 'range'
+    ],
+    [TABS.JUDGES_MANAGEMENT]: ['assignments', 'registry', 'coverage', 'officials', 'evaluators', 'adjudicators', 'assign items'],
+    [TABS.DATA_ENTRY]: ['items', 'participants', 'registry', 'list', 'delegates', 'chest number', 'enrollment'],
+    [TABS.SCHEDULE]: ['timeline', 'stage', 'venue', 'calendar', 'dates', 'time', 'slots', 'ai schedule', 'optimize', 'manual scheduling'],
+    [TABS.ITEM_TIMER]: ['clock', 'stopwatch', 'bell', 'warning', 'stage control', 'mute', 'overtime', 'resonant bell'],
+    [TABS.SCORING_RESULTS]: ['terminal', 'judgement', 'verdict', 'declaration', 'marks', 'points', 'scoring', 'mean mark', 'standing', 'unlock'],
+    [TABS.POINTS]: ['analytics', 'leaderboard', 'standing', 'tally', 'rank', 'merit', 'contributors', 'toppers', 'individual ranking'],
+    [TABS.REPORTS]: [
+        'print', 'pdf', 'export', 'documents', 'checklist', 'profiles', 'cards', 'id cards', 
+        'valuation sheet', 'matrix', 'manual', 'program manual', 'prize winners'
+    ],
+    [TABS.CREATIVE_STUDIO]: ['poster', 'certificate', 'design', 'graphics', 'visual', 'e-poster', 'templates', 'canvas', 'background', 'download image'],
+};
+
 // Pages accessible without authentication
 export const GUEST_PERMISSIONS = [
   TABS.LANDING,
@@ -108,7 +136,6 @@ export const SIDEBAR_GROUPS = [
     {
         title: 'Core',
         tabs: [
-            TABS.LANDING, 
             TABS.DASHBOARD,
             TABS.PROJECTOR
         ]

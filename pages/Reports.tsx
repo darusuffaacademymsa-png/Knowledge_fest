@@ -170,7 +170,7 @@ const ReportsPage: React.FC = () => {
     filteredParticipants.forEach((p, index) => {
       const team = getTeamName(p.teamId); const category = getCategoryName(p.categoryId);
       const participantScheduledItems = p.itemIds.map(itemId => { const item = state.items.find(i => i.id === itemId); const schedule = state.schedule.find(s => s.itemId === itemId && s.categoryId === p.categoryId); return { item, schedule }; }).filter(si => si.item).sort((a, b) => { if (a.schedule && b.schedule) { const dateComp = (a.schedule as ScheduledEvent).date.localeCompare((b.schedule as ScheduledEvent).date); if (dateComp !== 0) return dateComp; return (a.schedule as ScheduledEvent).time.localeCompare((b.schedule as ScheduledEvent).time); } return (a.item?.name || '').localeCompare(b.item?.name || ''); });
-      const wrapperClass = (paginated && index > 0) ? 'profile-wrapper page-break-before-always' : 'profile-wrapper';
+      const wrapperClass = (paginated && index > 0) ? 'report-block profile-wrapper page-break-before-always' : 'report-block profile-wrapper';
       html += ` <div class="${wrapperClass}"> <div class="profile-header"> <div class="profile-name">${p.name}</div> ${p.place ? `<div style="text-align:center; font-size:0.9rem; font-weight:700; color:#666; text-transform:uppercase; margin-top:4px;">${p.place}</div>` : ''} <div class="profile-chest">Chest No: ${p.chestNumber}</div> </div> <div class="profile-details"> <div><strong>Team:</strong> ${team}</div> <div><strong>Category:</strong> ${category}</div> </div> ${participantScheduledItems.length > 0 ? ` <h4>Registered Items</h4> <table class="schedule-table"> <thead><tr><th>Item</th><th>Date</th><th>Time</th><th>Stage</th></tr></thead> <tbody> ${participantScheduledItems.map(si => ` <tr> <td>${si.item?.name}</td> <td>${si.schedule?.date || '-'}</td> <td>${si.schedule?.time || '-'}</td> <td>${si.schedule?.stage || '-'}</td> </tr> `).join('')} </tbody> </table> ` : '<p>No items registered.</p>'} </div> `;
     });
     setReportContent({ title: 'Participant Profiles', content: html, isSearchable: true });
@@ -186,7 +186,7 @@ const ReportsPage: React.FC = () => {
       const groupByCategory = (itemList: Item[]) => { const groups: Record<string, Item[]> = {}; itemList.forEach(i => { const cat = state.categories.find(c => c.id === i.categoryId)?.name || 'General'; if (!groups[cat]) groups[cat] = []; groups[cat].push(i); }); return groups; };
       const onStageGroups = groupByCategory(onStageItems); const offStageGroups = groupByCategory(offStageItems);
       const renderGroups = (groups: Record<string, Item[]>) => { return Object.entries(groups).map(([cat, catItems]) => ` <div class="category-block"> <div class="category-title">${cat}</div> <div class="item-list"> ${catItems.sort((a,b) => a.name.localeCompare(b.name)).map(i => ` <div class="item-chip">${i.name}</div> `).join('')} </div> </div> `).join(''); };
-      html += ` <div class="id-card"> <div class="id-header"> <div class="id-top-row"> <div class="id-chest">${p.chestNumber}</div> ${state.categories.find(c => c.id === p.categoryId)?.isGeneralCategory ? '<span class="id-badge" style="background:#fefce8; border-color:#fef9c3; color:#a16207;">Gen Category</span>' : ''} </div> <div class="id-name">${p.name}</div> ${p.place ? `<div style="font-size:0.7rem; font-weight:800; color:#4D5A2A; text-transform:uppercase; letter-spacing:0.5px; margin-top:-4px; margin-bottom:8px;">${p.place}</div>` : ''} <div class="id-details"> <span class="id-badge team">${team}</span> <span class="id-badge category">${categoryName}</span> </div> </div> <div class="id-body"> ${onStageItems.length > 0 ? ` <div class="section"> <div class="section-header"><span>🎤 On-Stage Events</span></div> ${renderGroups(onStageGroups)} </div> ` : ''} ${onStageItems.length > 0 && offStageItems.length > 0 ? '<div class="divider"></div>' : ''} ${offStageItems.length > 0 ? ` <div class="section"> <div class="section-header"><span>📝 Off-Stage Events</span></div> ${renderGroups(onStageGroups)} </div> ` : ''} ${items.length === 0 ? '<div class="empty-state">No events registered</div>' : ''} </div> </div> `;
+      html += ` <div class="report-block id-card"> <div class="id-header"> <div class="id-top-row"> <div class="id-chest">${p.chestNumber}</div> ${state.categories.find(c => c.id === p.categoryId)?.isGeneralCategory ? '<span class="id-badge" style="background:#fefce8; border-color:#fef9c3; color:#a16207;">Gen Category</span>' : ''} </div> <div class="id-name">${p.name}</div> ${p.place ? `<div style="font-size:0.7rem; font-weight:800; color:#4D5A2A; text-transform:uppercase; letter-spacing:0.5px; margin-top:-4px; margin-bottom:8px;">${p.place}</div>` : ''} <div class="id-details"> <span class="id-badge team">${team}</span> <span class="id-badge category">${categoryName}</span> </div> </div> <div class="id-body"> ${onStageItems.length > 0 ? ` <div class="section"> <div class="section-header"><span>🎤 On-Stage Events</span></div> ${renderGroups(onStageGroups)} </div> ` : ''} ${onStageItems.length > 0 && offStageItems.length > 0 ? '<div class="divider"></div>' : ''} ${offStageItems.length > 0 ? ` <div class="section"> <div class="section-header"><span>📝 Off-Stage Events</span></div> ${renderGroups(onStageGroups)} </div> ` : ''} ${items.length === 0 ? '<div class="empty-state">No events registered</div>' : ''} </div> </div> `;
     });
     html += `</div>`;
     setReportContent({ title: 'Participant ID Cards', content: html, isSearchable: true });
@@ -242,8 +242,8 @@ const ReportsPage: React.FC = () => {
           }
 
           html += `
-            <div style="margin-bottom: 2rem; position: relative; z-index: 1; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
-                <div style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9; margin-bottom: 10px;">
+            <div class="report-block" style="margin-bottom: 2rem; position: relative; z-index: 1; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
+                <div class="block-header" style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9; margin-bottom: 10px;">
                     <h3 style="margin:0;">${item.name}</h3>
                     <p style="margin:0; font-size: 0.9rem;">Category: ${category} | Type: ${item.type} | Duration: ${item.duration} min</p>
                 </div>
@@ -295,8 +295,8 @@ const ReportsPage: React.FC = () => {
              if (!item || !category) return;
 
              html += `
-                <div style="margin-bottom: 2rem; position: relative; z-index: 1; border-bottom: 1px dashed #ccc; padding-bottom: 1rem; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
-                    <h4>${item?.name} (${category?.name})</h4>
+                <div class="report-block" style="margin-bottom: 2rem; position: relative; z-index: 1; border-bottom: 1px dashed #ccc; padding-bottom: 1rem; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
+                    <h4 class="block-header">${item?.name} (${category?.name})</h4>
                     <table style="background: white;">
                         <thead><tr><th>Rank</th><th>Chest No</th><th>Name</th><th>Team</th><th>Mark</th><th>Grade</th></tr></thead>
                         <tbody>
@@ -348,8 +348,8 @@ const ReportsPage: React.FC = () => {
         if (tabulation.length === 0) return;
 
         html += `
-          <div style="margin-bottom: 2rem; position: relative; z-index: 1; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
-              <div style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9; margin-bottom: 10px;">
+          <div class="report-block" style="margin-bottom: 2rem; position: relative; z-index: 1; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}">
+              <div class="block-header" style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9; margin-bottom: 10px;">
                   <h3 style="margin:0;">${item.name}</h3>
                   <p style="margin:0; font-size: 0.9rem;">Category: ${category} | Performance: ${item.performanceType}</p>
               </div>
@@ -408,8 +408,8 @@ const ReportsPage: React.FC = () => {
         if (relevantParticipants.length === 0) return;
 
         html += `
-          <div style="position: relative; z-index: 1; ${catIndex > 0 ? 'page-break-before: always;' : ''}">
-            <h4 style="margin-top: 20px; padding-bottom: 5px; border-bottom: 2px solid var(--secondary);">${catName} Checklist</h4>
+          <div class="report-block" style="position: relative; z-index: 1; ${catIndex > 0 ? 'page-break-before: always;' : ''}">
+            <h4 class="block-header" style="margin-top: 20px; padding-bottom: 5px; border-bottom: 2px solid var(--secondary);">${catName} Checklist</h4>
             <div style="overflow-x: auto; margin-bottom: 2rem;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
                     <thead>
@@ -587,8 +587,8 @@ const ReportsPage: React.FC = () => {
         if (items.length === 0) return;
 
         html += `
-            <div class="handbook-page category-section">
-                <div class="category-header">
+            <div class="handbook-page report-block category-section">
+                <div class="category-header block-header">
                     <h2>${cat.name}</h2>
                     <span style="font-weight: 800; font-size: 0.8rem; opacity: 0.8;">${items.length} EVENTS</span>
                 </div>
@@ -635,26 +635,28 @@ const ReportsPage: React.FC = () => {
 
         Object.entries(groupedByDate).forEach(([date, events]) => {
             html += `
-                <h4 style="background: var(--secondary); color: white !important; padding: 8px 15px; border-radius: 6px; margin-top: 20px;">${date}</h4>
-                <table>
-                    <thead>
-                        <tr><th>Time</th><th>Item</th><th>Category</th><th>Venue / Stage</th></tr>
-                    </thead>
-                    <tbody>
-                        ${events.map(ev => {
-                            const item = state.items.find(i => i.id === ev.itemId);
-                            const cat = state.categories.find(c => c.id === ev.categoryId);
-                            return `
-                                <tr>
-                                    <td style="font-weight: bold; white-space: nowrap;">${ev.time}</td>
-                                    <td><div style="font-weight: bold;">${item?.name}</div><div style="font-size: 10px; color: #666;">${item?.performanceType}</div></td>
-                                    <td>${cat?.name}</td>
-                                    <td><span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${ev.stage}</span></td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
+                <div class="report-block">
+                    <h4 class="block-header" style="background: var(--secondary); color: white !important; padding: 8px 15px; border-radius: 6px; margin-top: 20px;">${date}</h4>
+                    <table>
+                        <thead>
+                            <tr><th>Time</th><th>Item</th><th>Category</th><th>Venue / Stage</th></tr>
+                        </thead>
+                        <tbody>
+                            ${events.map(ev => {
+                                const item = state.items.find(i => i.id === ev.itemId);
+                                const cat = state.categories.find(c => c.id === ev.categoryId);
+                                return `
+                                    <tr>
+                                        <td style="font-weight: bold; white-space: nowrap;">${ev.time}</td>
+                                        <td><div style="font-weight: bold;">${item?.name}</div><div style="font-size: 10px; color: #666;">${item?.performanceType}</div></td>
+                                        <td>${cat?.name}</td>
+                                        <td><span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${ev.stage}</span></td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
         });
     }

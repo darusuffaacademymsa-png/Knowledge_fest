@@ -38,6 +38,7 @@ const App: React.FC = () => {
     setGlobalFilters, setGlobalSearchTerm
   } = useFirebase();
 
+  // Initialize strictly to Landing if no valid hash exists
   const [activeTab, setActiveTab] = useState<string>(() => {
     const hash = decodeURIComponent(window.location.hash.substring(1));
     return hash && Object.values(TABS).includes(hash) ? hash : TABS.LANDING;
@@ -105,7 +106,6 @@ const App: React.FC = () => {
     applyTheme(theme);
     localStorage.setItem('theme', theme);
 
-    // Listen for system theme changes if 'system' is selected
     if (theme === 'system') {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handler = () => applyTheme('system');
@@ -138,7 +138,8 @@ const App: React.FC = () => {
   }, [isSidebarExpanded]);
 
   useEffect(() => {
-    if (currentUser && !hasPermission(activeTab)) {
+    // If logged in but on a restricted tab, go to Dashboard (never Landing unless explicitly chosen)
+    if (currentUser && activeTab !== TABS.LANDING && !hasPermission(activeTab)) {
       setActiveTab(TABS.DASHBOARD);
     }
   }, [currentUser, activeTab, hasPermission]);
@@ -146,15 +147,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = decodeURIComponent(window.location.hash.substring(1));
-      if (hash && Object.values(TABS).includes(hash) && hasPermission(hash)) {
-        setActiveTab(hash);
-      } else if (!hash) {
+      if (hash && Object.values(TABS).includes(hash)) {
+        if (hasPermission(hash)) {
+            setActiveTab(hash);
+        } else if (currentUser) {
+            setActiveTab(TABS.DASHBOARD);
+        } else {
+            setActiveTab(TABS.LANDING);
+        }
+      } else {
+        // No hash = Go Home
         setActiveTab(TABS.LANDING);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [hasPermission]);
+  }, [hasPermission, currentUser]);
 
   const handleSetActiveTab = (tab: string) => {
     if (hasPermission(tab)) {
@@ -208,6 +216,7 @@ const App: React.FC = () => {
   const navigateMainTab = useCallback((direction: 'next' | 'prev') => {
     const flatTabs = SIDEBAR_GROUPS.flatMap(g => g.tabs).filter(t => hasPermission(t));
     const idx = flatTabs.indexOf(activeTab);
+    if (idx === -1) return; // Not in console tabs
     const delta = direction === 'next' ? 1 : -1;
     const nextIdx = (idx + delta + flatTabs.length) % flatTabs.length;
     handleSetActiveTab(flatTabs[nextIdx]);
@@ -314,13 +323,13 @@ const App: React.FC = () => {
     );
   }
 
-  // --- REFINED AUTH GATE ---
+  // --- REFINED GLOBAL HUB GATE ---
+  // If we are explicitly on Home or if there's NO specific guest permissions for the hash, show Landing.
   if (activeTab === TABS.LANDING) {
      return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
   }
 
-  const isHashExplicitlyGuest = window.location.hash && hasPermission(activeTab);
-  if (!currentUser && (!isHashExplicitlyGuest || !hasPermission(activeTab))) {
+  if (!currentUser && !hasPermission(activeTab)) {
     return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
   }
 
@@ -344,7 +353,6 @@ const App: React.FC = () => {
       {currentUser && isMobile && !isMobileSticky && (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[998] transition-opacity duration-500 ease-in-out ${isSidebarExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={handleBackdropClick} aria-hidden="true" />
       )}
-      {/* SIDEBAR ONLY RENDERS FOR SIGNED IN USERS */}
       {currentUser && (
         <Sidebar activeTab={activeTab} setActiveTab={handleSetActiveTab} isExpanded={isSidebarExpanded} isOpen={isSidebarOpen} toggleSidebar={toggleSidebarExpansion} isMobile={isMobile} handleLogout={logout} currentUser={currentUser} hasPermission={hasPermission} />
       )}

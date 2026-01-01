@@ -159,7 +159,9 @@ export interface Settings {
       logoUrl?: string; // Base64 string
   };
   branding?: {
-      typographyUrl?: string; // Base64 string for Event Title
+      typographyUrl?: string; // Legacy Fallback
+      typographyUrlLight?: string; // Theme Light
+      typographyUrlDark?: string; // Theme Dark
       teamLogoUrl?: string; // Base64 string for Organizing Team
   };
   // Custom Fonts

@@ -450,12 +450,30 @@ const BulkCodeAssigner: React.FC = () => {
             const item = state.items.find(i => i.id === itemId);
             if (!item) return;
             const enrolled = state.participants.filter(p => p.itemIds.includes(itemId));
-            enrolled.forEach((p, idx) => {
-                const entryId = `${itemId}-${p.id}`;
+            
+            let targets: { id: string, categoryId: string }[] = [];
+            if (item.type === ItemType.GROUP) {
+                const groups: Record<string, Participant[]> = {};
+                enrolled.forEach(p => {
+                    const groupIdx = p.itemGroups?.[item.id] || 1;
+                    const key = `${p.teamId}_${groupIdx}`;
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(p);
+                });
+                targets = Object.values(groups).map(members => {
+                    const leader = members.find(p => p.groupLeaderItemIds?.includes(item.id)) || members[0];
+                    return { id: leader.id, categoryId: item.categoryId };
+                });
+            } else {
+                targets = enrolled.map(p => ({ id: p.id, categoryId: item.categoryId }));
+            }
+
+            targets.forEach((t, idx) => {
+                const entryId = `${itemId}-${t.id}`;
                 const code = state.codeLetters[idx % state.codeLetters.length].code;
-                const existing = state.tabulation.find(t => t.id === entryId);
+                const existing = state.tabulation.find(tab => tab.id === entryId);
                 updates.push(existing ? { ...existing, codeLetter: code } : {
-                    id: entryId, itemId, categoryId: item.categoryId, participantId: p.id, codeLetter: code, marks: {}, finalMark: null, position: null, gradeId: null
+                    id: entryId, itemId, categoryId: t.categoryId, participantId: t.id, codeLetter: code, marks: {}, finalMark: null, position: null, gradeId: null
                 });
             });
         });
@@ -574,19 +592,41 @@ const BulkCodeAssigner: React.FC = () => {
     );
 };
 
+// --- SECTION: Manual Code Editor Modal ---
 const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> = ({ itemId, onClose }) => {
     const { state, updateMultipleTabulationEntries } = useFirebase();
     const [draftEntries, setDraftEntries] = useState<Record<string, string>>({});
     
     const item = state?.items.find(i => i.id === itemId);
     const itemEntries = useMemo(() => {
-        if (!state) return [];
+        if (!state || !item) return [];
         const enrolled = state.participants.filter(p => p.itemIds.includes(itemId));
+        
+        if (item.type === ItemType.GROUP) {
+            const groups: Record<string, Participant[]> = {};
+            enrolled.forEach(p => {
+                const groupIdx = p.itemGroups?.[item.id] || 1;
+                const key = `${p.teamId}_${groupIdx}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
+            return Object.values(groups).map(members => {
+                let leader = members.find(p => p.groupLeaderItemIds?.includes(item.id)) || members[0];
+                const tab = state.tabulation.find(t => t.itemId === itemId && t.participantId === leader.id);
+                return { 
+                    id: leader.id, 
+                    name: `${leader.name} & Party`, 
+                    chestNumber: leader.groupChestNumbers?.[item.id] || leader.chestNumber, 
+                    codeLetter: tab?.codeLetter || '' 
+                };
+            });
+        }
+
         return enrolled.map(p => {
             const tab = state.tabulation.find(t => t.itemId === itemId && t.participantId === p.id);
             return { id: p.id, name: p.name, chestNumber: p.chestNumber, codeLetter: tab?.codeLetter || '' };
         });
-    }, [state, itemId]);
+    }, [state, itemId, item]);
 
     useEffect(() => {
         const initial: Record<string, string> = {};
@@ -660,7 +700,7 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
                 </div>
                 <div className="p-7 border-t border-white/5 bg-zinc-50 dark:bg-white/[0.02] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Discard</button>
-                    <button onClick={handleSave} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">Save Changes</button>
+                    <button onClick={handleSave} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amazio-primary/20 active:scale-95 transition-all">Save Changes</button>
                 </div>
             </div>
         </div>, document.body

@@ -36,6 +36,14 @@ const StatCard: React.FC<{ icon: React.ElementType, title: string, value: string
 const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
   const { state, currentUser } = useFirebase();
 
+  const isDark = useMemo(() => document.documentElement.classList.contains('dark'), []);
+  const logoUrl = useMemo(() => {
+    if (!state?.settings.branding) return null;
+    const { typographyUrl, typographyUrlLight, typographyUrlDark } = state.settings.branding;
+    if (isDark) return typographyUrlDark || typographyUrl;
+    return typographyUrlLight || typographyUrl;
+  }, [state?.settings.branding, isDark]);
+
   const hasJudgeAccess = useMemo(() => {
       if (!state || !currentUser || currentUser.role !== UserRole.JUDGE || !currentUser.judgeId) return () => true;
       const myItemIds = new Set(state.judgeAssignments.filter(a => a.judgeIds.includes(currentUser.judgeId!)).map(a => a.itemId));
@@ -81,8 +89,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) => {
                      <span className="text-[10px] font-black tracking-[0.3em] uppercase text-amazio-primary/80 dark:text-zinc-400">Terminal Operational</span>
                   </div>
                   <div className="py-2">
-                      {state?.settings.branding?.typographyUrl ? (
-                          <img src={state.settings.branding.typographyUrl} alt={state.settings.heading} className="h-auto max-h-24 sm:max-h-32 w-auto object-contain filter drop-shadow-xl" />
+                      {logoUrl ? (
+                          <img src={logoUrl} alt={state.settings.heading} className="h-auto max-h-24 sm:max-h-32 w-auto object-contain filter drop-shadow-xl" />
                       ) : (
                           <h1 className="text-5xl md:text-7xl font-black font-serif tracking-tighter leading-tight text-amazio-primary dark:text-white uppercase">{state?.settings.heading || 'AMAZIO 2026'}</h1>
                       )}

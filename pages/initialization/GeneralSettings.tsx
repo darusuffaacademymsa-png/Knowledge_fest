@@ -337,14 +337,14 @@ const GeneralSettings: React.FC = () => {
     const [isEditingInst, setIsEditingInst] = useState(false);
     const [instData, setInstData] = useState(state?.settings.institutionDetails || { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' });
     const [isEditingOrg, setIsEditingOrg] = useState(false);
-    const [orgData, setOrgData] = useState({ organizingTeam: state?.settings.organizingTeam || '', heading: state?.settings.heading || '', description: state?.settings.description || '', eventDates: state?.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', teamLogoUrl: '' } });
+    const [orgData, setOrgData] = useState({ organizingTeam: state?.settings.organizingTeam || '', heading: state?.settings.heading || '', description: state?.settings.description || '', eventDates: state?.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } });
     
     // User Modal State
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
 
     useEffect(() => { if (!isEditingInst && state?.settings.institutionDetails) setInstData(state.settings.institutionDetails); }, [state?.settings.institutionDetails, isEditingInst]);
-    useEffect(() => { if (!isEditingOrg && state?.settings) setOrgData({ organizingTeam: state.settings.organizingTeam, heading: state.settings.heading, description: state.settings.description, eventDates: state.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', teamLogoUrl: '' } }); }, [state?.settings, isEditingOrg]);
+    useEffect(() => { if (!isEditingOrg && state?.settings) setOrgData({ organizingTeam: state.settings.organizingTeam, heading: state.settings.heading, description: state.settings.description, eventDates: state.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } }); }, [state?.settings, isEditingOrg]);
 
     if (!state) return <div>Loading...</div>;
 
@@ -463,7 +463,7 @@ const GeneralSettings: React.FC = () => {
 
                         {/* Event Branding */}
                         <Card title="Event Branding" action={isEditingOrg ? <button onClick={handleSaveOrg} className="p-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"><Check size={20}/></button> : <button onClick={() => setIsEditingOrg(true)} className="p-2 text-zinc-400 hover:text-indigo-500 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg transition-colors"><Edit2 size={18}/></button>}>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                 <div className="lg:col-span-2 space-y-6">
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Organizing Body</label>
@@ -526,13 +526,27 @@ const GeneralSettings: React.FC = () => {
                                 </div>
                                 <div className="lg:col-span-1 h-full">
                                     <div className="h-full flex flex-col">
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Stylized Event Logo</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Logo (Light Theme)</label>
                                         <div className="flex-grow">
                                             <ImageUpload 
                                                 label="" 
-                                                description="High-resolution PNG for main dashboard hero section." 
-                                                currentValue={orgData.branding?.typographyUrl} 
-                                                onChange={v => setOrgData({...orgData, branding: {...orgData.branding!, typographyUrl: v}})} 
+                                                description="Logo displayed during Light Theme mode." 
+                                                currentValue={orgData.branding?.typographyUrlLight || orgData.branding?.typographyUrl} 
+                                                onChange={v => setOrgData({...orgData, branding: {...orgData.branding!, typographyUrlLight: v}})} 
+                                                disabled={!isEditingOrg}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-1 h-full">
+                                    <div className="h-full flex flex-col">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Logo (Dark Theme)</label>
+                                        <div className="flex-grow">
+                                            <ImageUpload 
+                                                label="" 
+                                                description="Logo displayed during Dark Theme mode." 
+                                                currentValue={orgData.branding?.typographyUrlDark} 
+                                                onChange={v => setOrgData({...orgData, branding: {...orgData.branding!, typographyUrlDark: v}})} 
                                                 disabled={!isEditingOrg}
                                             />
                                         </div>

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
-import { X, Printer } from 'lucide-react';
+import { X, Printer, Search } from 'lucide-react';
 import { getGlobalFontCSS } from './GlobalFontManager';
 
 interface ReportViewerProps {
@@ -41,19 +40,53 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
 
   useEffect(() => {
     if (!isSearchable || !reportContentRef.current) return;
+    const term = searchTerm.toLowerCase().trim();
 
-    const tables = reportContentRef.current.querySelectorAll('table');
-    tables.forEach(table => {
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const rowText = (row as HTMLElement).innerText.toLowerCase();
-            if (rowText.includes(searchTerm.toLowerCase())) {
-                (row as HTMLElement).style.display = '';
+    // Strategy: Search in standardized blocks first, then rows.
+    const blocks = reportContentRef.current.querySelectorAll('.report-block');
+    
+    if (blocks.length > 0) {
+        blocks.forEach(block => {
+            const el = block as HTMLElement;
+            // Enhanced header matching: look for any textual header or specific profile/block headers
+            const headerElement = el.querySelector('h1, h2, h3, h4, h5, h6, .block-header, .profile-header, .profile-name, .block-title');
+            const blockHeaderText = headerElement?.textContent?.toLowerCase() || '';
+            const blockFullText = (el.textContent || '').toLowerCase();
+            
+            const matchesHeader = blockHeaderText.includes(term);
+            const matchesFullContent = blockFullText.includes(term);
+
+            if (term === '' || matchesFullContent) {
+                el.style.display = '';
+                
+                // Fine-grained row filtering
+                // If the header (e.g. Item Name or Participant Name) matches, show all rows for context.
+                // Otherwise, filter the table rows based on content.
+                const rows = el.querySelectorAll('tbody tr');
+                if (rows.length > 0) {
+                    rows.forEach(row => {
+                        const rowEl = row as HTMLElement;
+                        const rowText = (rowEl.textContent || '').toLowerCase();
+                        if (term === '' || matchesHeader || rowText.includes(term)) {
+                            rowEl.style.display = '';
+                        } else {
+                            rowEl.style.display = 'none';
+                        }
+                    });
+                }
             } else {
-                (row as HTMLElement).style.display = 'none';
+                el.style.display = 'none';
             }
         });
-    });
+    } else {
+        // Fallback for flat reports (just a table)
+        const rows = reportContentRef.current.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const rowEl = row as HTMLElement;
+            const rowText = (rowEl.textContent || '').toLowerCase();
+            rowEl.style.display = (term === '' || rowText.includes(term)) ? '' : 'none';
+        });
+    }
   }, [searchTerm, isSearchable, content]);
 
   useEffect(() => {
@@ -75,14 +108,14 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
         if (th !== header) {
           delete (th as HTMLElement).dataset.sortDirection;
           const indicator = th.querySelector('.sort-indicator');
-          if (indicator) indicator.innerHTML = ' &#x2195;'; // Changed from \u2195
+          if (indicator) indicator.innerHTML = ' &#x2195;'; 
         }
       });
 
       header.dataset.sortDirection = newDirection;
       const indicator = header.querySelector('.sort-indicator');
       if (indicator) {
-        indicator.innerHTML = newDirection === 'asc' ? ' &#x2191;' : ' &#x2193;'; // Changed from \u2191, \u2193
+        indicator.innerHTML = newDirection === 'asc' ? ' &#x2191;' : ' &#x2193;'; 
       }
 
       const tbody = table.querySelector('tbody');
@@ -117,7 +150,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
             const indicator = document.createElement('span');
             indicator.className = 'sort-indicator';
             indicator.style.display = 'inline-block';
-            indicator.innerHTML = ' &#x2195;'; // Changed from \u2195
+            indicator.innerHTML = ' &#x2195;'; 
             header.appendChild(indicator);
         }
         header.addEventListener('click', clickHandler);
@@ -136,7 +169,6 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
 
 
   const handlePrint = () => {
-    // Open a new tab
     const printWindow = window.open('', '_blank');
     
     if (!printWindow) {
@@ -155,11 +187,8 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
           <title>${title}</title>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Roboto+Slab:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style> 
-            /* Inject Custom Fonts */
             ${globalFontCss}
-
             @page {
-                /* size: auto;  Removed fixed size to allow user to choose orientation */
                 margin: 0.5in;
                 @top-left {
                     content: "${hideHeader ? '' : (reportSettings?.header || '').replace(/"/g, "'")}";
@@ -183,8 +212,6 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
                 padding: 20px;
                 background-color: #ffffff;
             }
-            
-            /* Print Button Styles */
             .print-ui-container {
                 position: fixed;
                 top: 20px;
@@ -194,7 +221,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
                 gap: 12px;
             }
             .print-btn {
-                background-color: #283E25; /* Amazio Primary */
+                background-color: #283E25; 
                 color: white;
                 border: none;
                 padding: 10px 20px;
@@ -209,34 +236,17 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
                 align-items: center;
                 gap: 8px;
             }
-            .print-btn:hover {
-                background-color: #1a2e18;
-            }
-            .print-btn svg {
-                width: 16px;
-                height: 16px;
-            }
-            
-            .print-btn.back-btn {
-                background-color: #f4f4f5; /* Zinc-100 */
-                color: #18181b; /* Zinc-900 */
-                border: 1px solid #e4e4e7; /* Zinc-200 */
-            }
-            .print-btn.back-btn:hover {
-                background-color: #e4e4e7;
-            }
-
-            /* Report Styles */
+            .print-btn:hover { background-color: #1a2e18; }
+            .print-btn.back-btn { background-color: #f4f4f5; color: #18181b; border: 1px solid #e4e4e7; }
+            .print-btn.back-btn:hover { background-color: #e4e4e7; }
             h1, h2, h3, h4, h5, h6 { font-family: 'GlobalAutoFont', 'Roboto Slab', serif; color: #283E25; }
             .report-container { max-width: 100%; margin: 0 auto; }
             .sort-indicator { display: none !important; } 
             .no-wrap { white-space: nowrap; }
-            
             table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
             th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; }
             th { background-color: #283E25 !important; color: white !important; font-weight: 600; font-family: 'GlobalAutoFont', 'Roboto Slab', serif; letter-spacing: 0.5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             tr:nth-child(even) { background-color: #F9FAF9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            
             @media print {
                 .print-ui-container { display: none !important; }
                 body { padding: 0; background-color: white; }
@@ -244,10 +254,8 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
                 .page-break-before-always { page-break-before: always; }
                 th, td { padding: 4px 6px !important; }
                 table { margin-bottom: 0.75rem !important; }
-                h1,h2,h3,h4 { margin-bottom: 0.5rem !important; }
                 th { background-color: #283E25 !important; color: white !important; }
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
           </style>
         </head>
@@ -262,7 +270,6 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
                 Print Report
             </button>
           </div>
-          
           <div class="report-container">
             ${!hideHeader ? `
             <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #D4AF37; padding-bottom: 1rem;">
@@ -271,9 +278,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
             </div>
             <h2 style="font-size: 1.5rem; font-weight: 600; color: #283E25; text-align: center; margin-bottom: 1.5rem;">${title}</h2>
             ` : ''}
-            <div>
-              ${contentToPrint}
-            </div>
+            <div>${contentToPrint}</div>
           </div>
         </body>
       </html>
@@ -283,60 +288,37 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
     printWindow.document.close();
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
   
-  const modalContent = (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"
-        onClick={onClose}
-        aria-modal="true"
-        role="dialog"
-      >
-        <div
-          className="relative flex flex-col w-full h-full max-w-4xl max-h-[90vh] bg-white dark:bg-zinc-900 rounded-lg shadow-2xl overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700 gap-4">
+  return ReactDOM.createPortal(
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose} aria-modal="true" role="dialog">
+        <div className="relative flex flex-col w-full h-full max-w-5xl max-h-[95vh] bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
+          <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800 gap-6 bg-zinc-50 dark:bg-zinc-900/50">
              {isSearchable ? (
-                <div className="flex-grow">
+                <div className="flex-grow max-w-md relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                     <input
                         type="text"
-                        placeholder={`Find in ${title}...`}
+                        placeholder="Search Item or Participant..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-md border-zinc-300 bg-zinc-100 dark:bg-zinc-800 dark:border-zinc-600 px-3 py-2 text-sm shadow-sm placeholder-zinc-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        className="w-full rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 pl-10 pr-4 py-2.5 text-sm font-bold shadow-inner focus:ring-2 focus:ring-indigo-500/20 outline-none"
                     />
                 </div>
-            ) : <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">{title}</h2>}
+            ) : <h2 className="text-xl font-black text-zinc-800 dark:text-zinc-100">{title}</h2>}
 
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-amazio-primary hover:bg-amazio-primary/90 text-white rounded-md transition-colors"
-                aria-label="Export report"
-              >
-                <Printer className="h-4 w-4" /> <span>Open & Print</span>
-              </button>
-              <button onClick={onClose} className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" aria-label="Close report viewer">
-                <X className="h-6 w-6" />
-              </button>
+            <div className="flex items-center gap-3">
+              <button onClick={handlePrint} className="flex items-center gap-2 px-5 py-2.5 bg-amazio-primary text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"><Printer size={16} /> Print</button>
+              <button onClick={onClose} className="p-2.5 rounded-xl text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"><X size={24} /></button>
             </div>
           </div>
-          {/* Force white background for report content area for document accuracy */}
-          <div 
-            className="flex-grow overflow-y-auto p-6 text-zinc-900 scroll-smooth custom-scrollbar" 
-            ref={reportContentRef}
-            style={{ backgroundColor: 'white', color: '#18181b' }}
-          >
+          <div className="flex-grow overflow-y-auto p-10 bg-white text-zinc-900 custom-scrollbar" ref={reportContentRef} style={{ backgroundColor: 'white' }}>
             <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
   );
-
-  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default ReportViewer;

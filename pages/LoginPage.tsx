@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { User, Lock, Sun, Moon, Laptop, ArrowRight, LogOut, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
 import { Settings } from '../types';
@@ -57,6 +57,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
         toggleTheme(nextThemeMap[theme] || 'system');
     };
 
+    const isDark = useMemo(() => document.documentElement.classList.contains('dark'), [theme]);
+    const logoUrl = useMemo(() => {
+        if (!settings.branding) return null;
+        const { typographyUrl, typographyUrlLight, typographyUrlDark } = settings.branding;
+        if (isDark) return typographyUrlDark || typographyUrl;
+        return typographyUrlLight || typographyUrl;
+    }, [settings.branding, isDark]);
+
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 font-sans overflow-hidden transition-colors duration-500 bg-amazio-light-bg dark:bg-amazio-bg selection:bg-amazio-accent selection:text-amazio-bg">
             
@@ -82,9 +90,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
                 <div className="text-center mb-8 pt-2">
                     {/* Event Typography (Replaces Icon & App Name) */}
                     <div className="flex justify-center items-center min-h-[160px]">
-                        {settings.branding?.typographyUrl ? (
+                        {logoUrl ? (
                             <img 
-                                src={settings.branding.typographyUrl} 
+                                src={logoUrl} 
                                 alt={settings.heading} 
                                 className="w-full max-w-[400px] sm:max-w-[480px] h-auto max-h-72 object-contain filter drop-shadow-xl hover:scale-105 transition-all duration-700" 
                             />
