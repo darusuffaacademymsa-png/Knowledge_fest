@@ -60,17 +60,17 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     const getStatusInfo = () => {
         if (isDeclared) return {
             label: 'Declared',
-            icon: <CheckCircle2 size={10} sm:size={12} strokeWidth={3} />,
-            class: 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/20'
+            icon: <CheckCircle2 size={10} strokeWidth={3} />,
+            class: 'bg-emerald-500 text-white border-emerald-400'
         };
         if (isDraft) return {
             label: 'Drafted',
-            icon: <ClipboardEdit size={10} sm:size={12} strokeWidth={3} />,
-            class: 'bg-amber-500 text-white border-amber-400 shadow-amber-500/20'
+            icon: <ClipboardEdit size={10} strokeWidth={3} />,
+            class: 'bg-amber-500 text-white border-amber-400'
         };
         return {
             label: 'Pending',
-            icon: <Clock size={10} sm:size={12} strokeWidth={3} />,
+            icon: <Clock size={10} strokeWidth={3} />,
             class: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700'
         };
     };
@@ -78,64 +78,63 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     const statusInfo = getStatusInfo();
 
     return (
-        <div className={`group relative flex flex-col h-full rounded-[1.2rem] sm:rounded-[2.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/30' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
-            <div className="p-4 sm:p-6 pb-1 sm:pb-2 flex justify-between items-start">
-                <div className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest border flex items-center gap-1 sm:gap-1.5 transition-all duration-300 ${statusInfo.class}`}>
+        <div className={`group relative flex flex-col h-full rounded-[1rem] sm:rounded-[1.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/20' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
+            <div className="p-3 sm:p-4 pb-1 sm:pb-1.5 flex justify-between items-center">
+                <div className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-widest border flex items-center gap-1 transition-all ${statusInfo.class}`}>
                     {statusInfo.icon}
                     {statusInfo.label}
                 </div>
                 {isDeclared && onUnlock && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onUnlock(item); }} 
-                        className="p-2 sm:p-3 rounded-lg sm:rounded-xl text-amber-500 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1.5"
+                        className="p-1.5 rounded-lg text-amber-500 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 transition-all hover:scale-105 active:scale-95"
                     >
-                        <LockOpen size={12} sm:size={14} strokeWidth={3} />
-                        <span className="text-[8px] sm:text-[9px] font-black uppercase">Unlock</span>
+                        <LockOpen size={12} strokeWidth={3} />
                     </button>
                 )}
             </div>
 
-            <div className="p-4 sm:p-6 pt-1 sm:pt-2 flex-grow flex flex-col">
-                <div className="mb-2 sm:mb-4">
-                    <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-1 transition-colors`} style={{ color: catColor }}>
+            <div className="p-3 sm:p-4 pt-1 sm:pt-1 flex-grow flex flex-col">
+                <div className="mb-2">
+                    <p className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-0.5`} style={{ color: catColor }}>
                         {categoryName}
                     </p>
-                    <h3 className="text-lg sm:text-2xl font-black font-serif uppercase tracking-tighter leading-tight text-amazio-primary dark:text-zinc-100 line-clamp-2">
+                    <h3 className="text-sm sm:text-base font-black font-serif uppercase tracking-tight leading-tight text-amazio-primary dark:text-zinc-100 line-clamp-2">
                         {item.name}
                     </h3>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-auto">
+                <div className="flex flex-wrap gap-1 mt-auto">
                     <span 
-                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[7px] sm:text-[9px] font-black uppercase tracking-widest border transition-all"
-                        style={{ backgroundColor: perfColor + '15', color: perfColor, borderColor: perfColor + '40' }}
+                        className="px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-tighter border"
+                        style={{ backgroundColor: perfColor + '10', color: perfColor, borderColor: perfColor + '20' }}
                     >
                         {item.performanceType}
                     </span>
                     <span 
-                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[7px] sm:text-[9px] font-black uppercase tracking-widest border transition-all"
-                        style={{ backgroundColor: typeColor + '15', color: typeColor, borderColor: typeColor + '40' }}
+                        className="px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-tighter border"
+                        style={{ backgroundColor: typeColor + '10', color: typeColor, borderColor: typeColor + '20' }}
                     >
                         {item.type}
                     </span>
                 </div>
             </div>
 
-            <div className="p-4 sm:p-6 pt-0 mt-1 sm:mt-2 border-t border-zinc-50 dark:border-white/5 pt-4 sm:pt-6">
-                <div className="flex gap-2">
+            <div className="p-3 sm:p-4 pt-0 mt-1 border-t border-zinc-50 dark:border-white/5 pt-3 sm:pt-4">
+                <div className="flex gap-1.5">
                     <button 
                         onClick={onEdit}
-                        className="flex-grow py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[8px] sm:text-[10px] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 bg-amazio-primary text-white shadow-amazio-primary/20"
+                        className="flex-grow py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-black uppercase tracking-widest text-[8px] sm:text-[9px] shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1 bg-amazio-primary text-white"
                     >
-                        {isDeclared ? <Eye size={12} sm:size={14}/> : <Edit3 size={12} sm:size={14}/>}
-                        {isDeclared ? 'Details' : 'Score'}
+                        {isDeclared ? <Eye size={12}/> : <Edit3 size={12}/>}
+                        {isDeclared ? 'View' : 'Score'}
                     </button>
                     {isDraft && onDeclare && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDeclare(item); }}
-                            className="w-10 h-10 sm:w-14 sm:h-12 bg-amber-500 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500 text-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-all"
                         >
-                            <Megaphone size={16} sm:size={18} strokeWidth={3} />
+                            <Megaphone size={14} strokeWidth={3} />
                         </button>
                     )}
                 </div>
@@ -144,7 +143,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     );
 };
 
-// --- ScoringTable Component (Table view for large screens) ---
+// --- ScoringTable Component ---
 const ScoringTable: React.FC<{
     participants: ScoredParticipant[];
     judgeIds: string[];
@@ -462,7 +461,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                          ) : (
                             <>
                                 {(isManager || (isJudge && !isDraft)) && (
-                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
+                                    <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
                                         <Save size={14}/> {isSaving ? '...' : (isJudge ? 'Submit' : 'Draft')}
                                     </button>
                                 )}
@@ -546,7 +545,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">Manage competition verdicts and global standings.</p>
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredItems.map(item => (
                     <ResultCard 
                         key={item.id} item={item} result={state.results.find(r => r.itemId === item.id)}

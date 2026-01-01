@@ -9,8 +9,9 @@ import { useFirebase } from '../hooks/useFirebase';
 import { Settings } from '../types';
 import { TABS } from '../constants';
 
+// Added missing LandingPageProps interface
 interface LandingPageProps {
-    theme: string;
+    theme: 'light' | 'dark' | 'system';
     toggleTheme: (theme: 'light' | 'dark' | 'system') => void;
     settings: Settings;
 }
@@ -109,7 +110,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             </div>
 
             <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-[#F1F5E9]/90 dark:bg-[#0F1210]/90 backdrop-blur-2xl border-b border-[#283618]/5 dark:border-white/5 py-4' : 'bg-transparent py-10'}`}>
-                <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+                <div className="max-w-5xl mx-auto px-6 flex justify-between items-center">
                     <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                         {logoUrl ? (
                             <img src={logoUrl} alt="AMAZIO" className="h-10 w-auto object-contain transition-all" />
@@ -143,11 +144,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             </nav>
 
             <section className="relative z-10 pt-48 pb-32 px-6">
-                <div className="max-w-7xl mx-auto text-center">
+                <div className="max-w-5xl mx-auto text-center">
                     <div className="inline-flex flex-col items-center animate-in fade-in slide-in-from-bottom-6 duration-700">
                         <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/40 dark:bg-[#9AAD59]/10 backdrop-blur-md rounded-full border border-[#283618]/10 dark:border-[#9AAD59]/20 mb-8 shadow-sm">
                             <TreePine size={18} className="text-[#283618] dark:text-[#9AAD59]" />
-                            <span className="text-[12px] font-black uppercase tracking-[0.5em] text-[#283618] dark:text-[#9AAD59]">The Rooted Tree</span>
+                            <span className="text-[12px] font-black uppercase tracking-with-[0.5em] text-[#283618] dark:text-[#9AAD59]">The Rooted Tree</span>
                         </div>
                         
                         <div className="relative mb-8">
@@ -195,7 +196,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                 </div>
             </section>
 
-            <section className="relative z-10 max-w-7xl mx-auto px-6 py-32 border-t border-[#283618]/5 dark:border-white/5">
+            <section className="relative z-10 max-w-5xl mx-auto px-6 py-32 border-t border-[#283618]/5 dark:border-white/5">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <LandingStatCard icon={Users} title="Delegates" value={landingStats.participants} colorClass="bg-emerald-500" />
                     <LandingStatCard icon={Trophy} title="Declared" value={landingStats.declared} colorClass="bg-rose-500" />
@@ -204,7 +205,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                 </div>
             </section>
 
-            <section id="portal" className="relative z-10 max-w-7xl mx-auto px-6 py-48 text-center flex flex-col items-center">
+            <section id="portal" className="relative z-10 max-w-5xl mx-auto px-6 py-48 text-center flex flex-col items-center">
                 <div className="max-w-md w-full">
                     <div className="mb-16">
                         <div className="w-16 h-1 bg-[#9AAD59] mx-auto mb-6 rounded-full"></div>
@@ -292,7 +293,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
             </section>
 
             <footer className="relative z-10 py-20 border-t border-[#283618]/5 dark:border-white/5">
-                <div className="max-w-7xl mx-auto px-6 text-center">
+                <div className="max-w-5xl mx-auto px-6 text-center">
                     <p className="text-[#283618] dark:text-white text-lg font-black uppercase tracking-tighter">AMAZIO 2026</p>
                     <p className="text-[#606C38] dark:text-[#9AAD59] text-[10px] font-black uppercase tracking-[0.4em] mt-2">The Rooted Tree • Art Fest Edition</p>
                 </div>

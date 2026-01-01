@@ -94,10 +94,9 @@ const PerformanceBadge = ({ type }: { type: PerformanceType }) => {
     );
 };
 
-// --- MODALS (Simplified for speed as requested to optimize UI size, not features) ---
+// --- MODALS ---
 
-/* FIX: Added GroupEntryModal to resolve "Cannot find name" error */
-const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; entry: any }> = ({ isOpen, onClose, entry }) => {
+export const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; entry: any }> = ({ isOpen, onClose, entry }) => {
     const { state, updateMultipleParticipants } = useFirebase();
     const [chestNo, setChestNo] = useState('');
     const [leaderId, setLeaderId] = useState('');
@@ -176,7 +175,7 @@ const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; entry: a
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Cancel</button>
-                    <button onClick={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
+                    <button handleSave={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
                 </div>
             </div>
         </div>,
@@ -184,7 +183,7 @@ const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; entry: a
     );
 };
 
-const ItemFormModal: React.FC<{ 
+export const ItemFormModal: React.FC<{ 
     isOpen: boolean; 
     onClose: () => void; 
     editingItem: Item | null; 
@@ -322,7 +321,7 @@ const ItemFormModal: React.FC<{
     );
 };
 
-const ParticipantFormModal: React.FC<{ 
+export const ParticipantFormModal: React.FC<{ 
     isOpen: boolean; 
     onClose: () => void; 
     editingParticipant: Participant | null;

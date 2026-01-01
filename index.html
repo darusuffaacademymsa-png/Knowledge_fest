@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="preload" style="scroll-behavior: smooth;">
   <head>
@@ -36,7 +37,7 @@
     <!-- Fonts System -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Roboto+Slab:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Roboto+Slab:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -46,8 +47,8 @@
           extend: {
             colors: {
               amazio: {
-                bg: '#0F1210', 
-                surface: '#181C19',
+                bg: '#09090b', 
+                surface: '#121215',
                 'light-bg': '#FAF9F6', 
                 'light-surface': '#FFFFFF',
                 primary: '#283618',
@@ -60,6 +61,10 @@
               serif: ['"Playfair Display"', 'serif'],
               slab: ['"Roboto Slab"', 'serif'], 
             },
+            boxShadow: {
+              'glass-hover': '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
+              'glow-emerald': '0 0 15px rgba(16, 185, 129, 0.3)',
+            }
           },
         },
       };
@@ -71,14 +76,22 @@
       }
       body {
         -webkit-font-smoothing: antialiased;
-        font-family: 'Roboto Slab', serif;
+        font-family: 'Inter', sans-serif;
         background-color: var(--bg-color);
-        /* Handled inside App components to avoid double padding */
         padding: 0;
         margin: 0;
         overflow-x: hidden;
       }
-      /* Mobile optimization for notch and scrollbars */
+      /* Custom scrollbar for desktop */
+      @media (min-width: 768px) {
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+          background: #3f3f46; 
+          border-radius: 10px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; }
+      }
       @media (max-width: 768px) {
         .custom-scrollbar::-webkit-scrollbar { display: none; }
         .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -103,7 +116,7 @@
 }
 </script>
   </head>
-  <body class="bg-amazio-light-bg dark:bg-amazio-bg text-amazio-primary dark:text-zinc-100 font-slab transition-colors duration-500">
+  <body class="bg-amazio-light-bg dark:bg-amazio-bg text-zinc-900 dark:text-zinc-100 transition-colors duration-500">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

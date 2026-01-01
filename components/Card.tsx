@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface CardProps {
@@ -9,16 +10,16 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ title, children, className, action }) => {
   return (
-    <div className={`relative bg-white/90 dark:bg-amazio-surface/60 backdrop-blur-xl rounded-3xl shadow-sm md:shadow-md border border-amazio-primary/10 dark:border-white/5 group overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-glass-hover hover:bg-white dark:hover:bg-amazio-surface/80 hover:-translate-y-1 ${className}`}>
+    <div className={`relative bg-white/90 dark:bg-zinc-900/60 backdrop-blur-xl rounded-[2rem] shadow-sm md:shadow-md border border-zinc-200 dark:border-zinc-800 group overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-glass-hover hover:bg-white dark:hover:bg-zinc-900/80 hover:-translate-y-1 ${className}`}>
       
       {/* Rim Light Gradient on Top Border - Adapts to Theme */}
-      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amazio-secondary/30 dark:via-amazio-accent/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amazio-secondary/30 dark:via-emerald-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
       
       {/* Header */}
-      <div className="px-6 py-5 flex justify-between items-center border-b border-amazio-primary/5 dark:border-white/5 bg-amazio-primary/[0.01] dark:bg-white/[0.02]">
+      <div className="px-6 py-5 flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/[0.3] dark:bg-white/[0.01]">
         <div className="flex items-center gap-3">
-             <div className="h-4 w-1 bg-amazio-secondary dark:bg-amazio-accent rounded-full shadow-[0_0_8px_rgba(77,90,42,0.2)] dark:shadow-[0_0_8px_rgba(154,168,106,0.5)]"></div>
-             <h3 className="text-lg font-black font-serif text-amazio-primary dark:text-white tracking-tight">
+             <div className="h-4 w-1 bg-emerald-600 dark:bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]"></div>
+             <h3 className="text-lg font-black font-serif text-zinc-900 dark:text-zinc-100 tracking-tight">
                 {title}
             </h3>
         </div>
