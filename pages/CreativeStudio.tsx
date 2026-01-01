@@ -1,20 +1,16 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { 
     Layout, Download, ChevronDown, 
     Loader2, Image as ImageIcon, Palette, Globe,
     Plus, Trash2, Check, Type, Award, Layers, User, MapPin, X,
-    Settings2, ChevronUp, ImagePlus
+    Settings2, ChevronUp, ImagePlus, Leaf, Crown, Star, Trophy
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ResultStatus, ItemType, PerformanceType } from '../types';
 
 // --- Utils ---
 
-/**
- * Compresses a Base64 image string for background use.
- */
 const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, quality = 0.8): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
@@ -39,7 +35,7 @@ const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, q
 
 // --- Types ---
 
-type TemplateType = 'CLASSIC' | 'MINIMAL' | 'HERITAGE';
+type TemplateType = 'ROOTED_TREE' | 'CLASSIC' | 'MINIMAL' | 'HERITAGE';
 
 interface PosterData {
     itemId: string;
@@ -59,6 +55,14 @@ interface PosterData {
 // --- Templates Config ---
 
 const TEMPLATES: Record<TemplateType, { name: string; bg: string; text: string; accent: string; fontTitle: string; fontBody: string }> = {
+    ROOTED_TREE: {
+        name: 'Rooted Tree Official',
+        bg: 'bg-[#E3EBD1]',
+        text: 'text-[#283618]',
+        accent: 'text-[#606C38]',
+        fontTitle: 'font-slab',
+        fontBody: 'font-slab'
+    },
     CLASSIC: {
         name: 'Classic Paper',
         bg: 'bg-[#F9F7F1]',
@@ -107,23 +111,83 @@ const PosterCanvas: React.FC<{
     showPoints?: boolean;
 }> = ({ data, template, settings, scale = 1, id, customBg, showPoints = true }) => {
     const style = TEMPLATES[template];
-    const footerText = settings.institutionDetails?.name || settings.organizingTeam;
     
-    // Logic for rank-specific point colors
-    const getPointColor = (rank: number) => {
-        if (rank === 1) return 'text-emerald-500';
-        if (rank === 2) return 'text-sky-500';
-        if (rank === 3) return 'text-rose-500';
-        return 'text-zinc-400';
-    };
+    // --- RENDER LOGIC FOR ROOTED TREE TEMPLATE ---
+    if (template === 'ROOTED_TREE') {
+        const parts = data.categoryName.split(' ');
+        const prefix = parts[0] || '';
+        const suffix = parts.slice(1).join(' ');
 
-    const getRankAccent = (rank: number) => {
-        if (rank === 1) return 'text-amber-500';
-        if (rank === 2) return 'text-slate-400';
-        if (rank === 3) return 'text-orange-500';
-        return 'text-zinc-300';
-    };
+        return (
+            <div 
+                id={id}
+                className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618] font-slab"
+                style={{ 
+                    width: '1080px', 
+                    height: '1080px', 
+                    transform: `scale(${scale})`, 
+                    transformOrigin: 'top left',
+                    flexShrink: 0 
+                }}
+            >
+                {/* Background Layer (Image B) */}
+                {customBg && (
+                    <img src={customBg} className="absolute inset-0 w-full h-full object-cover z-0" alt="Official Background" />
+                )}
 
+                {/* Dynamic Content Overlay - Strict Positioning based on Image A */}
+                <div className="relative z-10 w-full h-full flex flex-col p-0">
+                    
+                    {/* Header Zone: Category (Prefix/Suffix) & Item Name (#speech Mal) */}
+                    <div className="mt-[232px] ml-[82px] space-y-0">
+                        <div className="flex items-center gap-3">
+                             <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]">
+                                <span className="text-[#99AD59]">{prefix}</span>
+                                {suffix && <span className="text-[#606C38] ml-4">{suffix}</span>}
+                             </h2>
+                             <Leaf className="w-[62px] h-[62px] text-[#99AD59] fill-current -mt-4" />
+                        </div>
+                        <h3 className="text-[52px] font-bold tracking-tight text-[#4D5A2A] mt-[-10px] ml-2">
+                            #{data.itemName}
+                        </h3>
+                    </div>
+
+                    {/* Winners Zone: Precise alignment with background icons */}
+                    {/* mt reduced from 16px to 8px to lift names up by 0.2 cm. space-y reduced from 30px to 11px to reduce gap by 0.5 cm. */}
+                    <div className="mt-[8px] ml-[205px] space-y-[11px] pr-[110px]">
+                        {data.winners.slice(0, 3).map((winner, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-[40px] min-h-[120px]">
+                                
+                                {/* Identity Column (Name, Place, Team) */}
+                                <div className="flex-grow min-w-0 pt-0">
+                                    <h4 className="text-[52px] font-black uppercase tracking-tighter leading-[1] mb-0 text-[#283618]">
+                                        {winner.name}
+                                    </h4>
+                                    <p className="text-[24px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight mt-0.5">
+                                        {winner.place}
+                                    </p>
+                                    <p className="text-[20px] font-medium italic opacity-70 leading-tight mt-0.5">
+                                        {winner.team}
+                                    </p>
+                                </div>
+
+                                {/* Grade Column - Centered vertically with the row */}
+                                {winner.grade && (
+                                    <div className="shrink-0 flex items-center mb-6">
+                                        <div className="bg-[#9AAD59] text-[#283618] px-6 py-2 rounded-[4px] font-black text-[22px] shadow-sm whitespace-nowrap tracking-wider">
+                                            GRADE {winner.grade.toUpperCase()}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- DEFAULT RENDER LOGIC FOR OTHER TEMPLATES ---
     return (
         <div 
             id={id}
@@ -149,7 +213,6 @@ const PosterCanvas: React.FC<{
             {/* Content Layer */}
             <div className="relative z-10 flex flex-col h-full p-20">
                 
-                {/* Header: Item & Category */}
                 <div className="flex justify-between items-start mb-16">
                     <div className="space-y-4">
                         <div className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full shadow-lg">
@@ -160,41 +223,24 @@ const PosterCanvas: React.FC<{
                             {data.itemName}
                         </h1>
                     </div>
-                    {data.resultNumber && (
-                        <div className="text-right">
-                             <div className="text-6xl font-black text-indigo-600/30 font-mono tracking-tighter leading-none">#{data.resultNumber.padStart(2, '0')}</div>
-                             <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Result ID</div>
-                        </div>
-                    )}
                 </div>
 
-                {/* Main Body: Winners List */}
                 <div className="flex-grow flex flex-col justify-center space-y-12">
                     {data.winners.map((winner, idx) => {
                         const rankInfo = formatRankNum(winner.rank);
-                        const pointColor = getPointColor(winner.rank);
-                        const rankAccent = getRankAccent(winner.rank);
 
                         return (
                             <div key={idx} className="flex items-center justify-between group animate-in slide-in-from-left duration-500" style={{ animationDelay: `${idx * 150}ms` }}>
                                 <div className="flex items-start gap-10">
-                                    {/* Rank Indicator */}
-                                    <div className={`flex items-start ${rankAccent}`}>
+                                    <div className="flex items-start text-indigo-600">
                                         <span className="text-8xl font-black leading-none tracking-tighter tabular-nums">{rankInfo.num}</span>
                                         <span className="text-3xl font-bold mt-2 ml-0.5 uppercase">{rankInfo.suffix}</span>
                                     </div>
 
-                                    {/* Identity */}
                                     <div className="flex flex-col">
                                         <h3 className="text-5xl font-black text-zinc-900 leading-none uppercase tracking-tight mb-3">
                                             {winner.name}
                                         </h3>
-                                        {winner.place && (
-                                            <div className="flex items-center gap-2 text-sky-600 font-black uppercase tracking-widest text-xl opacity-90 mb-2">
-                                                <MapPin size={18} strokeWidth={3} />
-                                                {winner.place}
-                                            </div>
-                                        )}
                                         <div className="flex items-center gap-4">
                                             <span className="text-2xl font-bold text-emerald-600 uppercase tracking-widest leading-none bg-emerald-50 px-3 py-1 rounded-lg">
                                                 {winner.team}
@@ -207,49 +253,11 @@ const PosterCanvas: React.FC<{
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Points Badge */}
-                                {showPoints && (
-                                    <div className="text-right flex flex-col items-end">
-                                        <div className={`text-7xl font-black ${pointColor} tabular-nums leading-none tracking-tighter`}>
-                                            +{winner.points}
-                                        </div>
-                                        <div className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400 mt-2">Points Earned</div>
-                                    </div>
-                                )}
                             </div>
                         );
                     })}
                 </div>
-
-                {/* Footer: Institutional Branding */}
-                <div className="mt-16 pt-12 border-t border-zinc-100/50 flex justify-between items-end">
-                    <div className="space-y-1">
-                        <h4 className="text-3xl font-black text-zinc-800 uppercase tracking-tighter">{footerText}</h4>
-                        <p className="text-lg font-bold text-zinc-500 uppercase tracking-widest">{settings.heading}</p>
-                    </div>
-                    <div className="flex items-center gap-8">
-                        <div className="text-right">
-                             <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.4em] mb-2">Event Year</p>
-                             <p className="text-3xl font-black text-zinc-800 font-mono tracking-tighter">2025</p>
-                        </div>
-                        {settings.institutionDetails?.logoUrl ? (
-                            <img src={settings.institutionDetails.logoUrl} className="h-20 w-20 object-contain grayscale opacity-80" alt="Logo" />
-                        ) : (
-                            <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center">
-                                <Globe size={40} className="text-zinc-300" />
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
-            
-            {/* Text Glow Helper (for backgrounds) */}
-            <style>{`
-                .drop-shadow-sm { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-                .animate-in { animation: slide-in 0.6s ease-out forwards; }
-            `}</style>
         </div>
     );
 };
@@ -257,10 +265,9 @@ const PosterCanvas: React.FC<{
 // --- Main Page Component ---
 const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const { state, updateSettings } = useFirebase();
-    const [template, setTemplate] = useState<TemplateType>('CLASSIC');
+    const [template, setTemplate] = useState<TemplateType>('ROOTED_TREE');
     const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [selectedBgUrl, setSelectedBgUrl] = useState<string | null>(null);
-    const [showPoints, setShowPoints] = useState(true);
     const [scale, setScale] = useState(0.5);
     const [isControlsOpen, setIsControlsOpen] = useState(!isMobile);
     const [hasInitialized, setHasInitialized] = useState(false);
@@ -268,10 +275,8 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const mainContainerRef = useRef<HTMLDivElement>(null);
     const bgInputRef = useRef<HTMLInputElement>(null);
 
-    // Toggle controls on mobile
     const toggleControls = () => setIsControlsOpen(!isControlsOpen);
 
-    // Dynamic scale logic: Fits 1080px to available screen space
     useEffect(() => {
         const calculateScale = () => {
             if (mainContainerRef.current) {
@@ -291,16 +296,14 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             clearTimeout(timerId);
             window.removeEventListener('resize', calculateScale);
         };
-    }, [selectedItemId, isMobile, selectedBgUrl, isControlsOpen]);
+    }, [selectedItemId, isMobile, selectedBgUrl, isControlsOpen, template]);
 
-    // Sanitized Declared Items List (No Ghosts)
     const declaredItems = useMemo(() => {
         if (!state) return [];
         return state.results
             .filter(r => r.status === ResultStatus.DECLARED)
             .map(r => {
                 const item = state.items.find(i => i.id === r.itemId);
-                // Only return valid objects where the item data actually exists
                 return item ? {
                     id: r.itemId,
                     name: item.name,
@@ -310,11 +313,13 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             .filter((entry): entry is { id: string; name: string; result: any } => entry !== null);
     }, [state]);
 
-    // Auto-select last declared result on mount
     useEffect(() => {
         if (state && !hasInitialized) {
             if (declaredItems.length > 0) {
                 setSelectedItemId(declaredItems[declaredItems.length - 1].id);
+            }
+            if (state.settings.customBackgrounds?.length) {
+                setSelectedBgUrl(state.settings.customBackgrounds[0]);
             }
             setHasInitialized(true);
         }
@@ -323,7 +328,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const posterData = useMemo(() => {
         if (!state || !selectedItemId) return null;
         
-        // Find result in the sanitized list to ensure indexing matches visibility
         const listIndex = declaredItems.findIndex(i => i.id === selectedItemId);
         if (listIndex === -1) return null;
 
@@ -361,7 +365,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             itemId: selectedItemId,
             itemName: item?.name || '',
             categoryName: category?.name || '',
-            // resultNumber is strictly based on the current list index + 1
             resultNumber: String(listIndex + 1),
             winners
         } as PosterData;
@@ -369,11 +372,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && state) {
+        if (file) {
             const reader = new FileReader();
             reader.onload = async () => {
                 const compressed = await compressBgImage(reader.result as string);
-                const existingBgs = state.settings.customBackgrounds || [];
+                const existingBgs = state?.settings.customBackgrounds || [];
                 await updateSettings({ customBackgrounds: [...existingBgs, compressed] });
                 setSelectedBgUrl(compressed);
             };
@@ -384,6 +387,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const handleDeleteBg = async (idx: number) => {
         if (!state) return;
         const bgs = [...(state.settings.customBackgrounds || [])];
+        // FIX: Added 'const' to declare the 'removed' variable.
         const removed = bgs.splice(idx, 1)[0];
         if (selectedBgUrl === removed) setSelectedBgUrl(null);
         await updateSettings({ customBackgrounds: bgs });
@@ -411,7 +415,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     return (
         <div className="flex flex-col h-full bg-amazio-light-bg dark:bg-amazio-bg animate-in fade-in duration-500 overflow-hidden relative">
             
-            {/* Header: Ultra-Compact */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 sm:p-4 bg-amazio-light-bg dark:bg-amazio-bg z-30">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
@@ -445,10 +448,8 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
             </div>
             
-            {/* Workspace Wrapper */}
             <div className="flex-grow flex flex-col lg:flex-row overflow-hidden relative">
                 
-                {/* Mobile Drawer Backdrop */}
                 {isMobile && isControlsOpen && (
                     <div 
                         className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-40 animate-in fade-in duration-300"
@@ -456,12 +457,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     />
                 )}
 
-                {/* Sidebar: Optimized Spacing */}
                 <aside className={`
                     fixed lg:relative bottom-0 left-0 right-0 lg:right-auto lg:w-72 
                     bg-white dark:bg-zinc-900 border-t lg:border-t-0 lg:border-r border-zinc-200 dark:border-zinc-800 
                     flex flex-col z-50 transition-transform duration-300 ease-out
-                    ${isMobile ? (isControlsOpen ? 'translate-y-0 h-[50vh] rounded-t-3xl shadow-2xl' : 'translate-y-full h-0') : 'h-full translate-y-0'}
+                    ${isMobile ? (isControlsOpen ? 'translate-y-0 h-[60vh] rounded-t-3xl shadow-2xl' : 'translate-y-full h-0') : 'h-full translate-y-0'}
                 `}>
                     {isMobile && (
                         <div className="flex justify-center p-2" onClick={() => setIsControlsOpen(false)}>
@@ -470,10 +470,9 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     )}
 
                     <div className="flex-grow overflow-y-auto custom-scrollbar p-4 space-y-6">
-                        {/* Background Manager: Compact */}
                         <div>
                             <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Library</h3>
+                                <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Layout Assets</h3>
                                 <button onClick={() => bgInputRef.current?.click()} className="p-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-md"><Plus size={14}/></button>
                                 <input type="file" id="bg-upload-input" ref={bgInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
                             </div>
@@ -503,22 +502,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             </div>
                         </div>
 
-                        {/* Display Options: NEW */}
-                        <div>
-                            <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3">Settings</h3>
-                            <button 
-                                onClick={() => setShowPoints(!showPoints)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${showPoints ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-transparent text-zinc-500 border-zinc-100'}`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Award size={14} />
-                                    <span>Include Points</span>
-                                </div>
-                                {showPoints ? <Check size={10} strokeWidth={3}/> : <X size={10} strokeWidth={3}/>}
-                            </button>
-                        </div>
-
-                        {/* Template Selection: Compact */}
                         <div>
                             <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3">Templates</h3>
                             <div className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-x-visible pb-1 no-scrollbar">
@@ -537,12 +520,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                 </aside>
 
-                {/* Main Canvas Area */}
                 <main ref={mainContainerRef} className="flex-grow overflow-hidden flex flex-col items-center justify-center bg-zinc-200/50 dark:bg-black relative p-2 sm:p-10">
                     {posterData ? (
                         <div className="relative flex flex-col items-center animate-in zoom-in-95 duration-500">
                             <div 
-                                className="bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/10"
+                                className="bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[1rem] shadow-2xl overflow-hidden border border-white/10"
                                 style={{ 
                                     width: `${1080 * scale}px`, 
                                     height: `${1080 * scale}px`,
@@ -556,7 +538,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                         settings={state.settings} 
                                         scale={scale} 
                                         customBg={selectedBgUrl}
-                                        showPoints={showPoints}
                                     />
                                 </div>
                             </div>
@@ -564,12 +545,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     ) : (
                         <div className="flex flex-col items-center justify-center opacity-20 text-zinc-500 text-center px-6">
                             <ImageIcon size={64} strokeWidth={1} />
-                            <p className="text-sm font-black uppercase tracking-widest mt-4">Select Source</p>
+                            <p className="text-sm font-black uppercase tracking-widest mt-4">Registry Query Required</p>
                         </div>
                     )}
                 </main>
 
-                {/* Mobile FAB: Smaller */}
                 {isMobile && (
                     <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-[60]">
                         <button 

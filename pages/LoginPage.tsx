@@ -57,13 +57,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
         toggleTheme(nextThemeMap[theme] || 'system');
     };
 
-    const isDark = useMemo(() => document.documentElement.classList.contains('dark'), [theme]);
     const logoUrl = useMemo(() => {
         if (!settings.branding) return null;
+        const isDark = document.documentElement.classList.contains('dark');
         const { typographyUrl, typographyUrlLight, typographyUrlDark } = settings.branding;
         if (isDark) return typographyUrlDark || typographyUrl;
         return typographyUrlLight || typographyUrl;
-    }, [settings.branding, isDark]);
+    }, [settings.branding, theme]);
 
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 font-sans overflow-hidden transition-colors duration-500 bg-amazio-light-bg dark:bg-amazio-bg selection:bg-amazio-accent selection:text-amazio-bg">

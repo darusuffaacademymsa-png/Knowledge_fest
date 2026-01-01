@@ -38,7 +38,6 @@ const App: React.FC = () => {
     setGlobalFilters, setGlobalSearchTerm
   } = useFirebase();
 
-  // Initialize strictly to Landing if no valid hash exists
   const [activeTab, setActiveTab] = useState<string>(() => {
     const hash = decodeURIComponent(window.location.hash.substring(1));
     return hash && Object.values(TABS).includes(hash) ? hash : TABS.LANDING;
@@ -138,7 +137,6 @@ const App: React.FC = () => {
   }, [isSidebarExpanded]);
 
   useEffect(() => {
-    // If logged in but on a restricted tab, go to Dashboard (never Landing unless explicitly chosen)
     if (currentUser && activeTab !== TABS.LANDING && !hasPermission(activeTab)) {
       setActiveTab(TABS.DASHBOARD);
     }
@@ -156,7 +154,6 @@ const App: React.FC = () => {
             setActiveTab(TABS.LANDING);
         }
       } else {
-        // No hash = Go Home
         setActiveTab(TABS.LANDING);
       }
     };
@@ -216,7 +213,7 @@ const App: React.FC = () => {
   const navigateMainTab = useCallback((direction: 'next' | 'prev') => {
     const flatTabs = SIDEBAR_GROUPS.flatMap(g => g.tabs).filter(t => hasPermission(t));
     const idx = flatTabs.indexOf(activeTab);
-    if (idx === -1) return; // Not in console tabs
+    if (idx === -1) return; 
     const delta = direction === 'next' ? 1 : -1;
     const nextIdx = (idx + delta + flatTabs.length) % flatTabs.length;
     handleSetActiveTab(flatTabs[nextIdx]);
@@ -303,7 +300,7 @@ const App: React.FC = () => {
       case TABS.REPORTS: return <ReportsPage />;
       case TABS.CREATIVE_STUDIO: return <CreativeStudio isMobile={isMobile} />;
       case TABS.PROJECTOR: return <ProjectorView onNavigate={handleSetActiveTab} />;
-      case TABS.DASHBOARD: return <DashboardPage setActiveTab={handleSetActiveTab} />;
+      case TABS.DASHBOARD: return <DashboardPage setActiveTab={handleSetActiveTab} theme={theme} />;
       default: return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
     }
   };
@@ -312,19 +309,17 @@ const App: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-amazio-light-bg dark:bg-amazio-bg transition-colors">
         <div className="text-center relative">
-          <div className="absolute inset-0 bg-amazio-neon/20 blur-xl rounded-full"></div>
-          <svg className="animate-spin h-12 w-12 text-amazio-secondary dark:text-amazio-accent mx-auto relative z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <div className="absolute inset-0 bg-emerald-500/10 blur-xl rounded-full"></div>
+          <svg className="animate-spin h-12 w-12 text-emerald-600 dark:text-emerald-400 mx-auto relative z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <p className="mt-6 text-amazio-primary dark:text-amazio-muted font-medium tracking-wide relative z-10">INITIALIZING AMAZIO OS...</p>
+          <p className="mt-6 text-amazio-primary dark:text-zinc-400 font-medium tracking-wide relative z-10">INITIALIZING AMAZIO OS...</p>
         </div>
       </div>
     );
   }
 
-  // --- REFINED GLOBAL HUB GATE ---
-  // If we are explicitly on Home or if there's NO specific guest permissions for the hash, show Landing.
   if (activeTab === TABS.LANDING) {
      return <LandingPage theme={theme} toggleTheme={(t) => toggleTheme(t)} settings={state.settings} />;
   }
@@ -345,9 +340,9 @@ const App: React.FC = () => {
   const isMobileSticky = isMobile && state.settings.mobileSidebarMode === 'sticky';
 
   return (
-    <div className="relative min-h-screen flex font-sans overflow-hidden text-amazio-primary dark:text-zinc-100">
+    <div className="relative min-h-screen flex font-sans overflow-hidden text-amazio-primary dark:text-zinc-100 bg-amazio-light-bg dark:bg-amazio-bg">
       <GlobalFontManager />
-      {currentUser && isMobile && state.settings.enableFloatingNav !== false && !isSidebarExpanded && !isMobileSticky && (
+      {currentUser && isMobile && state.settings.enableFloatingNav === true && !isSidebarExpanded && !isMobileSticky && (
         <FloatingNavRail activeTab={activeTab} setActiveTab={handleSetActiveTab} hasPermission={hasPermission} />
       )}
       {currentUser && isMobile && !isMobileSticky && (
@@ -356,15 +351,17 @@ const App: React.FC = () => {
       {currentUser && (
         <Sidebar activeTab={activeTab} setActiveTab={handleSetActiveTab} isExpanded={isSidebarExpanded} isOpen={isSidebarOpen} toggleSidebar={toggleSidebarExpansion} isMobile={isMobile} handleLogout={logout} currentUser={currentUser} hasPermission={hasPermission} />
       )}
-      <div className={`flex-1 flex flex-col h-screen max-w-full overflow-hidden relative transition-all duration-500 ease-in-out ${currentUser && state.settings.enableFloatingNav !== false && isMobile && !isSidebarExpanded && !isMobileSticky ? 'pl-0' : ''} ${currentUser && isMobileSticky ? 'pl-[50px]' : ''}`}>
+      <div className={`flex-1 flex flex-col h-screen max-w-full overflow-hidden relative transition-all duration-500 ease-in-out ${currentUser && state.settings.enableFloatingNav === true && isMobile && !isSidebarExpanded && !isMobileSticky ? 'pl-0' : ''} ${currentUser && isMobileSticky ? 'pl-[50px]' : ''}`}>
         <Header pageTitle={activeTab} onMenuClick={toggleSidebarExpansion} handleLogout={logout} currentUser={currentUser} theme={theme} toggleTheme={toggleTheme} isVisible={isHeaderVisible} onTitleClick={() => handleSetActiveTab(TABS.LANDING)} />
-        <main ref={mainContentRef} onScroll={handleMainScroll} onClick={handleContentClick} className={`flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar ${activeTab === TABS.CREATIVE_STUDIO ? 'p-0' : 'px-2 py-0 sm:px-4 sm:py-3 lg:p-4'} transition-all duration-300`}>
-            <div className={`${activeTab === TABS.CREATIVE_STUDIO ? 'flex-1 h-full flex flex-col' : 'max-w-7xl mx-auto md:space-y-4 sm:space-y-6'} transition-all`}>
-                <div className="md:hidden"><div className="h-[env(safe-area-inset-top)]"></div><div className="h-14"></div></div>
+        <main ref={mainContentRef} onScroll={handleMainScroll} onClick={handleContentClick} className={`flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar px-4 py-4 md:px-6 md:py-6 pb-[env(safe-area-inset-bottom)]`}>
+            <div className={`transition-all ${activeTab === TABS.CREATIVE_STUDIO ? 'flex-1 h-full flex flex-col' : 'max-w-7xl mx-auto md:space-y-8 sm:space-y-6'}`}>
+                <div className="md:hidden">
+                  <div className="h-14"></div>
+                </div>
                 {activeTab !== TABS.CREATIVE_STUDIO && <InstructionDisplay pageTitle={activeTab} />}
                 {renderContent()}
             </div>
-            {activeTab !== TABS.CREATIVE_STUDIO && <div className="h-12"></div>}
+            {activeTab !== TABS.CREATIVE_STUDIO && <div className="h-12 md:h-16"></div>}
         </main>
       </div>
     </div>

@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
     }, [pageTitle, dataEntryView, itemsSubView, gradeSubView, judgesSubView, settingsSubView]);
 
     return (
-        <header className={`fixed md:relative top-0 left-0 right-0 z-40 w-full transition-all duration-300 ease-in-out transform-gpu bg-amazio-light-bg dark:bg-amazio-bg md:bg-transparent ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 md:translate-y-0 md:opacity-100'}`}>
+        <header className={`fixed md:relative top-0 left-0 right-0 z-40 w-full transition-all duration-300 ease-in-out transform-gpu bg-amazio-light-bg dark:bg-amazio-bg md:bg-transparent pt-[env(safe-area-inset-top)] ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 md:translate-y-0 md:opacity-100'}`}>
             <div className="md:bg-amazio-light-bg/90 md:dark:bg-amazio-bg/90 md:backdrop-blur-xl px-4 flex items-center justify-between gap-2 h-14 md:h-16 relative z-50">
                 
                 {isMobileSearchOpen && isSearchablePage ? (
@@ -129,14 +129,14 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                                     title="Return to Landing Page"
                                 >
                                     <ArrowLeft size={16} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xs:inline">Exit to Home</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xs:inline">Exit</span>
                                 </button>
                             )}
                             <h1 onClick={onTitleClick} className="text-sm md:text-lg font-black font-serif text-amazio-primary dark:text-white tracking-tight truncate cursor-pointer hover:opacity-80 transition-opacity">{displayTitle}</h1>
                             
                             <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ml-2 border ${isOnline ? 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-900' : 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/30 dark:border-rose-900'}`}>
                                 {isOnline ? <Wifi size={10}/> : <WifiOff size={10}/>}
-                                {isOnline ? 'Synced' : 'Offline'}
+                                <span className="hidden xs:inline">{isOnline ? 'Synced' : 'Offline'}</span>
                             </div>
                         </div>
 
@@ -156,30 +156,22 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
 
                         <div className="flex-grow"></div>
 
-                        {isSearchablePage && (
-                            <div className="hidden md:flex items-center mx-4 max-w-xs flex-grow animate-in fade-in duration-500">
-                                <div className="relative w-full group">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-indigo-500 transition-colors" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search records..." 
-                                        value={globalSearchTerm}
-                                        onChange={(e) => setGlobalSearchTerm(e.target.value)}
-                                        className="w-full bg-white/50 dark:bg-black/20 border border-amazio-primary/10 dark:border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all shadow-inner"
-                                    />
-                                    {globalSearchTerm && (
-                                        <button 
-                                            onClick={() => setGlobalSearchTerm('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-rose-500 transition-colors"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
                         <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
+                            {isSearchablePage && (
+                                <div className="hidden md:flex items-center mx-2 max-w-xs animate-in fade-in duration-500">
+                                    <div className="relative w-full group">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-indigo-500 transition-colors" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search..." 
+                                            value={globalSearchTerm}
+                                            onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                                            className="w-full bg-white/50 dark:bg-black/20 border border-amazio-primary/10 dark:border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all shadow-inner"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {hasSubNavigation && (
                                 <div className="relative lg:hidden" ref={subNavRef}>
                                     <button onClick={() => setIsSubNavOpen(!isSubNavOpen)} className={`p-2 rounded-xl transition-all flex items-center gap-2 border ${isSubNavOpen ? 'bg-indigo-600 text-white border-indigo-700' : 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200'}`}>

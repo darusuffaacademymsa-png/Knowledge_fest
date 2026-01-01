@@ -265,7 +265,7 @@ const ParticipantFormModal: React.FC<{
                 <div className="p-7 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
                     <div>
                         <h3 className="font-serif font-black text-2xl text-amazio-primary dark:text-white uppercase tracking-tighter leading-none">{editingParticipant ? 'Edit Profile' : 'Register Delegate'}</h3>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mt-1">Manage individual identity</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mt-1.5 tracking-widest">Manage individual identity</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><X size={24} className="text-zinc-400" /></button>
                 </div>
@@ -691,7 +691,7 @@ const ItemsManagement: React.FC = () => {
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex flex-col gap-1.5">
                                                         <div 
-                                                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${entry.chestNumber ? 'text-white shadow-sm' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 border-zinc-200'}`}
+                                                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${entry.chestNumber ? 'text-white shadow-md' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 border-zinc-200'}`}
                                                             style={entry.chestNumber ? { backgroundColor: chestColor, borderColor: chestColor } : {}}
                                                         >
                                                             {entry.chestNumber ? `ID# ${entry.chestNumber}` : 'No ID Assigned'}

@@ -74,13 +74,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
         else toggleTheme('light');
     };
 
-    const isDark = useMemo(() => document.documentElement.classList.contains('dark'), [theme]);
     const logoUrl = useMemo(() => {
         if (!settings.branding) return null;
+        const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         const { typographyUrl, typographyUrlLight, typographyUrlDark } = settings.branding;
         if (isDark) return typographyUrlDark || typographyUrl;
         return typographyUrlLight || typographyUrl;
-    }, [settings.branding, isDark]);
+    }, [settings.branding, theme]);
 
     return (
         <div className="min-h-screen bg-[#F1F5E9] dark:bg-[#0F1210] text-[#283618] dark:text-white selection:bg-[#9AAD59] selection:text-[#283618] overflow-x-hidden font-slab transition-colors duration-1000">

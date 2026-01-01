@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
     <title>AMAZIO Knowledge Fest 2026</title>
     
     <!-- PWA Manifest and Theme Color -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#283618" />
+    <meta name="theme-color" content="#FAF9F6" />
     <meta name="description" content="The official management terminal for the Amazio Knowledge Fest 2026 Edition." />
 
     <!-- Apple PWA tags -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png">
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Amazio 2026" />
 
     <!-- Theme Blocking Script -->
@@ -33,10 +33,10 @@
       })();
     </script>
 
-    <!-- Fonts System:Roboto Slab is the priority -->
+    <!-- Fonts System -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Source+Sans+3:wght@400;700&family=Roboto+Slab:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Roboto+Slab:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -48,38 +48,18 @@
               amazio: {
                 bg: '#0F1210', 
                 surface: '#181C19',
-                'light-bg': '#FAF9F6', // Sophisticated Off-White/Ivory
+                'light-bg': '#FAF9F6', 
                 'light-surface': '#FFFFFF',
-                'dark-green': '#283618', 
-                'moss-green': '#606C38', 
-                'olivine': '#9AAD59',    
                 primary: '#283618',
                 secondary: '#606C38',
                 accent: '#9AAD59',
-                neon: '#B4C47A',
-                cream: '#F2F4EE',
-                muted: '#8A9A88',
               },
             },
             fontFamily: {
               sans: ['"Inter"', 'sans-serif'],
               serif: ['"Playfair Display"', 'serif'],
               slab: ['"Roboto Slab"', 'serif'], 
-              montserrat: ['"Montserrat"', 'sans-serif'],
             },
-            borderRadius: {
-              xl: '16px',
-              '2xl': '20px',
-              '3xl': '32px',
-            },
-            boxShadow: {
-              'glass': '0 8px 32px 0 rgba(40, 54, 24, 0.3)',
-              'neon': '0 0 10px rgba(154, 173, 89, 0.3)',
-            },
-            backgroundImage: {
-                'rooted-gradient': 'linear-gradient(135deg, #283618 0%, #606C38 100%)',
-                'moss-gradient': 'linear-gradient(135deg, #606C38 0%, #9AAD59 100%)',
-            }
           },
         },
       };
@@ -88,54 +68,43 @@
       .preload, .preload * { transition: none !important; }
       :root {
         --bg-color: #FAF9F6;
-        --primary: #283618;
-        --secondary: #606C38;
-        --accent: #9AAD59;
       }
       body {
         -webkit-font-smoothing: antialiased;
         font-family: 'Roboto Slab', serif;
         background-color: var(--bg-color);
+        /* Handled inside App components to avoid double padding */
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
       }
-      h1, h2, h3, h4, h5, h6 {
-        font-family: 'Roboto Slab', serif;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-      .ambient-light {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
-      }
-      html.dark .ambient-light {
-        background: radial-gradient(circle at 15% 50%, rgba(40, 54, 24, 0.2) 0%, transparent 40%),
-                    radial-gradient(circle at 85% 30%, rgba(96, 108, 56, 0.15) 0%, transparent 40%);
-      }
-      html:not(.dark) .ambient-light {
-         background: radial-gradient(circle at 10% 20%, rgba(154, 173, 89, 0.1) 0%, transparent 45%),
-                    radial-gradient(circle at 90% 60%, rgba(96, 108, 56, 0.05) 0%, transparent 40%);
+      /* Mobile optimization for notch and scrollbars */
+      @media (max-width: 768px) {
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.548.0",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
-        "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
-        "jszip": "https://aistudiocdn.com/jszip@^3.10.1/dist/jszip.min.js",
-        "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1/dist/html2canvas.min.js",
-        "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.548.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1/dist/jszip.min.js",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1/dist/html2canvas.min.js",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/"
+  }
+}
+</script>
   </head>
-  <body class="bg-amazio-light-bg dark:bg-amazio-bg text-amazio-primary dark:text-amazio-cream font-slab transition-colors duration-500">
+  <body class="bg-amazio-light-bg dark:bg-amazio-bg text-amazio-primary dark:text-zinc-100 font-slab transition-colors duration-500">
     <div id="root"></div>
-    <div class="ambient-light"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -130,9 +130,6 @@ const LanguageFontCard = ({
                 }
             `;
         }
-        return () => {
-            // Cleanup logic if needed, but keeping style allows persistence during switches
-        };
     }, [tempFont, language]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,14 +156,14 @@ const LanguageFontCard = ({
     };
 
     return (
-        <div className="bg-[#121412] border border-zinc-800 rounded-[2rem] p-8 flex flex-col gap-6 relative overflow-hidden group shadow-xl">
+        <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 flex flex-col gap-6 relative overflow-hidden group shadow-sm md:shadow-xl">
              {/* Header */}
              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-900/10 flex items-center justify-center text-emerald-500 border border-emerald-900/20 shadow-inner">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-900/20 shadow-inner">
                     <Type size={24} />
                 </div>
                 <div>
-                    <h3 className="text-white font-serif text-xl font-bold tracking-tight">{title}</h3>
+                    <h3 className="text-amazio-primary dark:text-white font-serif text-xl font-bold tracking-tight">{title}</h3>
                     <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mt-1.5">{subtitle}</p>
                 </div>
              </div>
@@ -174,18 +171,18 @@ const LanguageFontCard = ({
              {/* Upload Button */}
              <div className="mt-2">
                 <button 
-                    onClick={() => fileInputRef.current?.click()} 
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/50 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 hover:text-white hover:border-zinc-600 transition-all"
+                    onClick={() => (fileInputRef.current as any)?.click()} 
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
                 >
                     <Upload size={14} /> Upload Font
                 </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
+                <input type="file" ref={fileInputRef as any} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
              </div>
 
              {/* Preview */}
-             <div className="bg-[#050605] rounded-3xl p-8 border border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-700 transition-colors">
-                <span className="absolute top-5 left-6 text-[9px] font-black text-zinc-600 uppercase tracking-widest">Live Rendering</span>
-                <p className="text-3xl text-white text-center leading-relaxed" style={{ fontFamily: tempFont ? `'${tempFont.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
+             <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
+                <span className="absolute top-5 left-6 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Live Rendering</span>
+                <p className="text-3xl text-amazio-primary dark:text-white text-center leading-relaxed" style={{ fontFamily: tempFont ? `'${tempFont.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
                     {previewText}
                 </p>
              </div>
@@ -194,7 +191,7 @@ const LanguageFontCard = ({
              <button
                 onClick={() => tempFont && onSave(tempFont)}
                 disabled={!isDirty}
-                className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${isDirty ? 'bg-emerald-700 text-white hover:bg-emerald-600 shadow-emerald-900/20 transform hover:-translate-y-0.5' : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed border border-zinc-800'}`}
+                className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${isDirty ? 'bg-emerald-700 text-white hover:bg-emerald-600 shadow-emerald-900/20 transform hover:-translate-y-0.5' : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-zinc-200 dark:border-zinc-800'}`}
              >
                 {isDirty ? <CheckCircle size={16} /> : <CheckCircle size={16} className="opacity-20"/>} Apply Registry
              </button>
@@ -337,7 +334,15 @@ const GeneralSettings: React.FC = () => {
     const [isEditingInst, setIsEditingInst] = useState(false);
     const [instData, setInstData] = useState(state?.settings.institutionDetails || { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' });
     const [isEditingOrg, setIsEditingOrg] = useState(false);
-    const [orgData, setOrgData] = useState({ organizingTeam: state?.settings.organizingTeam || '', heading: state?.settings.heading || '', description: state?.settings.description || '', eventDates: state?.settings.eventDates || [], branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } });
+    
+    // Improved data initialization for branding
+    const [orgData, setOrgData] = useState({ 
+        organizingTeam: state?.settings.organizingTeam || '', 
+        heading: state?.settings.heading || '', 
+        description: state?.settings.description || '', 
+        eventDates: state?.settings.eventDates || [], 
+        branding: state?.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
+    });
     
     // User Modal State
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -531,8 +536,8 @@ const GeneralSettings: React.FC = () => {
                                             <ImageUpload 
                                                 label="" 
                                                 description="Logo displayed during Light Theme mode." 
-                                                currentValue={orgData.branding?.typographyUrlLight || orgData.branding?.typographyUrl} 
-                                                onChange={v => setOrgData({...orgData, branding: {...orgData.branding!, typographyUrlLight: v}})} 
+                                                currentValue={isEditingOrg ? orgData.branding?.typographyUrlLight : (orgData.branding?.typographyUrlLight || orgData.branding?.typographyUrl)} 
+                                                onChange={v => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), typographyUrlLight: v}}))} 
                                                 disabled={!isEditingOrg}
                                             />
                                         </div>
@@ -546,7 +551,7 @@ const GeneralSettings: React.FC = () => {
                                                 label="" 
                                                 description="Logo displayed during Dark Theme mode." 
                                                 currentValue={orgData.branding?.typographyUrlDark} 
-                                                onChange={v => setOrgData({...orgData, branding: {...orgData.branding!, typographyUrlDark: v}})} 
+                                                onChange={v => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), typographyUrlDark: v}}))} 
                                                 disabled={!isEditingOrg}
                                             />
                                         </div>
@@ -585,26 +590,26 @@ const GeneralSettings: React.FC = () => {
                         {/* UX Preferences */}
                         <div>
                             <SectionTitle title="UX Preferences" icon={LayoutTemplate} color="emerald" />
-                            <div className="bg-[#121412] border border-zinc-800 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+                            <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm md:shadow-xl">
                                 <div className="flex items-center gap-5 w-full">
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-900/10 flex items-center justify-center text-emerald-500 border border-emerald-900/20 shadow-inner shrink-0">
+                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-900/20 shadow-inner shrink-0">
                                         <SlidersHorizontal size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-black font-serif text-lg tracking-tight">FLOATING NAVIGATION RAIL</h4>
+                                        <h4 className="text-amazio-primary dark:text-white font-black font-serif text-lg tracking-tight">FLOATING NAVIGATION RAIL</h4>
                                         <p className="text-xs text-zinc-500 mt-1 font-medium max-w-sm">Draggable floating icon menu for streamlined mobile usage.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6 w-full md:w-auto justify-end">
                                      <button 
                                         onClick={() => window.dispatchEvent(new Event('reset-floating-nav'))} 
-                                        className="px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/50 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-zinc-500 transition-all whitespace-nowrap"
+                                        className="px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white transition-all whitespace-nowrap"
                                      >
                                         Reset Anchor
                                      </button>
                                      <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={state.settings.enableFloatingNav !== false} onChange={e => updateSettings({ enableFloatingNav: e.target.checked })} />
-                                        <div className="w-14 h-8 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600 border border-zinc-700"></div>
+                                        <input type="checkbox" className="sr-only peer" checked={state.settings.enableFloatingNav === true} onChange={e => updateSettings({ enableFloatingNav: e.target.checked })} />
+                                        <div className="w-14 h-8 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600 border border-zinc-300 dark:border-zinc-700"></div>
                                      </label>
                                 </div>
                             </div>
@@ -683,10 +688,10 @@ const GeneralSettings: React.FC = () => {
                                 const allTabs = Object.values(TABS);
                                 
                                 return (
-                                    <div key={role} className="bg-[#121412] border border-zinc-800 rounded-[2rem] p-6 shadow-xl flex flex-col h-full">
-                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+                                    <div key={role} className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm md:shadow-xl flex flex-col h-full">
+                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
                                             <div className="h-4 w-1 bg-emerald-500 rounded-full"></div>
-                                            <h4 className="text-white font-black font-serif text-lg tracking-tight capitalize">{role.replace('_', ' ')} Scopes</h4>
+                                            <h4 className="text-amazio-primary dark:text-white font-black font-serif text-lg tracking-tight capitalize">{role.replace('_', ' ')} Scopes</h4>
                                         </div>
                                         
                                         <div className="flex-grow space-y-2 overflow-y-auto custom-scrollbar max-h-[400px] pr-1">
@@ -840,7 +845,7 @@ const GeneralSettings: React.FC = () => {
                                         }}
                                     />
                                     <button 
-                                        onClick={() => restoreInputRef.current?.click()}
+                                        onClick={() => (restoreInputRef.current as any)?.click()}
                                         className="w-full py-4 border-2 border-rose-100 dark:border-strong-900/30 text-rose-600 dark:text-rose-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-50 dark:hover:bg-rose-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                     >
                                         <Upload size={16} strokeWidth={3}/> Upload Snapshot

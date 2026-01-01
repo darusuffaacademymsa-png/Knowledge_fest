@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { 
@@ -26,7 +25,7 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
              const defaultX = window.innerWidth - 60; 
              return {
                  x: savedX ? parseFloat(savedX) : defaultX,
-                 y: savedY ? parseFloat(savedY) : window.innerHeight / 2 - 200
+                 y: savedY ? parseFloat(savedY) : window.innerHeight / 2 - 100
              };
         }
         return { x: 10, y: 300 };
@@ -54,7 +53,7 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
     // Reset event listener for settings page
     useEffect(() => {
         const handleReset = () => {
-            const defaultY = window.innerHeight / 2 - 250;
+            const defaultY = window.innerHeight / 2 - 150;
             const defaultX = window.innerWidth - 60;
             const newPos = { x: defaultX, y: defaultY };
             setPos(newPos);
@@ -101,11 +100,13 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
         const railWidth = railRef.current?.clientWidth || 48;
         const railHeight = railRef.current?.clientHeight || 60;
         
-        const maxX = window.innerWidth - railWidth - 8;
-        const maxH = window.innerHeight - railHeight - 20; 
-        const minH = 60;
+        // Boundaries with safe area considerations
+        const maxX = window.innerWidth - railWidth - 12;
+        const minX = 12;
+        const maxH = window.innerHeight - railHeight - 40; 
+        const minH = 80;
         
-        if (newX < 8) newX = 8;
+        if (newX < minX) newX = minX;
         if (newX > maxX) newX = maxX;
         if (newY < minH) newY = minH;
         if (newY > maxH) newY = maxH;
@@ -140,8 +141,8 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
             const railWidth = railRef.current?.clientWidth || 48;
             const windowWidth = window.innerWidth;
             const midpoint = windowWidth / 2;
-            let finalX = 8; // Snap Left
-            if (currentX + (railWidth / 2) > midpoint) finalX = windowWidth - railWidth - 8; // Snap Right
+            let finalX = 12; // Snap Left
+            if (currentX + (railWidth / 2) > midpoint) finalX = windowWidth - railWidth - 12; // Snap Right
             
             const snappedPos = { x: finalX, y: currentY };
             setPos(snappedPos);
@@ -152,7 +153,6 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
     }, [handleMove]);
 
     const handleStart = (clientX: number, clientY: number, type: 'mouse' | 'touch') => {
-        // Debounce touch vs mouse to prevent double firing
         if (type === 'touch') {
             ignoreMouseRef.current = true;
             setTimeout(() => { ignoreMouseRef.current = false; }, 1000);
@@ -186,46 +186,39 @@ const FloatingNavRail: React.FC<FloatingNavRailProps> = ({ activeTab, setActiveT
                 onMouseDown={(e) => handleStart(e.clientX, e.clientY, 'mouse')}
                 onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY, 'touch')}
             >
-                <div className="transition-transform duration-300 flex flex-col items-center justify-center gap-0.5 bg-white/90 dark:bg-black/90 backdrop-blur-md p-2 rounded-full shadow-lg border border-zinc-200/50 dark:border-white/10">
-                    {/* Visual Grip Indicators */}
-                    <div className="w-6 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full"></div>
+                <div className="transition-transform duration-300 flex flex-col items-center justify-center gap-0.5 bg-white/95 dark:bg-black/95 backdrop-blur-md p-2 rounded-full shadow-2xl border border-zinc-200 dark:border-white/10">
+                    <div className="w-5 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full"></div>
                     <div className="transition-transform duration-300 mt-1">
-                        {isCollapsed ? <ChevronDown size={20} className="text-zinc-600 dark:text-zinc-300" /> : <ChevronUp size={20} className="text-zinc-600 dark:text-zinc-300" />}
+                        {isCollapsed ? <ChevronDown size={18} className="text-zinc-600 dark:text-zinc-300" /> : <ChevronUp size={18} className="text-zinc-600 dark:text-zinc-300" />}
                     </div>
                 </div>
             </div>
 
             {/* Icons List */}
             <div 
-                className={`flex flex-col gap-1.5 w-full overflow-y-auto overflow-x-hidden no-scrollbar scroll-smooth transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 opacity-0 pb-0 scale-y-0 origin-top' : 'max-h-[60vh] opacity-100 pb-2 pt-1 scale-y-100 origin-top'}`}
-                onMouseDown={(e) => e.stopPropagation()} // Prevent drag start from list area
-                onTouchStart={(e) => e.stopPropagation()} // Prevent drag start from list area
-                style={{ touchAction: 'pan-y' }} // Allow vertical scrolling of the list itself
+                className={`flex flex-col gap-2 w-full overflow-y-auto overflow-x-hidden no-scrollbar scroll-smooth transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 opacity-0 pb-0 scale-y-0 origin-top' : 'max-h-[50vh] opacity-100 pb-4 pt-1 scale-y-100 origin-top'}`}
+                onMouseDown={(e) => e.stopPropagation()} 
+                onTouchStart={(e) => e.stopPropagation()} 
+                style={{ touchAction: 'pan-y' }} 
             >
                 {navItems.map((item) => {
                     const isActive = activeTab === item.id;
                     const Icon = item.icon;
                     const colorKey = TAB_COLORS[item.id] || 'emerald';
-                    // Construct Tailwind classes dynamically
                     const activeBgClass = `bg-${colorKey}-500`;
                     const activeShadowClass = `shadow-${colorKey}-500/40`;
 
                     return (
                         <button
                             key={item.id}
-                            onClick={() => { setActiveTab(item.id); }}
-                            className={`relative group p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shrink-0 mx-auto w-10 h-10 ${
+                            onClick={() => { setActiveTab(item.id); setIsCollapsed(true); }}
+                            className={`relative group p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shrink-0 mx-auto w-11 h-11 ${
                                 isActive 
                                 ? `${activeBgClass} ${activeShadowClass} text-white shadow-lg scale-110` 
-                                : 'bg-white/90 dark:bg-black/90 backdrop-blur-sm text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 shadow-md border border-zinc-100 dark:border-white/5'
+                                : 'bg-white/95 dark:bg-black/95 backdrop-blur-sm text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 shadow-md border border-zinc-100 dark:border-white/5'
                             }`}
                         >
-                            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'drop-shadow-sm' : ''} />
-                            
-                            {/* Tooltip Label (Optional for context) */}
-                            <span className="absolute right-full mr-3 px-2 py-1 bg-black/80 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                {item.id}
-                            </span>
+                            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                         </button>
                     );
                 })}
