@@ -1,19 +1,45 @@
-import { ArrowUpRight, Award, BarChart2, CheckCircle2, ChevronDown, ChevronRight, Filter, GraduationCap, Info, Layers, Layout, ListFilter, Loader2, Mic, PenTool, PieChart, Search, SearchX, Trophy, User, Users, Zap, Check, TrendingUp } from 'lucide-react';
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import Card from '../components/Card';
+import { 
+    Award, BarChart2, CheckCircle2, ChevronDown, ChevronRight, 
+    Filter, GraduationCap, Info, Layers, Layout, ListFilter, 
+    PieChart, Search, SearchX, Trophy, User, Users, Zap, 
+    Check, TrendingUp, BookOpen, UserCheck, ArrowUpRight,
+    MapPin, X, ExternalLink, ArrowUp
+} from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
 import { ItemType, PerformanceType, ResultStatus } from '../types';
 
-// --- Helper Components ---
+// --- Helper Components & Utils ---
+
+const getThemeColor = (str: string) => {
+    if (!str) return { bg: 'bg-zinc-100', text: 'text-zinc-600', border: 'border-zinc-200', light: 'bg-zinc-50 dark:bg-zinc-900/30', shadow: 'shadow-zinc-500/10' };
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0; 
+    }
+    const themes = [
+        { bg: 'bg-indigo-500', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800', light: 'bg-indigo-50 dark:bg-indigo-900/20', shadow: 'shadow-indigo-500/10' },
+        { bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', light: 'bg-emerald-50 dark:bg-indigo-900/20', shadow: 'shadow-emerald-500/10' },
+        { bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800', light: 'bg-amber-50 dark:bg-amber-900/10', shadow: 'shadow-amber-500/10' },
+        { bg: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800', light: 'bg-rose-50 dark:bg-rose-900/20', shadow: 'shadow-rose-500/10' },
+        { bg: 'bg-purple-500', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800', light: 'bg-purple-50 dark:bg-fuchsia-900/20', shadow: 'shadow-purple-500/10' },
+        { bg: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-200 dark:border-sky-800', light: 'bg-sky-50 dark:bg-sky-900/20', shadow: 'shadow-sky-500/10' },
+        { bg: 'bg-teal-500', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-800', light: 'bg-teal-50 dark:bg-teal-900/20', shadow: 'shadow-teal-500/10' },
+        { bg: 'bg-orange-500', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800', light: 'bg-orange-50 dark:bg-orange-900/20', shadow: 'shadow-orange-500/10' },
+    ];
+    return themes[Math.abs(hash) % themes.length];
+};
 
 const StatBox = ({ label, value, icon: Icon, colorClass }: { label: string, value: number | string, icon: any, colorClass: string }) => (
-    <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border bg-white dark:bg-zinc-900/50 flex items-center gap-3 sm:gap-4 transition-all hover:shadow-md ${colorClass}`}>
-        <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-white dark:bg-black/20 shadow-sm shrink-0">
-            <Icon size={16} sm:size={20} />
+    <div className={`p-4 rounded-3xl border bg-white dark:bg-zinc-900/50 flex items-center gap-4 transition-all hover:shadow-md ${colorClass}`}>
+        <div className="p-3 rounded-2xl bg-white dark:bg-black/20 shadow-sm shrink-0">
+            <Icon size={24} />
         </div>
         <div>
-            <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-wider opacity-60">{label}</div>
-            <div className="text-xl sm:text-2xl font-black tabular-nums leading-none">{value}</div>
+            <div className="text-[10px] font-black uppercase tracking-wider opacity-60">{label}</div>
+            <div className="text-2xl sm:text-3xl font-black tabular-nums leading-none">{value}</div>
         </div>
     </div>
 );
@@ -27,189 +53,577 @@ const PointChip = ({ type, value, label }: { type: 'rank' | 'grade' | 'total', v
     };
     const Icon = type === 'rank' ? Trophy : type === 'grade' ? GraduationCap : Layers;
     return (
-        <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[7px] sm:text-[10px] font-bold ${styles[type]}`} title={label}>
-            <Icon size={8} sm:size={10} />
+        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold ${styles[type]}`} title={label}>
+            <Icon size={12} />
             <span>{value}</span>
         </div>
     );
 };
 
-const getGradeColor = (name: string) => {
-    const n = name.toLowerCase().trim();
-    if (n.startsWith('a')) return 'border-emerald-200 text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
-    if (n.startsWith('b')) return 'border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
-    return 'border-zinc-200 text-zinc-700 bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700';
+const DetailModal: React.FC<{ 
+    isOpen: boolean; 
+    onClose: () => void; 
+    title: string; 
+    subtitle?: string; 
+    icon: any; 
+    children: React.ReactNode 
+}> = ({ isOpen, onClose, title, subtitle, icon: Icon, children }) => {
+    useEffect(() => {
+        if (isOpen) document.body.style.overflow = 'hidden';
+        else document.body.style.overflow = 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white dark:bg-[#121412] w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                <div className="p-7 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg">
+                            <Icon size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{title}</h3>
+                            {subtitle && <p className="text-[10px] font-black uppercase text-zinc-400 mt-1.5 tracking-widest">{subtitle}</p>}
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors text-zinc-400"><X size={24}/></button>
+                </div>
+                <div className="flex-grow overflow-y-auto p-8 custom-scrollbar">
+                    {children}
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
 };
 
 const PointsPage: React.FC = () => {
-    const { state, globalSearchTerm } = useFirebase();
+    const { state, globalSearchTerm, globalFilters } = useFirebase();
+    const [viewMode, setViewMode] = useState<'STANDINGS' | 'ITEMS' | 'PARTICIPANTS'>('STANDINGS');
     const [viewFilter, setViewFilter] = useState<'BOTH' | 'RANK' | 'GRADE'>('BOTH');
+    
+    // Selection for Modals
+    const [selectedItem, setSelectedItem] = useState<any | null>(null);
+    const [selectedParticipant, setSelectedParticipant] = useState<any | null>(null);
+
+    // Drill-down State (Standings)
     const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
-    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-    const [topperTypeFilter, topperTypeFilterSet] = useState<'ALL' | PerformanceType.ON_STAGE | PerformanceType.OFF_STAGE>('ALL');
-    const [topperCategoryFilter, topperCategoryFilterSet] = useState<string>('ALL');
-    const [insightsMode, setInsightsMode] = useState<'ITEM' | 'PARTICIPANT'>('ITEM');
-    const [itemInsightsId, setItemInsightsId] = useState('');
-    const [participantInsightsId, setParticipantInsightsId] = useState('');
+    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set()); // Key: teamId-categoryId
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set()); // Key: teamId-catId-itemId
 
     const { teams, categories, participants, results, items, gradePoints } = state || {};
 
     const analytics = useMemo(() => {
         if (!teams || !results || !items || !participants || !gradePoints || !categories) return null;
+        
         const teamData: { [teamId: string]: any } = {};
-        teams.forEach(t => { teamData[t.id] = { teamId: t.id, teamName: t.name, totalPoints: 0, totalRankPoints: 0, totalGradePoints: 0, rankCount: 0, participantCount: 0, categories: {} }; });
+        teams.forEach(t => { 
+            teamData[t.id] = { 
+                teamId: t.id, 
+                teamName: t.name, 
+                totalPoints: 0, 
+                totalRankPoints: 0, 
+                totalGradePoints: 0, 
+                rankCount: 0, 
+                participantCount: 0, 
+                categories: {} 
+            }; 
+        });
+
         const declaredItemsSet = new Set<string>();
         let totalEntryCombinations = 0;
         const participantRawEntries: any[] = [];
+        const itemAggregate: Record<string, any> = {};
+
         results.forEach(result => {
             if (result.status !== ResultStatus.DECLARED) return;
             const item = items.find(i => i.id === result.itemId);
             const category = categories.find(c => c.id === result.categoryId);
             if (!item || !category) return;
+            
             declaredItemsSet.add(item.id);
+            if (!itemAggregate[item.id]) {
+                itemAggregate[item.id] = { 
+                    item, 
+                    category, 
+                    winners: [],
+                    totalPoints: 0 
+                };
+            }
+
             result.winners.forEach(winner => {
                 const p = participants.find(part => part.id === winner.participantId);
                 if (!p) return;
+                
                 totalEntryCombinations++;
                 const team = teamData[p.teamId];
                 if (!team) return;
+
                 let rankPts = 0;
                 if (winner.position === 1) rankPts = item.points.first;
                 else if (winner.position === 2) rankPts = item.points.second;
                 else if (winner.position === 3) rankPts = item.points.third;
-                let gradePts = 0; let gradeName = '-';
+
+                let gradePts = 0; 
+                let gradeName = '-';
                 if (winner.gradeId) {
                     const gradeConfig = item.type === ItemType.SINGLE ? (gradePoints.single || []) : (gradePoints.group || []);
                     const grade = gradeConfig.find(g => g.id === winner.gradeId);
-                    if (grade) { gradeName = grade.name; gradePts = (item.gradePointsOverride && item.gradePointsOverride[grade.id] !== undefined) ? item.gradePointsOverride[grade.id] : (grade.points || 0); }
+                    if (grade) { 
+                        gradeName = grade.name; 
+                        gradePts = (item.gradePointsOverride && item.gradePointsOverride[grade.id] !== undefined) 
+                            ? item.gradePointsOverride[grade.id] 
+                            : (grade.points || 0); 
+                    }
                 }
-                if (!team.categories[category.id]) team.categories[category.id] = { categoryId: category.id, categoryName: category.name, rankTotal: 0, gradeTotal: 0, total: 0, items: {} };
-                const catData = team.categories[category.id];
-                if (!catData.items[item.id]) catData.items[item.id] = { itemId: item.id, itemName: item.name, itemType: item.type, performanceType: item.performanceType, categoryId: category.id, categoryName: category.name, rankTotal: 0, gradeTotal: 0, total: 0, contributors: [] };
-                const itemData = catData.items[item.id];
+
                 const entryTotal = rankPts + gradePts;
-                itemData.rankTotal += rankPts; itemData.gradeTotal += gradePts; itemData.total += entryTotal;
-                catData.rankTotal += rankPts; catData.gradeTotal += gradePts; catData.total += entryTotal;
-                team.totalRankPoints += rankPts; team.totalGradePoints += gradePts; team.totalPoints += entryTotal;
-                if (rankPts > 0) team.rankCount++; team.participantCount++;
-                itemData.contributors.push({ participantId: p.id, participantName: item.type === ItemType.GROUP ? `${p.name} & Party` : p.name, chestNumber: p.chestNumber, place: p.place, teamId: p.teamId, rank: winner.position, rankPoints: rankPts, gradeName: gradeName, gradePoints: gradePts, total: entryTotal });
-                participantRawEntries.push({ participant: p, item: item, category: category, rank: winner.position, rankPoints: rankPts, gradeName: gradeName, gradePoints: gradePts, total: entryTotal });
+
+                if (entryTotal > 0) {
+                    if (!team.categories[category.id]) {
+                        team.categories[category.id] = { 
+                            categoryId: category.id, 
+                            categoryName: category.name, 
+                            rankTotal: 0, 
+                            gradeTotal: 0, 
+                            total: 0, 
+                            items: {} 
+                        };
+                    }
+                    const catData = team.categories[category.id];
+                    
+                    if (!catData.items[item.id]) {
+                        catData.items[item.id] = { 
+                            itemId: item.id, 
+                            itemName: item.name, 
+                            itemType: item.type, 
+                            performanceType: item.performanceType, 
+                            rankTotal: 0, 
+                            gradeTotal: 0, 
+                            total: 0, 
+                            contributors: [] 
+                        };
+                    }
+                    const itemData = catData.items[item.id];
+                    
+                    itemData.rankTotal += rankPts; 
+                    itemData.gradeTotal += gradePts; 
+                    itemData.total += entryTotal;
+                    
+                    catData.rankTotal += rankPts; 
+                    catData.gradeTotal += gradePts; 
+                    catData.total += entryTotal;
+                    
+                    team.totalRankPoints += rankPts; 
+                    team.totalGradePoints += gradePts; 
+                    team.totalPoints += entryTotal;
+                    
+                    if (rankPts > 0) team.rankCount++; 
+                    team.participantCount++;
+
+                    const contributor = { 
+                        participantId: p.id, 
+                        participantName: item.type === ItemType.GROUP ? `${p.name} & Party` : p.name, 
+                        chestNumber: p.chestNumber, 
+                        teamId: p.teamId, 
+                        teamName: team.teamName,
+                        rank: winner.position, 
+                        rankPoints: rankPts, 
+                        gradeName: gradeName, 
+                        gradePoints: gradePts, 
+                        total: entryTotal,
+                        itemName: item.name,
+                        categoryName: category.name
+                    };
+
+                    itemData.contributors.push(contributor);
+                    itemAggregate[item.id].winners.push(contributor);
+                    itemAggregate[item.id].totalPoints += entryTotal;
+
+                    participantRawEntries.push({ 
+                        participant: p, 
+                        item: item, 
+                        category: category, 
+                        rank: winner.position, 
+                        rankPoints: rankPts, 
+                        gradeName: gradeName, 
+                        gradePoints: gradePts, 
+                        total: entryTotal 
+                    });
+                }
             });
         });
-        return { teamData, participantRawEntries, stats: { declaredCount: declaredItemsSet.size, contributorsCount: new Set(participantRawEntries.map(e => e.participant.id)).size, totalEntries: totalEntryCombinations } };
-    }, [teams, categories, participants, results, items, gradePoints]);
+
+        // Final filtering and aggregation
+        let finalTeamData = Object.values(teamData);
+        if (globalFilters.teamId.length > 0) finalTeamData = finalTeamData.filter(t => globalFilters.teamId.includes(t.teamId));
+
+        let finalItemAggregate = Object.values(itemAggregate);
+        if (globalFilters.teamId.length > 0) {
+            finalItemAggregate = finalItemAggregate.filter(agg => 
+                agg.winners.some((w: any) => globalFilters.teamId.includes(w.teamId))
+            ).map(agg => ({
+                ...agg,
+                winners: agg.winners.filter((w: any) => globalFilters.teamId.includes(w.teamId)),
+                totalPoints: agg.winners.filter((w: any) => globalFilters.teamId.includes(w.teamId)).reduce((s: number, w: any) => s + w.total, 0)
+            }));
+        }
+
+        let finalParticipantEntries = [...participantRawEntries];
+        if (globalFilters.teamId.length > 0) finalParticipantEntries = finalParticipantEntries.filter(e => globalFilters.teamId.includes(e.participant.teamId));
+
+        return { 
+            teamData: finalTeamData, 
+            participantRawEntries: finalParticipantEntries, 
+            itemAggregate: finalItemAggregate.sort((a,b) => b.totalPoints - a.totalPoints),
+            stats: { 
+                declaredCount: declaredItemsSet.size, 
+                contributorsCount: new Set(finalParticipantEntries.map(e => e.participant.id)).size, 
+                totalEntries: finalParticipantEntries.length,
+                totalPoints: finalTeamData.reduce((sum, t) => sum + t.totalPoints, 0)
+            } 
+        };
+    }, [teams, categories, participants, results, items, gradePoints, globalFilters.teamId]);
 
     const sortedTeams = useMemo(() => {
         if (!analytics) return [];
-        return Object.values(analytics.teamData).sort((a: any, b: any) => {
+        return analytics.teamData.sort((a: any, b: any) => {
             const valA = viewFilter === 'RANK' ? a.totalRankPoints : viewFilter === 'GRADE' ? a.totalGradePoints : a.totalPoints;
             const valB = viewFilter === 'RANK' ? b.totalRankPoints : viewFilter === 'GRADE' ? b.totalGradePoints : b.totalPoints;
             return valB - valA;
         });
     }, [analytics, viewFilter]);
 
-    const topperInsights = useMemo(() => {
+    const participantsAggregated = useMemo(() => {
         if (!analytics) return [];
-        const tally: Record<string, any> = {};
+        const map = new Map<string, any>();
         analytics.participantRawEntries.forEach(entry => {
-            if ((topperTypeFilter === 'ALL' || entry.item.performanceType === topperTypeFilter) && (topperCategoryFilter === 'ALL' || entry.category.id === topperCategoryFilter) && entry.item.type === ItemType.SINGLE) {
-                const pid = entry.participant.id;
-                if (!tally[pid]) tally[pid] = { participantId: pid, name: entry.participant.name, chestNumber: entry.participant.chestNumber, teamName: teams?.find(t => t.id === entry.participant.teamId)?.name || 'N/A', categoryName: categories?.find(c => c.id === entry.participant.categoryId)?.name || 'N/A', points: 0 };
-                tally[pid].points += entry.total;
+            if (!map.has(entry.participant.id)) {
+                map.set(entry.participant.id, { 
+                    ...entry.participant, 
+                    total: 0, 
+                    items: [], 
+                    displayTeam: teams?.find(t => t.id === entry.participant.teamId)?.name || 'N/A' 
+                });
             }
+            const p = map.get(entry.participant.id);
+            p.total += entry.total;
+            p.items.push(entry);
         });
-        return Object.values(tally).sort((a: any, b: any) => b.points - a.points).slice(0, 3);
-    }, [analytics, topperTypeFilter, topperCategoryFilter, teams, categories]);
+        return Array.from(map.values()).sort((a,b) => b.total - a.total);
+    }, [analytics, teams]);
 
-    if (!state || !analytics) return <div className="p-12 text-center text-zinc-500">Calculating...</div>;
+    if (!state || !analytics) return <div className="p-12 text-center text-zinc-500">Calculating standings...</div>;
 
-    const topTeamScore = sortedTeams.length > 0 ? (viewFilter === 'RANK' ? (sortedTeams[0] as any).totalRankPoints : viewFilter === 'GRADE' ? (sortedTeams[0] as any).totalGradePoints : (sortedTeams[0] as any).totalPoints) : 0;
+    const toggleTeam = (tid: string) => setExpandedTeams(prev => { const n = new Set(prev); if(n.has(tid)) n.delete(tid); else n.add(tid); return n; });
+    const toggleCat = (tid: string, cid: string) => setExpandedCategories(prev => { const key = `${tid}-${cid}`; const n = new Set(prev); if(n.has(key)) n.delete(key); else n.add(key); return n; });
+    const toggleItem = (tid: string, cid: string, iid: string) => setExpandedItems(prev => { const key = `${tid}-${cid}-${iid}`; const n = new Set(prev); if(n.has(key)) n.delete(key); else n.add(key); return n; });
 
     return (
-        <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-500 pb-24">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-500 pb-24">
+            {/* Header */}
             <div className="hidden md:flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
-                    <h2 className="text-4xl font-black font-serif text-amazio-primary dark:text-white tracking-tight uppercase">Leaderboard</h2>
+                    <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Point Tallies</h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">Global standings and contribution analysis.</p>
                 </div>
-                <div className="flex items-center gap-3 p-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl border border-zinc-200 shadow-inner">
-                    {[ { id: 'BOTH', label: 'Overall', icon: Layers }, { id: 'RANK', label: 'Prize', icon: Trophy }, { id: 'GRADE', label: 'Grade', icon: GraduationCap } ].map(f => (
-                        <button key={f.id} onClick={() => setViewFilter(f.id as any)} className={`px-4 py-1.5 rounded-xl text-[10px] font-bold transition-all ${viewFilter === f.id ? 'bg-white text-amazio-primary shadow-sm' : 'text-zinc-500'}`}>{f.label}</button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                <StatBox label="Results" value={analytics.stats.declaredCount} icon={CheckCircle2} colorClass="text-emerald-700 border-emerald-100 bg-emerald-50/50" />
-                <StatBox label="Contributing" value={analytics.stats.contributorsCount} icon={Users} colorClass="text-indigo-700 border-indigo-100 bg-indigo-50/50" />
-                <div className="hidden md:block">
-                  <StatBox label="Scoring Entries" value={analytics.stats.totalEntries} icon={PieChart} colorClass="text-amber-700 border-amber-100 bg-amber-50/50" />
+                <div className="flex bg-white/40 dark:bg-black/20 p-1.5 rounded-2xl border border-amazio-primary/5 shadow-inner">
+                    <button onClick={() => setViewMode('STANDINGS')} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500'}`}>Leaderboard</button>
+                    <button onClick={() => setViewMode('ITEMS')} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'ITEMS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500'}`}>By Item</button>
+                    <button onClick={() => setViewMode('PARTICIPANTS')} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'PARTICIPANTS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500'}`}>By Participant</button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-8 items-start">
-                <div className="xl:col-span-8 space-y-4 sm:space-y-6">
-                    <Card title="Team Standings">
-                        <div className="space-y-2.5 sm:space-y-4">
-                            {sortedTeams.map((team: any, idx) => {
-                                const isExpanded = expandedTeams.has(team.teamId);
-                                const currentPoints = viewFilter === 'RANK' ? team.totalRankPoints : viewFilter === 'GRADE' ? team.totalGradePoints : team.totalPoints;
-                                const progress = topTeamScore > 0 ? (currentPoints / topTeamScore) * 100 : 0;
-                                return (
-                                    <div key={team.teamId} className="group flex flex-col gap-1">
-                                        <div onClick={() => setExpandedTeams(prev => { const n = new Set(prev); if(n.has(team.teamId)) n.delete(team.teamId); else n.add(team.teamId); return n; })} className={`relative overflow-hidden cursor-pointer p-3 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all ${isExpanded ? 'bg-indigo-50/50 border-indigo-200' : 'bg-white dark:bg-zinc-900 border-zinc-100 shadow-sm'}`}>
-                                            <div className="flex items-center justify-between gap-3 relative z-10">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-sm sm:text-xl ${idx === 0 ? 'bg-amber-400 text-amber-950' : idx === 1 ? 'bg-zinc-300 text-zinc-800' : 'bg-zinc-100 text-zinc-400'}`}>{idx + 1}</div>
-                                                    <div className="min-w-0">
-                                                        <h3 className="text-sm sm:text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight truncate">{team.teamName}</h3>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <div className="flex items-center gap-1 text-[8px] font-black text-zinc-400 uppercase"><Trophy size={8} /> {team.rankCount}</div>
-                                                            <div className="flex items-center gap-1 text-[8px] font-black text-zinc-400 uppercase"><Users size={8} /> {team.participantCount}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3 sm:gap-6">
-                                                    <div className="flex gap-1">
-                                                        {viewFilter !== 'GRADE' && <PointChip type="rank" value={team.totalRankPoints} />}
-                                                        {viewFilter !== 'RANK' && <PointChip type="grade" value={team.totalGradePoints} />}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-xl sm:text-3xl font-black text-indigo-600 leading-none">{currentPoints}</div>
-                                                    </div>
-                                                    <ChevronRight size={16} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                                                </div>
-                                            </div>
-                                            <div className="absolute bottom-0 left-0 h-1 bg-indigo-500/20 w-full"><div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+            {/* Mobile View Toggles */}
+            <div className="md:hidden flex bg-white/40 dark:bg-black/20 p-1 rounded-xl border border-amazio-primary/5">
+                <button onClick={() => setViewMode('STANDINGS')} className={`flex-1 py-2 text-[8px] font-black uppercase rounded-lg ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-500'}`}>Stats</button>
+                <button onClick={() => setViewMode('ITEMS')} className={`flex-1 py-2 text-[8px] font-black uppercase rounded-lg ${viewMode === 'ITEMS' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-500'}`}>Items</button>
+                <button onClick={() => setViewMode('PARTICIPANTS')} className={`flex-1 py-2 text-[8px] font-black uppercase rounded-lg ${viewMode === 'PARTICIPANTS' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-500'}`}>People</button>
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                <StatBox label="Declared Results" value={analytics.stats.declaredCount} icon={CheckCircle2} colorClass="text-emerald-700 border-emerald-100 bg-emerald-50/50" />
+                <StatBox label="Festival Points" value={analytics.stats.totalPoints} icon={Zap} colorClass="text-amber-700 border-amber-100 bg-amber-50/50" />
+                <StatBox label="Contributors" value={analytics.stats.contributorsCount} icon={Users} colorClass="text-indigo-700 border-indigo-100 bg-indigo-50/50" />
+                <StatBox label="Scoring Entries" value={analytics.stats.totalEntries} icon={PieChart} colorClass="text-rose-700 border-rose-100 bg-rose-50/50" />
+            </div>
+
+            {/* View Mode: Leaderboard */}
+            {viewMode === 'STANDINGS' && (
+                <div className="space-y-6 animate-in slide-in-from-left duration-500">
+                    <div className="flex justify-between items-center px-2">
+                        <div className="flex items-center gap-3">
+                            <Trophy size={20} className="text-amber-500" />
+                            <h3 className="text-xl font-black font-serif uppercase text-amazio-primary dark:text-white">Unit Standings</h3>
                         </div>
-                    </Card>
-                </div>
-
-                <div className="xl:col-span-4 space-y-4 sm:space-y-6">
-                    <Card title="Toppers">
-                        <div className="space-y-3 sm:space-y-4">
-                            {topperInsights.map((topper: any, idx: number) => (
-                                <div key={topper.participantId} className={`relative p-3 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all ${idx === 0 ? 'bg-amber-50/50 border-amber-200' : 'bg-white dark:bg-zinc-900 border-zinc-100 shadow-sm'}`}>
-                                    <div className="flex items-center gap-3 sm:gap-4">
-                                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center font-black text-sm sm:text-lg ${idx === 0 ? 'bg-amber-400 text-amber-950' : 'bg-zinc-100 text-zinc-500'}`}>{idx + 1}</div>
-                                        <div className="min-w-0 flex-grow">
-                                            <h4 className="text-[11px] sm:text-sm font-black text-zinc-900 dark:text-zinc-100 uppercase truncate leading-tight">{topper.name}</h4>
-                                            <div className="flex items-center gap-1.5 mt-0.5"><span className="text-[8px] font-bold text-zinc-400 uppercase truncate">{topper.teamName}</span></div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-base sm:text-xl font-black text-indigo-600 leading-none">{topper.points}</div>
-                                            <div className="text-[7px] font-bold text-zinc-400 uppercase">Pts</div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/20 p-1 rounded-xl border border-amazio-primary/5">
+                            {['BOTH', 'RANK', 'GRADE'].map(f => (
+                                <button key={f} onClick={() => setViewFilter(f as any)} className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-all ${viewFilter === f ? 'bg-white dark:bg-zinc-800 text-amazio-primary dark:text-white shadow-sm' : 'text-zinc-400'}`}>{f}</button>
                             ))}
                         </div>
-                    </Card>
+                    </div>
+
+                    <div className="space-y-3">
+                        {sortedTeams.map((team: any, idx) => {
+                            const isTExpanded = expandedTeams.has(team.teamId);
+                            const currentPoints = viewFilter === 'RANK' ? team.totalRankPoints : viewFilter === 'GRADE' ? team.totalGradePoints : team.totalPoints;
+                            
+                            return (
+                                <div key={team.teamId} className={`rounded-[1.5rem] sm:rounded-[2.5rem] border transition-all overflow-hidden bg-white dark:bg-[#121412] ${isTExpanded ? 'border-indigo-500/30 shadow-xl' : 'border-zinc-100 dark:border-white/5 shadow-sm'}`}>
+                                    <div onClick={() => toggleTeam(team.teamId)} className="p-4 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/[0.01] transition-colors">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-lg sm:text-2xl ${idx === 0 ? 'bg-amber-400 text-amber-950 shadow-lg' : idx === 1 ? 'bg-slate-200 text-slate-700' : 'bg-zinc-100 text-zinc-400'}`}>{idx + 1}</div>
+                                            <div className="min-w-0">
+                                                <h4 className="text-base sm:text-2xl font-black uppercase text-amazio-primary dark:text-white truncate">{team.teamName}</h4>
+                                                <div className="flex gap-2 mt-1">
+                                                    <PointChip type="rank" value={team.totalRankPoints} />
+                                                    <PointChip type="grade" value={team.totalGradePoints} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 sm:gap-8">
+                                            <div className="text-right">
+                                                <div className="text-2xl sm:text-5xl font-black text-indigo-600 leading-none tabular-nums">{currentPoints}</div>
+                                                <div className="text-[8px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Total Points</div>
+                                            </div>
+                                            <div className={`p-2 rounded-xl bg-zinc-50 dark:bg-white/5 transition-transform ${isTExpanded ? 'rotate-180' : ''}`}><ChevronDown size={20} /></div>
+                                        </div>
+                                    </div>
+
+                                    {isTExpanded && (
+                                        <div className="px-4 pb-4 sm:px-12 sm:pb-8 space-y-2 animate-in slide-in-from-top-4 duration-300">
+                                            {Object.values(team.categories).sort((a:any, b:any) => b.total - a.total).map((cat: any) => {
+                                                const isCExpanded = expandedCategories.has(`${team.teamId}-${cat.categoryId}`);
+                                                return (
+                                                    <div key={cat.categoryId} className="bg-zinc-50 dark:bg-black/20 rounded-[1.5rem] border border-zinc-100 dark:border-white/5 overflow-hidden">
+                                                        <div onClick={() => toggleCat(team.teamId, cat.categoryId)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/50 transition-colors">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><Layers size={14} className="text-zinc-400"/></div>
+                                                                <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-zinc-700 dark:text-zinc-300">{cat.categoryName}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-6">
+                                                                <span className="text-base sm:text-xl font-black text-indigo-500 tabular-nums">{cat.total}</span>
+                                                                <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isCExpanded ? 'rotate-180' : ''}`} />
+                                                            </div>
+                                                        </div>
+                                                        {isCExpanded && (
+                                                            <div className="px-4 pb-4 space-y-1.5">
+                                                                {Object.values(cat.items).sort((a:any,b:any) => b.total - a.total).map((item: any) => {
+                                                                    const isIExpanded = expandedItems.has(`${team.teamId}-${cat.categoryId}-${item.itemId}`);
+                                                                    return (
+                                                                        <div key={item.itemId} className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-xl overflow-hidden shadow-sm">
+                                                                            <div onClick={() => toggleItem(team.teamId, cat.categoryId, item.itemId)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-50 transition-colors">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                                                    <span className="text-[11px] sm:text-xs font-bold uppercase text-zinc-600 dark:text-zinc-300">{item.itemName}</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-4">
+                                                                                    <span className="text-sm font-black text-indigo-400 tabular-nums">{item.total}</span>
+                                                                                    <ChevronRight size={12} className={`text-zinc-300 transition-transform ${isIExpanded ? 'rotate-90' : ''}`} />
+                                                                                </div>
+                                                                            </div>
+                                                                            {isIExpanded && (
+                                                                                <div className="p-3 pt-0 border-t border-zinc-50 dark:border-white/5 space-y-1 bg-zinc-50/30">
+                                                                                    {item.contributors.map((c: any) => (
+                                                                                        <div key={c.participantId} className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition-colors">
+                                                                                            <div className="flex items-center gap-3">
+                                                                                                <span className="text-[9px] font-black text-zinc-400 w-8">#{c.chestNumber}</span>
+                                                                                                <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">{c.participantName}</span>
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                {c.rank > 0 && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100">Rank {c.rank}</span>}
+                                                                                                {c.gradeName !== '-' && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-100">{c.gradeName}</span>}
+                                                                                                <span className="text-xs font-black text-emerald-600 tabular-nums ml-2">+{c.total}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* View Mode: Items Analysis */}
+            {viewMode === 'ITEMS' && (
+                <div className="space-y-6 animate-in slide-in-from-right duration-500">
+                    <div className="flex items-center gap-3 px-2">
+                        <BookOpen size={20} className="text-emerald-500" />
+                        <h3 className="text-xl font-black font-serif uppercase text-amazio-primary dark:text-white">Item Analytics</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {analytics.itemAggregate.map(agg => (
+                            <div 
+                                key={agg.item.id} 
+                                onClick={() => setSelectedItem(agg)}
+                                className="bg-white dark:bg-[#121412] p-6 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-sm group hover:shadow-xl transition-all cursor-pointer flex flex-col hover:-translate-y-1"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black uppercase text-zinc-500 border border-zinc-200 dark:border-zinc-700">{agg.category.name}</div>
+                                    <div className="text-2xl font-black text-indigo-500 tabular-nums">{agg.totalPoints}</div>
+                                </div>
+                                <h4 className="text-lg font-black uppercase text-amazio-primary dark:text-white tracking-tight leading-tight mb-4">{agg.item.name}</h4>
+                                <div className="mt-auto flex items-center justify-between text-[10px] font-black uppercase text-zinc-400 tracking-widest pt-4 border-t border-zinc-50 dark:border-white/5">
+                                    <span>{agg.winners.length} Scorers</span>
+                                    <span className="flex items-center gap-1 group-hover:text-indigo-500 transition-colors">Details <ExternalLink size={10}/></span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* View Mode: Participant Analysis */}
+            {viewMode === 'PARTICIPANTS' && (
+                <div className="space-y-6 animate-in zoom-in-95 duration-500">
+                    <div className="flex items-center gap-3 px-2">
+                        <UserCheck size={20} className="text-indigo-500" />
+                        <h3 className="text-xl font-black font-serif uppercase text-amazio-primary dark:text-white">Contributor Registry</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {participantsAggregated.map(p => {
+                            const theme = getThemeColor(p.displayTeam);
+                            return (
+                                <div 
+                                    key={p.id} 
+                                    onClick={() => setSelectedParticipant(p)}
+                                    className="relative bg-white dark:bg-[#121412] p-5 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-sm hover:shadow-xl hover:border-zinc-300 transition-all duration-300 cursor-pointer overflow-hidden group"
+                                >
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-sm shadow-md transition-transform group-hover:scale-110 ${theme.bg}`}>
+                                                {p.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="text-sm font-black uppercase text-amazio-primary dark:text-white truncate leading-tight group-hover:text-indigo-500 transition-colors">{p.name}</h4>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-2 py-0.5 rounded-lg">#{p.chestNumber}</span>
+                                                    {p.place && <div className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 italic truncate"><MapPin size={8}/> {p.place}</div>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xl font-black text-indigo-500 tabular-nums leading-none">{p.total}</div>
+                                            <div className="text-[8px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Points</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1">
+                                        <p className={`text-[9px] font-black uppercase tracking-widest truncate ${theme.text}`}>{p.displayTeam}</p>
+                                        <span className="opacity-0 group-hover:opacity-100 transition-all text-indigo-500"><ExternalLink size={10}/></span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Detail Modal: By Item (Ascending Points Order) */}
+            <DetailModal 
+                isOpen={!!selectedItem} 
+                onClose={() => setSelectedItem(null)}
+                title={selectedItem?.item.name || ''}
+                subtitle={`${selectedItem?.category.name} Analysis`}
+                icon={BookOpen}
+            >
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-4 py-3 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 mb-6">
+                        <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Total Contribution</span>
+                        <span className="text-2xl font-black text-indigo-500 tabular-nums">{selectedItem?.totalPoints}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-4 px-2">
+                        <ArrowUp size={14} className="text-indigo-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Winners (Points Ascending)</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        {/* Sort by total points ascending as requested */}
+                        {[...(selectedItem?.winners || [])].sort((a: any, b: any) => a.total - b.total).map((w: any) => (
+                            <div key={w.participantId} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-[1.5rem] shadow-sm hover:border-indigo-500/20 transition-all">
+                                <div className="flex items-center gap-4 min-w-0">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${w.rank === 1 ? 'bg-amber-400 text-amber-950' : 'bg-zinc-100 text-zinc-400'}`}>
+                                        {w.rank || '-'}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h5 className="font-black text-amazio-primary dark:text-zinc-100 uppercase text-sm truncate">{w.participantName}</h5>
+                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">#{w.chestNumber} • {w.teamName}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-lg font-black text-emerald-600 tabular-nums">+{w.total}</div>
+                                    <div className="flex gap-1 justify-end">
+                                        {w.rankPoints > 0 && <span className="text-[7px] font-black text-amber-600 bg-amber-50 px-1 rounded uppercase">Rank {w.rank}</span>}
+                                        {w.gradeName !== '-' && <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 px-1 rounded uppercase">{w.gradeName}</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {selectedItem?.winners.length === 0 && (
+                            <div className="py-20 text-center opacity-30 italic uppercase text-[10px] font-black tracking-widest">No contributors recorded</div>
+                        )}
+                    </div>
+                </div>
+            </DetailModal>
+
+            {/* Detail Modal: By Participant (Contribution Sources) */}
+            <DetailModal 
+                isOpen={!!selectedParticipant} 
+                onClose={() => setSelectedParticipant(null)}
+                title={selectedParticipant?.name || ''}
+                subtitle={`${selectedParticipant?.displayTeam} Performance`}
+                icon={UserCheck}
+            >
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-4 py-3 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 mb-6">
+                        <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Personal Tally</span>
+                        <span className="text-2xl font-black text-indigo-500 tabular-nums">{selectedParticipant?.total}</span>
+                    </div>
+
+                    <div className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-2 mb-4">Contribution Matrix</div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                        {selectedParticipant?.items.map((e: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-[1.5rem] shadow-sm">
+                                <div className="min-w-0 pr-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                        <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">{e.category.name}</span>
+                                    </div>
+                                    <h5 className="text-sm font-black uppercase text-amazio-primary dark:text-zinc-100 truncate">{e.item.name}</h5>
+                                    <div className="flex gap-2 mt-1.5">
+                                        {e.rank > 0 && <span className="text-[8px] font-black px-2 py-0.5 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">Rank {e.rank}</span>}
+                                        {e.gradeName !== '-' && <span className="text-[8px] font-black px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">{e.gradeName}</span>}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-lg font-black text-emerald-600 tabular-nums">+{e.total}</div>
+                                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">Points Earned</p>
+                                </div>
+                            </div>
+                        ))}
+                        {selectedParticipant?.items.length === 0 && (
+                            <div className="py-20 text-center opacity-30 italic uppercase text-[10px] font-black tracking-widest">Registry query pending</div>
+                        )}
+                    </div>
+                </div>
+            </DetailModal>
         </div>
     );
 };
