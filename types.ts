@@ -1,4 +1,3 @@
-
 export enum ItemType {
   SINGLE = 'Single',
   GROUP = 'Group',
@@ -185,6 +184,8 @@ export interface Settings {
       malayalam?: FontConfig;
       arabic?: FontConfig;
       english?: FontConfig;
+      englishPrimary?: FontConfig;
+      englishSecondary?: FontConfig;
   };
   generalCustomFonts?: GeneralFontConfig[]; // New: For Creative Studio explicit font selection
   // Custom Templates for Creative Studio

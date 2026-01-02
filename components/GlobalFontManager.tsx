@@ -34,12 +34,35 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
         `;
     }
 
+    // Default global English (Latin) font
     if (settings.customFonts?.english?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'GlobalAutoFont';
                 src: url('${settings.customFonts.english.url}');
                 unicode-range: ${LATIN_RANGE};
+                font-display: swap;
+            }
+        `;
+    }
+
+    // Primary English
+    if (settings.customFonts?.englishPrimary?.url) {
+        fontFaces += `
+            @font-face {
+                font-family: 'EnglishPrimary';
+                src: url('${settings.customFonts.englishPrimary.url}');
+                font-display: swap;
+            }
+        `;
+    }
+
+    // Secondary English
+    if (settings.customFonts?.englishSecondary?.url) {
+        fontFaces += `
+            @font-face {
+                font-family: 'EnglishSecondary';
+                src: url('${settings.customFonts.englishSecondary.url}');
                 font-display: swap;
             }
         `;
@@ -85,6 +108,8 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
             .font-malayalam { font-family: 'GlobalAutoFont', sans-serif !important; }
             .font-arabic { font-family: 'GlobalAutoFont', serif !important; direction: rtl; }
             .font-english { font-family: 'GlobalAutoFont', sans-serif !important; }
+            .font-english-primary { font-family: 'EnglishPrimary', 'GlobalAutoFont', sans-serif !important; }
+            .font-english-secondary { font-family: 'EnglishSecondary', 'GlobalAutoFont', sans-serif !important; }
         `;
     }
     

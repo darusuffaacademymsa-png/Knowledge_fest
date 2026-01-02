@@ -4,7 +4,7 @@ import {
     Download, ChevronDown, 
     Loader2, Image as ImageIcon, Palette, 
     Plus, Check, Layers, X,
-    Settings2, Leaf, CheckCircle2
+    Settings2, Leaf, CheckCircle2, Type, RefreshCw
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ResultStatus, ItemType } from '../types';
@@ -52,19 +52,6 @@ interface PosterData {
     }[];
 }
 
-// --- Templates Config ---
-
-const TEMPLATES: Record<TemplateType, { name: string; bg: string; text: string; accent: string; fontTitle: string; fontBody: string }> = {
-    ROOTED_TREE: {
-        name: 'Rooted Tree Official',
-        bg: 'bg-[#E3EBD1]',
-        text: 'text-[#283618]',
-        accent: 'text-[#606C38]',
-        fontTitle: 'font-slab',
-        fontBody: 'font-slab'
-    }
-};
-
 // --- Components ---
 
 const PosterCanvas: React.FC<{ 
@@ -72,21 +59,25 @@ const PosterCanvas: React.FC<{
     scale?: number;
     id?: string;
     customBg?: string | null;
-}> = ({ data, scale = 1, id, customBg }) => {
+    fontFamily?: string;
+}> = ({ data, scale = 1, id, customBg, fontFamily = 'font-slab' }) => {
     const parts = data.categoryName.split(' ');
     const prefix = parts[0] || '';
     const suffix = parts.slice(1).join(' ');
 
+    const textStyle = { fontFamily: fontFamily && fontFamily.includes(' ') ? `'${fontFamily}'` : fontFamily };
+
     return (
         <div 
             id={id}
-            className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618] font-slab"
+            className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618]"
             style={{ 
                 width: '1080px', 
                 height: '1080px', 
                 transform: `scale(${scale})`, 
                 transformOrigin: 'top left',
-                flexShrink: 0 
+                flexShrink: 0,
+                ...textStyle
             }}
         >
             {/* Background Layer */}
@@ -111,46 +102,23 @@ const PosterCanvas: React.FC<{
                     </h3>
                 </div>
 
-                {/* Winners Zone - Optimized for Column Alignment and Precise Spacing */}
-                {/* 
-                   Grid Layout Specifications: 
-                   - mt-[35px]: 35px gap between Item Name and first prize holder
-                   - gap-y-[45px]: 45px vertical gap between winners
-                   - grid-cols-[minmax(335px,_max-content)_auto]: 
-                        - Ensures grade starts after center (540px total poster width - 205px left margin = 335px min col width)
-                        - Aligns all grades based on the longest name in the view
-                   - gap-x-[15px]: 15px horizontal gap between Name and Grade
-                */}
-                <div className="mt-[35px] ml-[205px] pr-[110px] grid grid-cols-[minmax(335px,_max-content)_auto] gap-x-[15px] gap-y-[45px] items-start">
+                {/* Winners Zone - Grades removed as requested */}
+                <div className="mt-[35px] ml-[205px] pr-[110px] space-y-[45px]">
                     {data.winners.slice(0, 3).map((winner, idx) => (
-                        <React.Fragment key={idx}>
-                            {/* Column 1: Identity & Metadata */}
-                            <div className="min-w-0">
-                                <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap">
-                                    {winner.name}
-                                </h4>
-                                <div className="mt-[-2px] flex items-center gap-3">
-                                    <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight">
-                                        {winner.place}
-                                    </p>
-                                    <span className="text-zinc-400 font-light text-xl">|</span>
-                                    <p className="text-[17px] font-medium italic opacity-70 leading-tight">
-                                        {winner.team}
-                                    </p>
-                                </div>
+                        <div key={idx} className="min-w-0">
+                            <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap">
+                                {winner.name}
+                            </h4>
+                            <div className="mt-[-2px] flex items-center gap-3">
+                                <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight">
+                                    {winner.place}
+                                </p>
+                                <span className="text-zinc-400 font-light text-xl">|</span>
+                                <p className="text-[17px] font-medium italic opacity-70 leading-tight">
+                                    {winner.team}
+                                </p>
                             </div>
-
-                            {/* Column 2: Grade Badge - Aligned with Name Line */}
-                            <div className="pt-[10px]">
-                                {winner.grade ? (
-                                    <div className="shrink-0 bg-[#9AAD59] text-[#283618] px-5 py-1.5 rounded-[4px] font-black text-[20px] shadow-sm whitespace-nowrap tracking-wider">
-                                        GRADE {winner.grade.toUpperCase()}
-                                    </div>
-                                ) : (
-                                    <div className="h-[40px] w-1" />
-                                )}
-                            </div>
-                        </React.Fragment>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -163,9 +131,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const { state, updateSettings } = useFirebase();
     const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [selectedBgUrl, setSelectedBgUrl] = useState<string | null>(null);
+    const [selectedFont, setSelectedFont] = useState<string>('font-slab');
     const [scale, setScale] = useState(0.5);
     const [isControlsOpen, setIsControlsOpen] = useState(!isMobile);
     const [hasInitialized, setHasInitialized] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const mainContainerRef = useRef<HTMLDivElement>(null);
     const bgInputRef = useRef<HTMLInputElement>(null);
@@ -267,15 +237,26 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
+        if (!file || !state) return;
+        
+        setIsUploading(true);
+        try {
             const reader = new FileReader();
-            reader.onload = async () => {
-                const compressed = await compressBgImage(reader.result as string);
-                const existingBgs = state?.settings.customBackgrounds || [];
-                await updateSettings({ customBackgrounds: [...existingBgs, compressed] });
-                setSelectedBgUrl(compressed);
-            };
-            reader.readAsDataURL(file);
+            const result = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+
+            const compressed = await compressBgImage(result);
+            const existingBgs = state.settings.customBackgrounds || [];
+            await updateSettings({ customBackgrounds: [...existingBgs, compressed] });
+            setSelectedBgUrl(compressed);
+        } catch (err) {
+            console.error("Upload failed", err);
+            alert("Failed to process background image.");
+        } finally {
+            setIsUploading(false);
+            if (bgInputRef.current) bgInputRef.current.value = '';
         }
     };
 
@@ -305,6 +286,18 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     };
 
     if (!state) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-zinc-400" size={48} /></div>;
+
+    const availableFonts = [
+        { label: 'System Slab', value: 'font-slab' },
+        { label: 'System Serif', value: 'font-serif' },
+        { label: 'System Sans', value: 'font-sans' },
+        ...(state.settings.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.settings.customFonts.englishPrimary.family}`, value: 'EnglishPrimary' }] : []),
+        ...(state.settings.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.settings.customFonts.englishSecondary.family}`, value: 'EnglishSecondary' }] : []),
+        ...(state.settings.generalCustomFonts || []).map(f => ({ label: f.family, value: f.family })),
+        ...(state.settings.customFonts?.english?.family ? [{ label: state.settings.customFonts.english.family, value: state.settings.customFonts.english.family }] : []),
+        ...(state.settings.customFonts?.malayalam?.family ? [{ label: state.settings.customFonts.malayalam.family, value: state.settings.customFonts.malayalam.family }] : []),
+        ...(state.settings.customFonts?.arabic?.family ? [{ label: state.settings.customFonts.arabic.family, value: state.settings.customFonts.arabic.family }] : []),
+    ];
 
     return (
         <div className="flex flex-col h-full bg-amazio-light-bg dark:bg-amazio-bg animate-in fade-in duration-500 overflow-hidden relative">
@@ -355,7 +348,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     />
                 )}
 
-                {/* Sidebar - Collapsible Side Drawer for Tablets/Desktop */}
+                {/* Sidebar - Collapsible Side Drawer */}
                 <aside className={`
                     fixed md:relative bottom-0 left-0 right-0 md:right-auto md:w-72 lg:w-80
                     bg-white dark:bg-[#121412] border-t md:border-t-0 md:border-r border-zinc-200 dark:border-zinc-800 
@@ -369,14 +362,22 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     )}
 
                     <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-8">
+                        {/* Background Selection */}
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <div className="flex items-center gap-2">
                                     <ImageIcon size={14} className="text-indigo-500" />
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Background Layers</h3>
                                 </div>
-                                <button onClick={() => bgInputRef.current?.click()} className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform"><Plus size={16}/></button>
-                                <input type="file" id="bg-upload-input" ref={bgInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
+                                <button 
+                                    onClick={() => bgInputRef.current?.click()} 
+                                    disabled={isUploading}
+                                    className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                    {/* Added missing RefreshCw icon import and usage for background upload button */}
+                                    {isUploading ? <RefreshCw className="animate-spin" size={16}/> : <Plus size={16}/>}
+                                </button>
+                                <input type="file" ref={bgInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
                             </div>
                             
                             <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -405,12 +406,34 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             </div>
                         </div>
 
+                        {/* Font Selection */}
                         <div className="pt-6 border-t border-zinc-100 dark:border-white/5">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2"><Palette size={14} className="text-emerald-500" /> System Template</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+                                <Type size={14} className="text-indigo-500" /> Poster Typography
+                            </h3>
+                            <div className="relative group">
+                                <select 
+                                    value={selectedFont}
+                                    onChange={(e) => setSelectedFont(e.target.value)}
+                                    className="w-full appearance-none bg-zinc-50 dark:bg-zinc-800 border-2 border-zinc-100 dark:border-zinc-700 rounded-xl px-4 py-3 text-xs font-bold transition-all focus:border-indigo-500 outline-none"
+                                >
+                                    {availableFonts.map((f, i) => (
+                                        <option key={i} value={f.value}>{f.label}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={14} />
+                            </div>
+                            <p className="mt-2 text-[8px] text-zinc-500 uppercase font-medium leading-relaxed">
+                                Applied globally to the rendering canvas. Add fonts in General Settings to see them here.
+                            </p>
+                        </div>
+
+                        <div className="pt-6 border-t border-zinc-100 dark:border-white/5">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2"><Palette size={14} className="text-emerald-500" /> Active Template</h3>
                             <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-[2rem] flex items-center justify-between">
                                 <div>
-                                    <span className="text-xs font-black uppercase tracking-tighter text-emerald-800 dark:text-emerald-400">Rooted Tree v1.0</span>
-                                    <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-0.5">Built-in Official Layout</p>
+                                    <span className="text-xs font-black uppercase tracking-tighter text-emerald-800 dark:text-emerald-400">Rooted Tree v2.0</span>
+                                    <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-0.5">Optimized Layout</p>
                                 </div>
                                 <CheckCircle2 size={18} strokeWidth={3} className="text-emerald-500" />
                             </div>
@@ -441,6 +464,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                         data={posterData} 
                                         scale={scale} 
                                         customBg={selectedBgUrl}
+                                        fontFamily={selectedFont}
                                     />
                                 </div>
                             </div>
@@ -461,7 +485,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     )}
                 </main>
 
-                {/* Mobile/Tablet Controls Toggle FAB */}
+                {/* Mobile FAB */}
                 {isMobile && (
                     <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-[60]">
                         <button 

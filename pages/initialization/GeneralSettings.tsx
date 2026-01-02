@@ -3,13 +3,14 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
 import { useFirebase } from '../../hooks/useFirebase';
+/* Added Layers to lucide-react imports */
 import { 
     X, Users, Trash2, BookText, Database, Info, FileDown, Upload, ArrowRight, 
     Building2, Briefcase, Image as ImageIcon, Check, LayoutTemplate, RotateCcw, 
     ShieldAlert, Award, Edit2, Save, Type, CheckCircle, CheckCircle2, ClipboardList, Plus, FileText, 
     MoreHorizontal, Settings, Palette, Calendar, SlidersHorizontal, MousePointer2, 
     UserCheck, Shield, LayoutDashboard, UserPlus, Medal, Gavel, Timer, Monitor,
-    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw
+    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw, Layers
 } from 'lucide-react';
 import { User, UserRole, AppState, FontConfig, GeneralFontConfig, ProjectorSettings } from '../../types';
 import { TABS, TAB_DISPLAY_NAMES } from '../../constants';
@@ -105,14 +106,16 @@ const LanguageFontCard = ({
     language,
     currentFont,
     previewText,
-    onSave
+    onSave,
+    fontFamilyName
 }: {
     title: string;
     subtitle: string;
-    language: 'malayalam' | 'arabic' | 'english';
+    language: string;
     currentFont?: FontConfig;
     previewText: string;
     onSave: (font: FontConfig | undefined) => Promise<void>;
+    fontFamilyName?: string;
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [tempFont, setTempFont] = useState<FontConfig | undefined>(currentFont);
@@ -160,7 +163,7 @@ const LanguageFontCard = ({
                 const newFont = {
                     name: file.name,
                     url: base64,
-                    family: `Custom${language.charAt(0).toUpperCase() + language.slice(1)}`
+                    family: fontFamilyName || `Custom${language.charAt(0).toUpperCase() + language.slice(1)}`
                 };
                 setTempFont(newFont);
                 setIsDirty(true);
@@ -186,7 +189,7 @@ const LanguageFontCard = ({
     };
 
     const handleRemove = async () => {
-        if (!confirm(`Are you sure you want to delete the custom ${language} font and revert to system default?`)) return;
+        if (!confirm(`Are you sure you want to delete the custom ${title} and revert to system default?`)) return;
         setIsSaving(true);
         try {
             await onSave(undefined);
@@ -341,7 +344,6 @@ const UserFormModal: React.FC<{
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
-                    {/* Fixed: button used handleSave property instead of onClick handler */}
                     <button onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
                 </div>
             </div>
@@ -425,6 +427,9 @@ const GeneralSettings: React.FC = () => {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
 
+    const [newFontName, setNewFontName] = useState('');
+    const fontUploadInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => { if (!isEditingInst && state?.settings.institutionDetails) setInstData(state.settings.institutionDetails); }, [state?.settings.institutionDetails, isEditingInst]);
     useEffect(() => { 
         if (!isEditingOrg && state?.settings) {
@@ -472,7 +477,7 @@ const GeneralSettings: React.FC = () => {
         setEditingUser(undefined);
     };
 
-    const handleUpdateCustomFont = async (lang: 'malayalam' | 'arabic' | 'english', font: FontConfig | undefined) => {
+    const handleUpdateCustomFont = async (lang: string, font: FontConfig | undefined) => {
         const currentFonts = state.settings.customFonts || {};
         await updateSettings({
             customFonts: {
@@ -480,6 +485,31 @@ const GeneralSettings: React.FC = () => {
                 [lang]: font
             }
         });
+    };
+
+    const handleAddGenericFont = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !newFontName.trim()) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64 = reader.result as string;
+            const newFont: GeneralFontConfig = {
+                id: `font_${Date.now()}`,
+                name: file.name,
+                url: base64,
+                family: newFontName.trim()
+            };
+            const existing = state.settings.generalCustomFonts || [];
+            await updateSettings({ generalCustomFonts: [...existing, newFont] });
+            setNewFontName('');
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
+    const handleDeleteGenericFont = async (id: string) => {
+        const filtered = (state.settings.generalCustomFonts || []).filter(f => f.id !== id);
+        await updateSettings({ generalCustomFonts: filtered });
     };
 
     const handleAddEventDate = (date: string) => {
@@ -681,34 +711,107 @@ const GeneralSettings: React.FC = () => {
             case 'display': 
                 return (
                     <div className="space-y-10 animate-in slide-in-from-right duration-500">
-                        {/* Language Fonts */}
+                        {/* Language & Identity Fonts */}
                         <div>
-                            <SectionTitle title="Typography & Assets" icon={Palette} color="purple"/>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <SectionTitle title="Typography Core" icon={Type} color="indigo"/>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                                 <LanguageFontCard 
-                                    title="English Layout Font"
-                                    subtitle="Applied to Latin Glyphs"
-                                    language="english"
-                                    previewText="English Font Preview"
-                                    currentFont={state.settings.customFonts?.english}
-                                    onSave={(f) => handleUpdateCustomFont('english', f)}
+                                    title="English Primary"
+                                    subtitle="Latin Main Brand Font"
+                                    language="englishPrimary"
+                                    fontFamilyName="EnglishPrimary"
+                                    previewText="English Primary Title"
+                                    currentFont={state.settings.customFonts?.englishPrimary}
+                                    onSave={(f) => handleUpdateCustomFont('englishPrimary', f)}
                                 />
                                 <LanguageFontCard 
-                                    title="Malayalam Layout Font"
-                                    subtitle="Applied to Malayalam Glyphs"
+                                    title="English Secondary"
+                                    subtitle="Latin Body & UI Font"
+                                    language="englishSecondary"
+                                    fontFamilyName="EnglishSecondary"
+                                    previewText="English Secondary Text"
+                                    currentFont={state.settings.customFonts?.englishSecondary}
+                                    onSave={(f) => handleUpdateCustomFont('englishSecondary', f)}
+                                />
+                                <LanguageFontCard 
+                                    title="Malayalam Global"
+                                    subtitle="Applied to ML Glyphs"
                                     language="malayalam"
                                     previewText="മലയാളം ഫോണ്ട് പ്രിവ്യൂ"
                                     currentFont={state.settings.customFonts?.malayalam}
                                     onSave={(f) => handleUpdateCustomFont('malayalam', f)}
                                 />
                                 <LanguageFontCard 
-                                    title="Arabic Layout Font"
-                                    subtitle="Applied to Arabic Glyphs"
+                                    title="Arabic Global"
+                                    subtitle="Applied to AR Glyphs"
                                     language="arabic"
                                     previewText="معاينة خط اللغة العربية"
                                     currentFont={state.settings.customFonts?.arabic}
                                     onSave={(f) => handleUpdateCustomFont('arabic', f)}
                                 />
+                            </div>
+                        </div>
+
+                        {/* Multiple Custom Fonts Management */}
+                        <div>
+                            <SectionTitle title="Extended Type Library" icon={Layers} color="purple"/>
+                            <div className="space-y-6">
+                                {/* Add New Generic Font */}
+                                <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-sm">
+                                     <div className="flex flex-col md:flex-row items-end gap-4">
+                                        <div className="flex-grow w-full">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">New Library Font Name</label>
+                                            <input 
+                                                type="text" 
+                                                value={newFontName} 
+                                                onChange={e => setNewFontName(e.target.value)} 
+                                                placeholder="e.g. Modern Sans, Fancy Script..."
+                                                className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500/20"
+                                            />
+                                        </div>
+                                        <button 
+                                            onClick={() => fontUploadInputRef.current?.click()}
+                                            disabled={!newFontName.trim()}
+                                            className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 ${newFontName.trim() ? 'bg-purple-600 text-white shadow-xl shadow-purple-500/20' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'}`}
+                                        >
+                                            <Upload size={16}/> Upload .ttf / .otf
+                                        </button>
+                                        <input type="file" ref={fontUploadInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleAddGenericFont} />
+                                     </div>
+                                </div>
+
+                                {/* List of Generic Fonts */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {(state.settings.generalCustomFonts || []).map(font => (
+                                        <div key={font.id} className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col gap-4 relative group">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/10 flex items-center justify-center text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/20 shadow-inner">
+                                                        <Type size={18} />
+                                                    </div>
+                                                    <span className="text-sm font-black uppercase tracking-tight text-amazio-primary dark:text-white truncate max-w-[120px]">{font.family}</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleDeleteGenericFont(font.id)}
+                                                    className="p-2 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-all"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <div className="p-6 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 min-h-[100px] flex items-center justify-center">
+                                                 <p className="text-xl text-center" style={{ fontFamily: `'${font.family}', sans-serif` }}>
+                                                    {font.family} Preview
+                                                 </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(state.settings.generalCustomFonts || []).length === 0 && (
+                                        <div className="col-span-full py-12 flex flex-col items-center justify-center opacity-30 italic text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem]">
+                                            <RefreshCw size={24} className="mb-2" />
+                                            Library empty
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -765,30 +868,6 @@ const GeneralSettings: React.FC = () => {
                                                     </div>
                                                 </div>
                                                 <p className="text-[9px] text-zinc-400 leading-relaxed font-medium">Controls how many of the most recently declared results will be shown in the Live Projector rotation loop.</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Point Tally Limit</label>
-                                            <div className="p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Declared Results to Count</span>
-                                                    <div className="flex items-center gap-3">
-                                                        <button 
-                                                            onClick={() => handleProjectorUpdate({ pointsLimit: Math.max(1, (state.settings.projector?.pointsLimit || 10) - 1) })}
-                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-8 text-center font-black text-indigo-600 dark:text-indigo-400">{state.settings.projector?.pointsLimit || 10}</span>
-                                                        <button 
-                                                            onClick={() => handleProjectorUpdate({ pointsLimit: Math.min(200, (state.settings.projector?.pointsLimit || 10) + 1) })}
-                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <p className="text-[9px] text-zinc-400 leading-relaxed font-medium">Controls how many of the first declared results are counted towards the total points showing in the Live Projector tallies.</p>
                                             </div>
                                         </div>
                                         <div>
