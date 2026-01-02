@@ -244,7 +244,7 @@ const ScoringTable: React.FC<{
                                             </span>
                                         )}
                                         {sp.rank > 0 && (
-                                            <span className={`px-2.5 py-1 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-sm ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : 'bg-orange-200 text-orange-800'}`}>
+                                            <span className={`px-2.5 py-1 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-sm ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : sp.rank === 3 ? 'bg-orange-200 text-orange-800' : ''}`}>
                                                 Rank {sp.rank}
                                             </span>
                                         )}
@@ -275,7 +275,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const isDeclared = selectedItemResult?.status === ResultStatus.DECLARED;
     const isUpdated = selectedItemResult?.status === ResultStatus.UPDATED;
     const isDraft = selectedItemResult?.status === ResultStatus.UPLOADED;
-    const isLocked = isDeclared || isUpdated || (isDraft && isJudge);
+    
+    // UPDATED: Judges are only locked if a manager has DECLARED or UPDATED the result.
+    // They can still edit their own column in UPLOADED (Draft) mode.
+    const isLocked = isDeclared || isUpdated;
 
     const filteredItems = useMemo(() => {
         if (!state) return [];
@@ -400,7 +403,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             const winners = scoring.map(sp => ({
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
             }));
-            // Maintain current status (UPDATED or DECLARED)
             await saveResult({ itemId: selectedItem.id, categoryId: selectedItem.categoryId, status: selectedItemResult?.status || ResultStatus.DECLARED, winners });
         }
     };
@@ -457,8 +459,6 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         setIsSaving(true);
         try {
             const existingResult = state.results.find(r => r.itemId === item.id);
-            // Revert to Uploaded (Draft) status or delete result entirely? 
-            // Better to revert to Draft to keep data safe but unlock edit.
             await saveResult({ 
                 itemId: item.id, 
                 categoryId: item.categoryId, 
@@ -497,7 +497,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             !isJudge && <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-lg text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={14}/> Unlock</button>
                          ) : (
                             <>
-                                {(isManager || (isJudge && !isLocked)) && (
+                                {(isManager || isJudge) && (
                                     <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
                                         <Save size={14}/> {isSaving ? '...' : (isJudge ? 'Submit' : 'Draft')}
                                     </button>
@@ -514,10 +514,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
                 
                 {isLocked && (
-                    <div className={`p-3 sm:p-4 border rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : isUpdated ? 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-800 dark:text-indigo-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
-                        {isDeclared ? <CheckCircle2 size={16} className="shrink-0" /> : isUpdated ? <RefreshCw size={16} className="shrink-0" /> : <Lock size={16} className="shrink-0" />}
+                    <div className={`p-3 sm:p-4 border rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-800 dark:text-indigo-200'}`}>
+                        {isDeclared ? <CheckCircle2 size={16} className="shrink-0" /> : <RefreshCw size={16} className="shrink-0" />}
                         <p className="text-[10px] sm:text-xs font-bold leading-tight">
-                            {isDeclared ? 'Live Points Active. Modifications will sync in real-time.' : isUpdated ? 'Updated Status. Points are calculated internally but hidden from public.' : 'Results Drafted. Your marks are locked for review.'}
+                            {isDeclared ? 'Live Points Active. Modifications will sync in real-time.' : 'Updated Status. Points are calculated internally but hidden from public.'}
                         </p>
                     </div>
                 )}
@@ -578,7 +578,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     }
 
     return (
-        <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-500 pb-24">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-24">
             <div className="hidden md:flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div>
                     <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Scoring Terminal</h2>

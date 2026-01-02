@@ -199,6 +199,13 @@ const LotMachine: React.FC = () => {
     const lotPool = state?.settings.lotEligibleCodes || [];
     const categories = useMemo(() => (state?.categories || []).slice().sort((a, b) => a.name.localeCompare(b.name)), [state?.categories]);
     
+    // Clear lot results when changing items
+    useEffect(() => {
+        setLotResults([]);
+        setSelectedParticipantIds(new Set());
+        setAssignmentStatus('idle');
+    }, [selectedItemId]);
+
     const availableItems = useMemo(() => {
         if (!state) return [];
         let items = state.items;
@@ -271,7 +278,22 @@ const LotMachine: React.FC = () => {
         } else {
             newSet.add(p.id);
             const existingTab = state?.tabulation.find(t => t.itemId === selectedItemId && t.participantId === p.id);
-            newResults.push({ participantId: p.id, name: p.displayName || p.name, code: existingTab?.codeLetter || '?', isLocked: !!existingTab?.codeLetter });
+            
+            // New logic: Automatically assign an available code from the pool
+            let assignedCode = existingTab?.codeLetter || '';
+            if (!assignedCode) {
+                // Find a code from lotPool that is not currently in our newResults list
+                const currentUsedCodes = new Set(newResults.map(r => r.code));
+                const availableFromPool = lotPool.find(c => !currentUsedCodes.has(c));
+                assignedCode = availableFromPool || '?';
+            }
+
+            newResults.push({ 
+                participantId: p.id, 
+                name: p.displayName || p.name, 
+                code: assignedCode, 
+                isLocked: !!existingTab?.codeLetter 
+            });
         }
         setSelectedParticipantIds(newSet);
         setLotResults(newResults);
