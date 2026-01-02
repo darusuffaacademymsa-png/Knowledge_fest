@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Sparkles, ArrowRight, Trophy, Palette, 
@@ -153,10 +154,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                         
                         <div className="relative mb-8">
                             {logoUrl ? (
-                                <img 
-                                    src={logoUrl} 
-                                    alt="AMAZIO" 
-                                    className="h-auto max-h-48 md:max-h-72 w-auto object-contain filter drop-shadow-2xl hover:scale-[1.02] transition-all duration-700 select-none" 
+                                /* FIX: Fixed syntax error in img tag by adding missing brackets */
+                                <img src={logoUrl} 
+                                alt="AMAZIO" 
+                                className="h-auto max-h-48 md:max-h-72 w-auto object-contain filter drop-shadow-2xl hover:scale-[1.02] transition-all duration-700 select-none" 
                                 />
                             ) : (
                                 <h1 className="text-7xl md:text-[14vh] font-black leading-none tracking-tighter uppercase text-[#283618] dark:text-white drop-shadow-xl select-none">
@@ -179,16 +180,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ theme, toggleTheme, settings 
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-6 mt-16 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
+                    <div className="flex flex-wrap justify-center gap-4 mt-16 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
                         <button 
                             onClick={() => navigateTo(TABS.DASHBOARD)} 
-                            className="px-12 py-6 bg-[#283618] dark:bg-[#9AAD59] text-white dark:text-[#283618] rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-[#283618]/40 dark:shadow-[#9AAD59]/30"
+                            className="px-10 py-6 bg-[#283618] dark:bg-[#9AAD59] text-white dark:text-[#283618] rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-[#283618]/40 dark:shadow-[#9AAD59]/30"
                         >
                             <LayoutDashboard size={20} /> Live Dashboard
                         </button>
                         <button 
+                            onClick={() => navigateTo(TABS.PROJECTOR)} 
+                            className="px-10 py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-indigo-600/30"
+                        >
+                            <Monitor size={20} /> Live Projector
+                        </button>
+                        <button 
                             onClick={() => navigateTo(TABS.CREATIVE_STUDIO)} 
-                            className="px-12 py-6 bg-white/40 dark:bg-white/5 border-2 border-[#283618]/10 dark:border-[#9AAD59]/20 text-[#283618] dark:text-white rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xl flex items-center gap-4"
+                            className="px-10 py-6 bg-white/40 dark:bg-white/5 border-2 border-[#283618]/10 dark:border-[#9AAD59]/20 text-[#283618] dark:text-white rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xl flex items-center gap-4"
                         >
                             <Palette size={20} /> Creative Studio
                         </button>

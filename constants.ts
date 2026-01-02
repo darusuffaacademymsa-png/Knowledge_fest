@@ -1,3 +1,4 @@
+
 import { Settings, Users, ClipboardList, Medal, Hash, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, Home, Scale, Gavel, Palette, Timer, Monitor } from 'lucide-react';
 import { UserRole } from './types';
 
@@ -52,6 +53,7 @@ export const GUEST_PERMISSIONS = [
   TABS.LANDING,
   TABS.DASHBOARD,
   TABS.CREATIVE_STUDIO,
+  TABS.PROJECTOR,
 ];
 
 // Map each tab to a Tailwind color base
