@@ -1,3 +1,4 @@
+
 export enum ItemType {
   SINGLE = 'Single',
   GROUP = 'Group',
@@ -11,6 +12,7 @@ export enum PerformanceType {
 export enum ResultStatus {
   NOT_UPLOADED = 'Not Uploaded',
   UPLOADED = 'Uploaded',
+  UPDATED = 'Updated',
   DECLARED = 'Declared',
 }
 
@@ -140,6 +142,7 @@ export interface Settings {
   eventDays?: string[];
   stages?: string[];
   timeSlots?: string[];
+  scheduleDisplayPriority?: 'TIME_FIRST' | 'DATE_FIRST';
 
   // Projector Customization
   projector?: ProjectorSettings;

@@ -14,7 +14,7 @@ interface DashboardPageProps {
 const StatCard: React.FC<{ icon: React.ElementType, title: string, value: string | number, colorClass: string, onClick?: () => void, delay?: number }> = ({ icon: Icon, title, value, colorClass, onClick, delay = 0 }) => (
   <div 
     onClick={onClick} 
-    className={`relative group p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/30 dark:hover:border-emerald-500/40 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards`}
+    className={`relative group p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] bg-white dark:bg-zinc-900/50 hover:border-emerald-500/30 dark:hover:border-emerald-500/40 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards`}
     style={{ animationDelay: `${delay}ms` }}
   >
     <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full blur-[80px] pointer-events-none opacity-20 dark:opacity-40 transition-colors duration-500 ${colorClass}`}></div>
@@ -90,7 +90,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab, theme }) =>
 
   return (
     <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-700 pb-24 max-w-5xl mx-auto">
-       <div className="relative w-full rounded-[2rem] sm:rounded-[3.5rem] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden group transition-all duration-700">
+       <div className="relative w-full rounded-[2rem] sm:rounded-[3.5rem] bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden group transition-all duration-700">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] to-indigo-500/[0.03] dark:from-emerald-500/[0.05] dark:to-indigo-500/[0.05] pointer-events-none"></div>
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 items-center p-6 sm:p-14 gap-8 sm:gap-10">
               <div className="lg:col-span-7 flex flex-col items-start gap-4 sm:gap-6">
@@ -132,10 +132,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab, theme }) =>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
           <div className="lg:col-span-8">
-              <Card title="Program Timeline" action={<button onClick={() => setActiveTab(TABS.SCHEDULE)} className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all">Full Schedule <ArrowRight size={14}/></button>}>
+              <Card title="Program Timeline" className="!border-none" action={<button onClick={() => setActiveTab(TABS.SCHEDULE)} className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all">Full Schedule <ArrowRight size={14}/></button>}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                     {upcomingEvents.length > 0 ? upcomingEvents.map((ev, i) => (
-                        <div key={ev.id} className="flex items-start gap-4 sm:gap-6 p-5 sm:p-7 bg-zinc-50 dark:bg-zinc-800/40 rounded-[1.5rem] sm:rounded-[2.5rem] border border-zinc-100 dark:border-zinc-700/50 group hover:border-emerald-500/30 transition-all hover:bg-white dark:hover:bg-zinc-800">
+                        <div key={ev.id} className="flex items-start gap-4 sm:gap-6 p-5 sm:p-7 bg-zinc-50 dark:bg-zinc-800/40 rounded-[1.5rem] sm:rounded-[2.5rem] group transition-all hover:bg-white dark:hover:bg-zinc-800 hover:shadow-md">
                             <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-[1.5rem] bg-zinc-900 dark:bg-emerald-500/20 flex items-center justify-center text-white dark:text-emerald-400 shrink-0 shadow-lg transition-transform group-hover:scale-105">
                                 <Clock size={24} sm:size={36} strokeWidth={2.5} />
                             </div>
@@ -161,7 +161,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab, theme }) =>
               </Card>
           </div>
           <div className="lg:col-span-4 space-y-6 sm:space-y-10">
-               <Card title="Latest Verdict">
+               <Card title="Latest Verdict" className="!border-none">
                 {recentResult ? (
                   <div className="space-y-5 sm:space-y-7">
                     <div className="text-center mb-4 sm:mb-8">
@@ -170,7 +170,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab, theme }) =>
                     </div>
                     <div className="space-y-2 sm:space-y-3">
                         {recentResult.winners.map((winner, idx) => (
-                            <div key={idx} className="flex items-center gap-4 sm:gap-5 p-3.5 sm:p-5 rounded-2xl sm:rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-700/30 hover:border-emerald-500/20 transition-all group/winner">
+                            <div key={idx} className="flex items-center gap-4 sm:gap-5 p-3.5 sm:p-5 rounded-2xl sm:rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-800/40 transition-all group/winner hover:bg-white dark:hover:bg-zinc-800 hover:shadow-md">
                                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1.5rem] flex items-center justify-center font-black text-base sm:text-xl ${winner.position === 1 ? 'bg-amber-400 text-amber-950 shadow-lg' : 'bg-white dark:bg-zinc-700 text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-600 shadow-sm'}`}>{winner.position}</div>
                                 <div className="min-w-0 flex-grow">
                                     <p className="font-black text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate uppercase group-hover/winner:text-emerald-600 dark:group-hover/winner:text-emerald-400 transition-colors">{winner.participantName}</p>

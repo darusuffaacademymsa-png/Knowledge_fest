@@ -3,7 +3,7 @@ import {
     Filter, GraduationCap, Info, Layers, Layout, ListFilter, 
     PieChart, Search, SearchX, Trophy, User, Users, Zap, 
     Check, TrendingUp, BookOpen, UserCheck, ArrowUpRight,
-    MapPin, X, ExternalLink, ArrowUp
+    MapPin, X, ExternalLink, ArrowUp, ArrowDown
 } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -139,7 +139,9 @@ const PointsPage: React.FC = () => {
         const itemAggregate: Record<string, any> = {};
 
         results.forEach(result => {
-            if (result.status !== ResultStatus.DECLARED) return;
+            // Updated Logic: Count both DECLARED and UPDATED status
+            if (result.status !== ResultStatus.DECLARED && result.status !== ResultStatus.UPDATED) return;
+            
             const item = items.find(i => i.id === result.itemId);
             const category = categories.find(c => c.id === result.categoryId);
             if (!item || !category) return;
@@ -310,7 +312,12 @@ const PointsPage: React.FC = () => {
                 });
             }
             const p = map.get(entry.participant.id);
-            p.total += entry.total;
+            
+            // Only add points to personal total if the item type is SINGLE
+            if (entry.item.type === ItemType.SINGLE) {
+                p.total += entry.total;
+            }
+            
             p.items.push(entry);
         });
         return Array.from(map.values()).sort((a,b) => b.total - a.total);
@@ -496,36 +503,38 @@ const PointsPage: React.FC = () => {
                         <UserCheck size={20} className="text-indigo-500" />
                         <h3 className="text-xl font-black font-serif uppercase text-amazio-primary dark:text-white">Contributor Registry</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {participantsAggregated.map(p => {
                             const theme = getThemeColor(p.displayTeam);
                             return (
                                 <div 
                                     key={p.id} 
                                     onClick={() => setSelectedParticipant(p)}
-                                    className="relative bg-white dark:bg-[#121412] p-5 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-sm hover:shadow-xl hover:border-zinc-300 transition-all duration-300 cursor-pointer overflow-hidden group"
+                                    className="relative bg-white dark:bg-[#121412] p-7 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-sm hover:shadow-xl hover:border-zinc-300 transition-all duration-300 cursor-pointer overflow-hidden group min-h-[160px] flex flex-col justify-between"
                                 >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-sm shadow-md transition-transform group-hover:scale-110 ${theme.bg}`}>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center font-black text-white text-xl shadow-lg transition-transform group-hover:scale-110 shrink-0 ${theme.bg}`}>
                                                 {p.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <h4 className="text-sm font-black uppercase text-amazio-primary dark:text-white truncate leading-tight group-hover:text-indigo-500 transition-colors">{p.name}</h4>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-2 py-0.5 rounded-lg">#{p.chestNumber}</span>
-                                                    {p.place && <div className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 italic truncate"><MapPin size={8}/> {p.place}</div>}
+                                                <h4 className="text-lg font-black uppercase text-amazio-primary dark:text-white truncate leading-tight group-hover:text-indigo-500 transition-colors mb-1">{p.name}</h4>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-[11px] font-black bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 px-2.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-800">#{p.chestNumber}</span>
+                                                    {p.place && <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 italic truncate"><MapPin size={10}/> {p.place}</div>}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-xl font-black text-indigo-500 tabular-nums leading-none">{p.total}</div>
-                                            <div className="text-[8px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Points</div>
+                                        <div className="text-right shrink-0">
+                                            <div className="bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-2xl border border-indigo-100 dark:border-indigo-800">
+                                                <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums leading-none mb-1">{p.total}</div>
+                                                <div className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Points</div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <p className={`text-[9px] font-black uppercase tracking-widest truncate ${theme.text}`}>{p.displayTeam}</p>
-                                        <span className="opacity-0 group-hover:opacity-100 transition-all text-indigo-500"><ExternalLink size={10}/></span>
+                                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-50 dark:border-white/5">
+                                        <p className={`text-[10px] font-black uppercase tracking-widest truncate ${theme.text}`}>{p.displayTeam}</p>
+                                        <span className="text-zinc-400 group-hover:text-indigo-500 transition-all flex items-center gap-1 text-[9px] font-black uppercase tracking-widest">Matrix <ExternalLink size={12}/></span>
                                     </div>
                                 </div>
                             );
@@ -534,7 +543,7 @@ const PointsPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Detail Modal: By Item (Ascending Points Order) */}
+            {/* Detail Modal: By Item (Points Order) */}
             <DetailModal 
                 isOpen={!!selectedItem} 
                 onClose={() => setSelectedItem(null)}
@@ -549,13 +558,13 @@ const PointsPage: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center gap-2 mb-4 px-2">
-                        <ArrowUp size={14} className="text-indigo-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Winners (Points Ascending)</span>
+                        <ArrowDown size={14} className="text-indigo-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Winners (Points Descending)</span>
                     </div>
 
                     <div className="space-y-3">
-                        {/* Sort by total points ascending as requested */}
-                        {[...(selectedItem?.winners || [])].sort((a: any, b: any) => a.total - b.total).map((w: any) => (
+                        {/* Sort by total points descending */}
+                        {[...(selectedItem?.winners || [])].sort((a: any, b: any) => b.total - a.total).map((w: any) => (
                             <div key={w.participantId} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-white/5 rounded-[1.5rem] shadow-sm hover:border-indigo-500/20 transition-all">
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${w.rank === 1 ? 'bg-amber-400 text-amber-950' : 'bg-zinc-100 text-zinc-400'}`}>
@@ -596,6 +605,11 @@ const PointsPage: React.FC = () => {
                         <span className="text-2xl font-black text-indigo-500 tabular-nums">{selectedParticipant?.total}</span>
                     </div>
 
+                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 flex items-start gap-3 mb-6">
+                        <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase leading-relaxed">Individual tallies only include performance from Single items. Group item points are listed for history but excluded from the total.</p>
+                    </div>
+
                     <div className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-2 mb-4">Contribution Matrix</div>
 
                     <div className="grid grid-cols-1 gap-3">
@@ -613,8 +627,12 @@ const PointsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-lg font-black text-emerald-600 tabular-nums">+{e.total}</div>
-                                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">Points Earned</p>
+                                    <div className={`text-lg font-black tabular-nums ${e.item.type === ItemType.GROUP ? 'text-zinc-400 line-through decoration-zinc-400/50' : 'text-emerald-600'}`}>
+                                        +{e.total}
+                                    </div>
+                                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">
+                                        {e.item.type === ItemType.GROUP ? 'Group (Excluded)' : 'Points Earned'}
+                                    </p>
                                 </div>
                             </div>
                         ))}

@@ -1,3 +1,4 @@
+
 import { AlertTriangle, ArrowRight, CheckCircle, ChevronDown, ChevronUp, ClipboardList, Clock, Edit2, FileDown, Image as ImageIcon, LayoutList, Layers, MapPin, Plus, RefreshCw, Save, Search, ShieldAlert, Sparkles, Tag, Trash2, Upload, UserPlus, Users, User as UserIcon, X, XCircle, BookOpen, Mic, PenTool, Hash, Info, ListTree, PackageSearch, Settings2, CheckSquare, Square, Check, Contact, Crown, ShieldCheck, Shield } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -175,7 +176,8 @@ export const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; e
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Cancel</button>
-                    <button handleSave={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
+                    {/* Fixed: button used handleSave property instead of onClick handler */}
+                    <button onClick={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
                 </div>
             </div>
         </div>,

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
-import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin, ClipboardList, Tag } from 'lucide-react';
+import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin, ClipboardList, Tag, RefreshCw } from 'lucide-react';
 import { UserRole, PerformanceType, ResultStatus } from '../types';
 import { TABS } from '../constants';
 
@@ -172,6 +172,7 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
     ];
     const statusOptions = [
         { id: ResultStatus.DECLARED, name: 'Declared', icon: ShieldCheck },
+        { id: ResultStatus.UPDATED, name: 'Updated', icon: RefreshCw },
         { id: ResultStatus.UPLOADED, name: 'Draft', icon: Award },
         { id: ResultStatus.NOT_UPLOADED, name: 'Not Uploaded', icon: Clock }
     ];

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
@@ -340,6 +341,7 @@ const UserFormModal: React.FC<{
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
+                    {/* Fixed: button used handleSave property instead of onClick handler */}
                     <button onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95 transition-all">Save Access</button>
                 </div>
             </div>

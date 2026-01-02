@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Award, Calculator, CheckCircle2, ChevronDown, ClipboardEdit, Clock, Edit3, Eye, FileText, Filter, LayoutGrid, Lock, LockOpen, Medal, Megaphone, Save, Search, ShieldAlert, Tag, Trash2, Trophy, UserCheck, Users, User, Star, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Award, Calculator, CheckCircle2, ChevronDown, ClipboardEdit, Clock, Edit3, Eye, FileText, Filter, LayoutGrid, Lock, LockOpen, Medal, Megaphone, Save, Search, ShieldAlert, Tag, Trash2, Trophy, UserCheck, Users, User, Star, RefreshCw, UploadCloud } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Card from '../components/Card';
 import { useFirebase } from '../hooks/useFirebase';
@@ -47,10 +47,12 @@ interface ResultCardProps {
     onEdit: () => void;
     onUnlock?: (item: Item) => void;
     onDeclare?: (item: Item) => void;
+    onUpdateTally?: (item: Item) => void;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryName, onEdit, onUnlock, onDeclare }) => {
+const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryName, onEdit, onUnlock, onDeclare, onUpdateTally }) => {
     const isDeclared = status === ResultStatus.DECLARED;
+    const isUpdated = status === ResultStatus.UPDATED;
     const isDraft = status === ResultStatus.UPLOADED;
     
     const catColor = getCategoryColor(categoryName);
@@ -62,6 +64,11 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
             label: 'Declared',
             icon: <CheckCircle2 size={10} strokeWidth={3} />,
             class: 'bg-emerald-500 text-white border-emerald-400'
+        };
+        if (isUpdated) return {
+            label: 'Updated',
+            icon: <RefreshCw size={10} strokeWidth={3} />,
+            class: 'bg-indigo-500 text-white border-indigo-400'
         };
         if (isDraft) return {
             label: 'Drafted',
@@ -78,7 +85,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
     const statusInfo = getStatusInfo();
 
     return (
-        <div className={`group relative flex flex-col h-full rounded-[1rem] sm:rounded-[1.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/20' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
+        <div className={`group relative flex flex-col h-full rounded-[1rem] sm:rounded-[1.5rem] border-2 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-[#121412] ${isDeclared ? 'border-emerald-500/20' : isUpdated ? 'border-indigo-500/20' : 'border-zinc-100 dark:border-white/5 hover:border-zinc-200'}`}>
             <div className="p-3 sm:p-4 pb-1 sm:pb-1.5 flex justify-between items-center">
                 <div className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-widest border flex items-center gap-1 transition-all ${statusInfo.class}`}>
                     {statusInfo.icon}
@@ -129,10 +136,20 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
                         {isDeclared ? <Eye size={12}/> : <Edit3 size={12}/>}
                         {isDeclared ? 'View' : 'Score'}
                     </button>
-                    {isDraft && onDeclare && (
+                    {isDraft && onUpdateTally && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onUpdateTally(item); }}
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 text-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-all"
+                            title="Push to Updated Status"
+                        >
+                            <UploadCloud size={14} strokeWidth={3} />
+                        </button>
+                    )}
+                    {(isDraft || isUpdated) && onDeclare && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDeclare(item); }}
-                            className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500 text-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-all"
+                            className={`w-8 h-8 sm:w-10 sm:h-10 text-white rounded-lg sm:rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-all ${isUpdated ? 'bg-emerald-600' : 'bg-amber-500'}`}
+                            title="Declare Result"
                         >
                             <Megaphone size={14} strokeWidth={3} />
                         </button>
@@ -147,14 +164,13 @@ const ResultCard: React.FC<ResultCardProps> = ({ item, result, status, categoryN
 const ScoringTable: React.FC<{
     participants: ScoredParticipant[];
     judgeIds: string[];
-    isDeclared: boolean;
-    isDraft: boolean;
+    isLocked: boolean;
     isJudge: boolean;
     isManager: boolean;
     currentJudgeId?: string;
     onMarkChange: (pid: string, jid: string, val: string) => void;
     state: any;
-}> = ({ participants, judgeIds, isDeclared, isDraft, isJudge, isManager, currentJudgeId, onMarkChange, state }) => {
+}> = ({ participants, judgeIds, isLocked, isJudge, isManager, currentJudgeId, onMarkChange, state }) => {
     return (
         <div className={`bg-white dark:bg-[#121412] rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-glass-light dark:shadow-2xl overflow-hidden animate-in fade-in duration-500`}>
             <div className="overflow-x-auto custom-scrollbar">
@@ -206,10 +222,10 @@ const ScoringTable: React.FC<{
                                                 type="number"
                                                 inputMode="decimal"
                                                 min="0" max="100" step="0.1"
-                                                disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== currentJudgeId)}
+                                                disabled={(isLocked && !isManager) || (isJudge && jid !== currentJudgeId)}
                                                 value={sp.marks[jid] ?? ''}
                                                 onChange={e => onMarkChange(sp.participantId, jid, e.target.value)}
-                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
+                                                className={`w-20 h-10 text-center font-black rounded-xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isLocked && !isManager) || (isJudge && jid !== currentJudgeId) ? 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`}
                                                 placeholder="--"
                                             />
                                         </div>
@@ -257,7 +273,9 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const selectedItem = useMemo(() => state?.items.find(i => i.id === selectedItemId), [state, selectedItemId]);
     const selectedItemResult = useMemo(() => state?.results.find(r => r.itemId === selectedItemId), [state, selectedItemId]);
     const isDeclared = selectedItemResult?.status === ResultStatus.DECLARED;
+    const isUpdated = selectedItemResult?.status === ResultStatus.UPDATED;
     const isDraft = selectedItemResult?.status === ResultStatus.UPLOADED;
+    const isLocked = isDeclared || isUpdated || (isDraft && isJudge);
 
     const filteredItems = useMemo(() => {
         if (!state) return [];
@@ -357,7 +375,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     }, [selectedItem, state, getScoringForItem]);
 
     const handleMarkChange = async (participantId: string, judgeKey: string, val: string) => {
-        if (!selectedItem || (isDeclared && !isManager) || (isDraft && isJudge)) return;
+        if (!selectedItem || (isLocked && !isManager) || (isJudge && judgeKey !== judgeId)) return;
         const mark = val === '' ? null : parseFloat(val);
         if (mark !== null && (mark < 0 || mark > 100)) return;
         const entryId = `${selectedItem.id}-${participantId}`;
@@ -372,7 +390,8 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
         await updateTabulationEntry(nextTab);
 
-        if (isDeclared && isManager && state) {
+        // Auto-update declared/updated results if manager edits
+        if ((isDeclared || isUpdated) && isManager && state) {
             const simulatedTabs = state.tabulation.map(t => t.id === entryId ? nextTab : t);
             const foundInSim = simulatedTabs.find(t => t.id === entryId);
             if (foundInSim) foundInSim.marks = marks;
@@ -381,7 +400,8 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             const winners = scoring.map(sp => ({
                 participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
             }));
-            await saveResult({ itemId: selectedItem.id, categoryId: selectedItem.categoryId, status: ResultStatus.DECLARED, winners });
+            // Maintain current status (UPDATED or DECLARED)
+            await saveResult({ itemId: selectedItem.id, categoryId: selectedItem.categoryId, status: selectedItemResult?.status || ResultStatus.DECLARED, winners });
         }
     };
 
@@ -400,10 +420,25 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         finally { setIsSaving(false); }
     };
 
+    const handlePushUpdate = async (itemOverride?: Item) => {
+        const item = itemOverride || selectedItem;
+        if (!item || !state) return;
+        if (!confirm(`Push Update for ${item.name}? This will make scores visible internally.`)) return;
+        const scoring = itemOverride ? getScoringForItem(itemOverride, state.tabulation) : scoredParticipants;
+        setIsSaving(true);
+        try {
+            const winners = scoring.map(sp => ({
+                participantId: sp.participantId, position: sp.rank, mark: sp.finalMark, gradeId: sp.grade?.id || null
+            }));
+            await saveResult({ itemId: item.id, categoryId: item.categoryId, status: ResultStatus.UPDATED, winners });
+        } catch (e) { alert("Failed to push update."); }
+        finally { setIsSaving(false); }
+    };
+
     const handleDeclare = async (itemOverride?: Item) => {
         const item = itemOverride || selectedItem;
         if (!item || !state) return;
-        if (!confirm(`Declare results for ${item.name}?`)) return;
+        if (!confirm(`FINAL DECLARATION for ${item.name}? This will publish results to all screens.`)) return;
         const scoring = itemOverride ? getScoringForItem(itemOverride, state.tabulation) : scoredParticipants;
         setIsSaving(true);
         try {
@@ -422,10 +457,12 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         setIsSaving(true);
         try {
             const existingResult = state.results.find(r => r.itemId === item.id);
+            // Revert to Uploaded (Draft) status or delete result entirely? 
+            // Better to revert to Draft to keep data safe but unlock edit.
             await saveResult({ 
                 itemId: item.id, 
                 categoryId: item.categoryId, 
-                status: ResultStatus.NOT_UPLOADED, 
+                status: ResultStatus.UPLOADED, 
                 winners: existingResult?.winners || [] 
             });
         } catch (e) { alert("Failed to unlock."); }
@@ -460,12 +497,15 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             !isJudge && <button onClick={() => handleUnlock()} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-amazio-primary dark:text-white rounded-lg text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-all"><LockOpen size={14}/> Unlock</button>
                          ) : (
                             <>
-                                {(isManager || (isJudge && !isDraft)) && (
+                                {(isManager || (isJudge && !isLocked)) && (
                                     <button onClick={() => handleSaveDraft()} disabled={scoredParticipants.length === 0 || isSaving} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm transition-all disabled:opacity-50 ${isJudge ? 'bg-indigo-600 text-white shadow-indigo-500/20' : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-amazio-primary dark:text-white hover:bg-zinc-50'}`}>
                                         <Save size={14}/> {isSaving ? '...' : (isJudge ? 'Submit' : 'Draft')}
                                     </button>
                                 )}
-                                {isManager && (
+                                {isManager && isDraft && (
+                                    <button onClick={() => handlePushUpdate()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><UploadCloud size={14} strokeWidth={3}/> {isSaving ? '...' : 'Update'}</button>
+                                )}
+                                {isManager && (isDraft || isUpdated) && (
                                     <button onClick={() => handleDeclare()} disabled={scoredParticipants.length === 0 || isSaving} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"><Calculator size={14} strokeWidth={3}/> {isSaving ? '...' : 'Declare'}</button>
                                 )}
                             </>
@@ -473,17 +513,17 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                 </div>
                 
-                {(isDeclared || (isDraft && isJudge)) && (
-                    <div className={`p-3 sm:p-4 border rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
-                        {isDeclared ? <CheckCircle2 size={16} className="shrink-0" /> : <Lock size={16} className="shrink-0" />}
+                {isLocked && (
+                    <div className={`p-3 sm:p-4 border rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-sm ${isDeclared ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200' : isUpdated ? 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-800 dark:text-indigo-200' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200'}`}>
+                        {isDeclared ? <CheckCircle2 size={16} className="shrink-0" /> : isUpdated ? <RefreshCw size={16} className="shrink-0" /> : <Lock size={16} className="shrink-0" />}
                         <p className="text-[10px] sm:text-xs font-bold leading-tight">
-                            {isDeclared ? 'Live Points Active. Modifications will sync in real-time.' : 'Results Drafted. Your marks are now locked for review.'}
+                            {isDeclared ? 'Live Points Active. Modifications will sync in real-time.' : isUpdated ? 'Updated Status. Points are calculated internally but hidden from public.' : 'Results Drafted. Your marks are locked for review.'}
                         </p>
                     </div>
                 )}
 
                 {!isMobile ? (
-                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isDeclared={isDeclared && !isManager} isDraft={isDraft} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
+                    <ScoringTable participants={scoredParticipants} judgeIds={activeJudgeInputs} isLocked={isLocked && !isManager} isJudge={isJudge} isManager={isManager} currentJudgeId={judgeId} onMarkChange={handleMarkChange} state={state} />
                 ) : (
                     <div className={`grid grid-cols-1 lg:grid-cols-2 gap-3`}>
                         {scoredParticipants.map(sp => (
@@ -515,7 +555,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                         {activeJudgeInputs.map(jid => (
                                             <div key={jid} className="relative">
                                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[7px] font-black uppercase text-zinc-400 pointer-events-none">{jid === MANUAL_OVERRIDE_ID ? 'Adm' : state.judges.find((j: Judge)=>j.id===jid)?.name.substring(0,3) || 'Jdg'}</div>
-                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isDeclared && !isManager) || (isDraft && isJudge) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-10 pl-10 pr-3 text-right font-black rounded-lg border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isDeclared && !isManager) || (isDraft && isJudge) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
+                                                <input type="number" inputMode="decimal" min="0" max="100" step="0.1" disabled={(isLocked && !isManager) || (isJudge && jid !== judgeId)} value={sp.marks[jid] ?? ''} onChange={e => handleMarkChange(sp.participantId, jid, e.target.value)} className={`w-full h-10 pl-10 pr-3 text-right font-black rounded-lg border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${(isLocked && !isManager) || (isJudge && jid !== judgeId) ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent' : 'bg-zinc-50 dark:bg-black/40 border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300'}`} placeholder="--" />
                                             </div>
                                         ))}
                                     </div>
@@ -553,6 +593,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                         categoryName={state.categories.find(c => c.id === item.categoryId)?.name || 'N/A'}
                         onEdit={() => setSelectedItemId(item.id)}
                         onDeclare={!isJudge ? (item) => handleDeclare(item) : undefined}
+                        onUpdateTally={!isJudge ? (item) => handlePushUpdate(item) : undefined}
                         onUnlock={!isJudge ? (item) => handleUnlock(item) : undefined}
                     />
                 ))}

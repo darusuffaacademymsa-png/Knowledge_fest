@@ -1,5 +1,5 @@
 
-import { AlertTriangle, ArrowLeft, Award, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown } from 'lucide-react';
+import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../components/Card';
@@ -42,19 +42,26 @@ const ItemManagementModal: React.FC<{
 
     const category = state.categories.find(c => c.id === item.categoryId);
     const isGeneralItem = category?.isGeneralCategory;
-    
-    // For SINGLE: item.maxParticipants is the number of individual slots a team can fill.
-    // For GROUP: item.maxGroupsPerTeam is the number of groups, item.maxParticipants is the size of each group.
-    const maxSlots = item.type === ItemType.GROUP ? (item.maxGroupsPerTeam || 1) : item.maxParticipants;
     const isGroup = item.type === ItemType.GROUP;
 
-    const handleAssign = async (p: Participant, groupIndex: number) => {
+    const handleAssign = async (p: Participant, groupIndex?: number) => {
         const newItemIds = Array.from(new Set([...p.itemIds, item.id]));
-        const newItemGroups = { ...(p.itemGroups || {}), [item.id]: groupIndex };
+        const newItemGroups = { ...(p.itemGroups || {}) };
+        if (isGroup && groupIndex !== undefined) {
+            newItemGroups[item.id] = groupIndex;
+        } else {
+            // For single items, clear any existing group index to avoid "Slot 1" artifacts
+            delete newItemGroups[item.id];
+        }
+
         let updates: Participant[] = [{ ...p, itemIds: newItemIds, itemGroups: newItemGroups }];
 
-        if (isGroup) {
-            const teamParticipants = state.participants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id) && (tp.itemGroups?.[item.id] || 1) === groupIndex);
+        if (isGroup && groupIndex !== undefined) {
+            const teamParticipants = state.participants.filter(tp => 
+                tp.teamId === p.teamId && 
+                tp.itemIds.includes(item.id) && 
+                (tp.itemGroups?.[item.id] || 1) === groupIndex
+            );
             const hasLeader = teamParticipants.some(tp => tp.groupLeaderItemIds?.includes(item.id));
             if (!hasLeader) {
                 updates[0].groupLeaderItemIds = Array.from(new Set([...(p.groupLeaderItemIds || []), item.id]));
@@ -123,7 +130,7 @@ const ItemManagementModal: React.FC<{
                         {/* Team Matrix */}
                         <div className="space-y-6">
                             <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                                <UsersIcon size={14}/> Unit-Wise Slots
+                                <UsersIcon size={14}/> Unit Status
                             </h4>
                             <div className="space-y-4">
                                 {state.teams.map(team => {
@@ -134,56 +141,62 @@ const ItemManagementModal: React.FC<{
                                             <div className="flex items-center gap-3 mb-4">
                                                 <div className={`w-2 h-4 rounded-full ${getTeamColor(team.name)}`}></div>
                                                 <span className="text-xs font-black uppercase tracking-tight text-zinc-700 dark:text-zinc-300">{team.name}</span>
-                                                <span className="text-[9px] font-bold text-zinc-400 ml-auto">{teamParticipants.length} Participants</span>
+                                                <span className={`text-[9px] font-bold ml-auto ${teamParticipants.length >= item.maxParticipants ? 'text-rose-500' : 'text-zinc-400'}`}>
+                                                    {teamParticipants.length} / {isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants} Registered
+                                                </span>
                                             </div>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {Array.from({ length: maxSlots }).map((_, idx) => {
-                                                    const groupIdx = idx + 1;
-                                                    const assigned = teamParticipants.filter(p => (p.itemGroups?.[item.id] || 1) === groupIdx);
-                                                    
-                                                    return (
-                                                        <div key={idx} className="flex flex-col gap-1 p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-zinc-100 dark:border-zinc-800">
-                                                            <div className="flex justify-between items-center mb-2 px-1">
-                                                                <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                                                                    {isGroup ? `Group Slot ${groupIdx}` : `Participant Slot ${groupIdx}`}
-                                                                </span>
-                                                                <span className="text-[8px] font-bold text-zinc-400">{assigned.length} / {isGroup ? item.maxParticipants : 1}</span>
-                                                            </div>
-                                                            {assigned.length > 0 ? (
+
+                                            {isGroup ? (
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {Array.from({ length: item.maxGroupsPerTeam || 1 }).map((_, idx) => {
+                                                        const groupIdx = idx + 1;
+                                                        const assigned = teamParticipants.filter(p => (p.itemGroups?.[item.id] || 1) === groupIdx);
+                                                        return (
+                                                            <div key={idx} className="p-3 rounded-2xl bg-white/40 dark:bg-black/20 border border-zinc-100 dark:border-zinc-800">
+                                                                <div className="flex justify-between items-center mb-2 px-1">
+                                                                    <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Group Slot {groupIdx}</span>
+                                                                    <span className="text-[8px] font-bold text-zinc-400">{assigned.length} / {item.maxParticipants} Members</span>
+                                                                </div>
                                                                 <div className="space-y-1.5">
                                                                     {assigned.map(p => {
                                                                         const isLeader = p.groupLeaderItemIds?.includes(item.id);
                                                                         return (
                                                                             <div key={p.id} className={`flex items-center justify-between p-2.5 bg-white dark:bg-zinc-900 border transition-all rounded-xl shadow-sm ${isLeader ? 'border-amber-400 ring-2 ring-amber-400/5' : 'border-zinc-200 dark:border-zinc-700'}`}>
                                                                                 <div className="flex items-center gap-3 min-w-0">
-                                                                                    <span className="text-[10px] font-black font-mono text-indigo-500 shrink-0">#{p.chestNumber}</span>
+                                                                                    <span className="text-[10px] font-black font-mono text-indigo-500">#{p.chestNumber}</span>
                                                                                     <span className="text-xs font-bold truncate dark:text-zinc-200">{p.name}</span>
                                                                                 </div>
                                                                                 <div className="flex items-center gap-1">
-                                                                                    {isGroup && (
-                                                                                        <button 
-                                                                                            onClick={() => handleToggleLeader(p, groupIdx)}
-                                                                                            title={isLeader ? "Group Leader" : "Set as Leader"}
-                                                                                            className={`p-1.5 rounded-lg transition-all ${isLeader ? 'text-amber-500 bg-amber-50' : 'text-zinc-300 hover:text-amber-400 hover:bg-amber-50/50'}`}
-                                                                                        >
-                                                                                            <Crown size={14} fill={isLeader ? "currentColor" : "none"} />
-                                                                                        </button>
-                                                                                    )}
+                                                                                    <button onClick={() => handleToggleLeader(p, groupIdx)} className={`p-1.5 rounded-lg transition-all ${isLeader ? 'text-amber-500 bg-amber-50' : 'text-zinc-300 hover:text-amber-400 hover:bg-amber-50/50'}`}><Crown size={14} fill={isLeader ? "currentColor" : "none"} /></button>
                                                                                     <button onClick={() => handleRemove(p)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={14}/></button>
                                                                                 </div>
                                                                             </div>
                                                                         );
                                                                     })}
+                                                                    {assigned.length === 0 && <div className="p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-center"><span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Available</span></div>}
                                                                 </div>
-                                                            ) : (
-                                                                <div className="p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-center">
-                                                                    <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Available</span>
-                                                                </div>
-                                                            )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-1.5">
+                                                    {teamParticipants.map(p => (
+                                                        <div key={p.id} className="flex items-center justify-between p-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm">
+                                                            <div className="flex items-center gap-3 min-w-0">
+                                                                <span className="text-[10px] font-black font-mono text-indigo-500">#{p.chestNumber}</span>
+                                                                <span className="text-xs font-bold truncate dark:text-zinc-200">{p.name}</span>
+                                                            </div>
+                                                            <button onClick={() => handleRemove(p)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={14}/></button>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    ))}
+                                                    {teamParticipants.length === 0 && (
+                                                        <div className="p-6 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-center">
+                                                            <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">No Participants Enrolled</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -212,7 +225,11 @@ const ItemManagementModal: React.FC<{
                                     .sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}))
                                     .map(p => {
                                         const team = state.teams.find(t => t.id === p.teamId);
+                                        const teamParticipants = state.participants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id));
                                         
+                                        const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
+                                        const isUnitFull = teamParticipants.length >= totalLimit;
+
                                         return (
                                             <div key={p.id} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl group hover:border-indigo-500/30 transition-all">
                                                 <div className="min-w-0 pr-4">
@@ -222,29 +239,20 @@ const ItemManagementModal: React.FC<{
                                                     </div>
                                                     <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{team?.name}</p>
                                                 </div>
-                                                <div className="flex flex-wrap justify-end gap-1 max-w-[150px]">
-                                                    {Array.from({ length: maxSlots }).map((_, i) => {
-                                                        const gIdx = i + 1;
-                                                        const teamParticipantsInSlot = state.participants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id) && (tp.itemGroups?.[item.id] || 1) === gIdx);
-                                                        
-                                                        // Capacity: 1 for Single Items, item.maxParticipants for Group Items
-                                                        const slotCapacity = isGroup ? item.maxParticipants : 1;
-                                                        const isSlotFull = teamParticipantsInSlot.length >= slotCapacity;
-
-                                                        if (isSlotFull) return null;
-
-                                                        return (
-                                                            <button 
-                                                                key={i}
-                                                                onClick={() => handleAssign(p, gIdx)}
-                                                                className="px-2 py-1 bg-indigo-600 text-white rounded text-[8px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all"
-                                                            >
-                                                                Add to S{gIdx}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                    {state.participants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id)).length >= (isGroup ? (maxSlots * item.maxParticipants) : maxSlots) && (
-                                                        <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-1 rounded">No Slots Available</span>
+                                                <div className="flex gap-1">
+                                                    {isUnitFull ? (
+                                                        <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded">Limit Reached</span>
+                                                    ) : isGroup ? (
+                                                        Array.from({ length: item.maxGroupsPerTeam || 1 }).map((_, i) => {
+                                                            const gIdx = i + 1;
+                                                            const occupants = teamParticipants.filter(tp => (tp.itemGroups?.[item.id] || 1) === gIdx);
+                                                            if (occupants.length >= item.maxParticipants) return null;
+                                                            return (
+                                                                <button key={i} onClick={() => handleAssign(p, gIdx)} className="px-2 py-1 bg-indigo-600 text-white rounded text-[8px] font-black uppercase hover:bg-indigo-700 transition-all">Add G{gIdx}</button>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <button onClick={() => handleAssign(p)} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-emerald-700 transition-all">Enroll</button>
                                                     )}
                                                 </div>
                                             </div>
@@ -288,57 +296,46 @@ const ParticipantManagementModal: React.FC<{
             const newItemIds = participant.itemIds.filter(id => id !== item.id);
             const newItemGroups = { ...(participant.itemGroups || {}) };
             delete newItemGroups[item.id];
-            
             const nextLeaders = (participant.groupLeaderItemIds || []).filter(id => id !== item.id);
             const nextChests = { ...(participant.groupChestNumbers || {}) };
             delete nextChests[item.id];
 
-            await updateParticipant({ 
-                ...participant, 
-                itemIds: newItemIds, 
-                itemGroups: newItemGroups, 
-                groupLeaderItemIds: nextLeaders,
-                groupChestNumbers: nextChests
-            });
+            await updateParticipant({ ...participant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders, groupChestNumbers: nextChests });
         } else {
-            // Addition: Identify the next free slot for this specific team/unit
-            const isGroup = item.type === ItemType.GROUP;
-            const maxSlots = isGroup ? (item.maxGroupsPerTeam || 1) : item.maxParticipants;
-            const slotCapacity = isGroup ? item.maxParticipants : 1;
-            
             const teamEnrolled = state.participants.filter(p => p.teamId === participant.teamId && p.itemIds.includes(item.id));
+            const isGroup = item.type === ItemType.GROUP;
+            const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
             
-            let targetIdx = -1;
-            for (let i = 1; i <= maxSlots; i++) {
-                const occupants = teamEnrolled.filter(p => (p.itemGroups?.[item.id] || 1) === i);
-                if (occupants.length < slotCapacity) {
-                    targetIdx = i;
-                    break;
-                }
-            }
-
-            if (targetIdx === -1) {
-                alert(`The unit "${team?.name}" has already occupied all available slots (${maxSlots}) for "${item.name}".`);
+            if (teamEnrolled.length >= totalLimit) {
+                alert(`The unit "${team?.name}" has already occupied all available spots for "${item.name}".`);
                 return;
             }
 
             const newItemIds = [...participant.itemIds, item.id];
-            const newItemGroups = { ...(participant.itemGroups || {}), [item.id]: targetIdx };
-            
+            const newItemGroups = { ...(participant.itemGroups || {}) };
             const nextLeaders = [...(participant.groupLeaderItemIds || [])];
+
             if (isGroup) {
-                const occupants = teamEnrolled.filter(p => (p.itemGroups?.[item.id] || 1) === targetIdx);
-                if (occupants.length === 0) {
-                    nextLeaders.push(item.id);
+                let targetIdx = -1;
+                for (let i = 1; i <= (item.maxGroupsPerTeam || 1); i++) {
+                    const groupMembers = teamEnrolled.filter(p => (p.itemGroups?.[item.id] || 1) === i);
+                    if (groupMembers.length < item.maxParticipants) {
+                        targetIdx = i;
+                        break;
+                    }
                 }
+                if (targetIdx !== -1) {
+                    newItemGroups[item.id] = targetIdx;
+                    if (teamEnrolled.filter(p => (p.itemGroups?.[item.id] || 1) === targetIdx).length === 0) {
+                        nextLeaders.push(item.id);
+                    }
+                }
+            } else {
+                // Single item: No slot grouping needed
+                delete newItemGroups[item.id];
             }
 
-            await updateParticipant({ 
-                ...participant, 
-                itemIds: newItemIds, 
-                itemGroups: newItemGroups,
-                groupLeaderItemIds: nextLeaders
-            });
+            await updateParticipant({ ...participant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders });
         }
     };
 
@@ -364,60 +361,33 @@ const ParticipantManagementModal: React.FC<{
                 <div className="p-8 space-y-6 flex-grow overflow-y-auto custom-scrollbar">
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-                        <input 
-                            type="text" 
-                            placeholder="Find items in assigned categories..." 
-                            value={search} 
-                            onChange={e => setSearch(e.target.value)} 
-                            className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                        />
+                        <input type="text" placeholder="Search events..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
                     </div>
 
                     <div className="grid grid-cols-1 gap-3">
                         {availableItems.map(item => {
                                 const isEnrolled = participant.itemIds.includes(item.id);
-                                const itemCat = state.categories.find(c => c.id === item.categoryId);
-                                const isGeneral = itemCat?.isGeneralCategory;
                                 const teamEnrolled = state.participants.filter(p => p.teamId === participant.teamId && p.itemIds.includes(item.id));
-                                
                                 const isGroup = item.type === ItemType.GROUP;
-                                const maxSlots = isGroup ? (item.maxGroupsPerTeam || 1) : item.maxParticipants;
-                                const slotCapacity = isGroup ? item.maxParticipants : 1;
-                                const totalCapacity = maxSlots * slotCapacity;
-                                
-                                const isFull = !isEnrolled && teamEnrolled.length >= totalCapacity;
+                                const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
+                                const isFull = !isEnrolled && teamEnrolled.length >= totalLimit;
 
                                 return (
-                                    <div 
-                                        key={item.id} 
-                                        onClick={() => toggleEnrollment(item)}
-                                        className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${isEnrolled ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 shadow-md' : isFull ? 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200'}`}
-                                    >
+                                    <div key={item.id} onClick={() => toggleEnrollment(item)} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${isEnrolled ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 shadow-md' : isFull ? 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200'}`}>
                                         <div className="min-w-0 pr-4">
                                             <div className="flex items-center gap-2">
                                                 <div className={`font-black text-sm uppercase tracking-tight ${isEnrolled ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-zinc-100'}`}>{item.name}</div>
-                                                {isGeneral && (
-                                                    <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm bg-amber-500 text-white`}>General</span>
-                                                )}
-                                                {isFull && (
-                                                    <span className="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900 flex items-center gap-1">
-                                                        <AlertTriangle size={8}/> Unit Limit Reached
-                                                    </span>
-                                                )}
+                                                {isFull && <span className="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900 flex items-center gap-1"><AlertTriangle size={8}/> Unit Limit</span>}
                                             </div>
                                             <div className="flex items-center gap-3 mt-1.5">
                                                 <div className="flex gap-1">
                                                     <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.type}</span>
                                                     <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.performanceType}</span>
                                                 </div>
-                                                <span className={`text-[8px] font-black uppercase tracking-widest ${isFull ? 'text-rose-500' : 'text-zinc-400'}`}>
-                                                    {teamEnrolled.length} / {totalCapacity} Individual Slots Filled
-                                                </span>
+                                                <span className={`text-[8px] font-black uppercase tracking-widest ${isFull ? 'text-rose-500' : 'text-zinc-400'}`}>{teamEnrolled.length} / {totalLimit} Enrolled</span>
                                             </div>
                                         </div>
-                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isEnrolled ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : isFull ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700'}`}>
-                                            {isEnrolled && <Check size={16} strokeWidth={4} />}
-                                        </div>
+                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isEnrolled ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : isFull ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700'}`}>{isEnrolled && <Check size={16} strokeWidth={4} />}</div>
                                     </div>
                                 );
                             })}
@@ -429,7 +399,7 @@ const ParticipantManagementModal: React.FC<{
     );
 };
 
-// --- Views ---
+// --- View Components ---
 
 const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
     const { state, globalSearchTerm, globalFilters } = useFirebase();
@@ -448,22 +418,13 @@ const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
     if (!state) return null;
 
     return (
-        <Card title="Enrollment by Events" action={
-            <button 
-                onClick={onAddItem}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all active:scale-95"
-            >
-                <Plus size={14} strokeWidth={3}/> New Event
-            </button>
-        }>
+        <Card title="Enrollment by Events" action={<button onClick={onAddItem} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all active:scale-95"><Plus size={14} strokeWidth={3}/> New Event</button>}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredItems.map(item => {
                     const category = state.categories.find(c => c.id === item.categoryId);
                     const theme = getCategoryTheme(category?.name || '');
                     const enrolledCount = state.participants.filter(p => p.itemIds.includes(item.id)).length;
-                    
-                    const isGroup = item.type === ItemType.GROUP;
-                    const maxPossiblePerTeam = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
+                    const maxPossiblePerTeam = item.type === ItemType.GROUP ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
                     const maxPossible = state.teams.length * maxPossiblePerTeam;
 
                     return (
@@ -471,16 +432,9 @@ const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center gap-2">
                                     <div className={`px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</div>
-                                    {category?.isGeneralCategory && (
-                                        <span className="bg-amber-500 text-white text-[7px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">General</span>
-                                    )}
+                                    {category?.isGeneralCategory && <span className="bg-amber-500 text-white text-[7px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">General</span>}
                                 </div>
-                                <button 
-                                    onClick={() => setSelectedItem(item)}
-                                    className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-all hover:scale-110"
-                                >
-                                    <ListPlus size={18} />
-                                </button>
+                                <button onClick={() => setSelectedItem(item)} className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-all hover:scale-110"><ListPlus size={18} /></button>
                             </div>
                             <h4 className="font-black text-amazio-primary dark:text-white text-lg uppercase tracking-tight leading-tight mb-2 line-clamp-1">{item.name}</h4>
                             <div className="flex items-center gap-2 mb-4">
@@ -521,14 +475,7 @@ const ParticipantEntryView: React.FC<{ onAddParticipant: () => void }> = ({ onAd
     if (!state) return null;
 
     return (
-        <Card title="Enrollment by Delegates" action={
-            <button 
-                onClick={onAddParticipant}
-                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-105 transition-all active:scale-95"
-            >
-                <Plus size={14} strokeWidth={3}/> New Delegate
-            </button>
-        }>
+        <Card title="Enrollment by Delegates" action={<button onClick={onAddParticipant} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-105 transition-all active:scale-95"><Plus size={14} strokeWidth={3}/> New Delegate</button>}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredParticipants.map(p => {
                     const team = state.teams.find(t => t.id === p.teamId);
@@ -545,12 +492,7 @@ const ParticipantEntryView: React.FC<{ onAddParticipant: () => void }> = ({ onAd
                                         <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500 max-w-[100px] truncate">{team?.name}</div>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => setSelectedParticipant(p)}
-                                    className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-all hover:scale-110"
-                                >
-                                    <Edit3 size={18} />
-                                </button>
+                                <button onClick={() => setSelectedParticipant(p)} className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-all hover:scale-110"><Edit3 size={18} /></button>
                             </div>
                             <h4 className="font-black text-amazio-primary dark:text-white text-lg uppercase tracking-tight leading-tight mb-2 truncate">{p.name}</h4>
                             <div className={`inline-block px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</div>
@@ -597,7 +539,6 @@ const DataEntryPage: React.FC<{ currentUser: User | null }> = ({ currentUser }) 
                 )}
             </div>
 
-            {/* Modals for creating new registry entries */}
             <ItemFormModal isOpen={isItemModalOpen} onClose={() => setIsItemModalOpen(false)} editingItem={null} />
             <ParticipantFormModal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)} editingParticipant={null} currentUser={currentUser} />
         </div>

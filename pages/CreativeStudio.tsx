@@ -4,7 +4,7 @@ import {
     Download, ChevronDown, 
     Loader2, Image as ImageIcon, Palette, 
     Plus, Check, Layers, X,
-    Settings2, Leaf
+    Settings2, Leaf, CheckCircle2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ResultStatus, ItemType } from '../types';
@@ -89,7 +89,7 @@ const PosterCanvas: React.FC<{
                 flexShrink: 0 
             }}
         >
-            {/* Background Layer (Image B) */}
+            {/* Background Layer */}
             {customBg && (
                 <img src={customBg} className="absolute inset-0 w-full h-full object-cover z-0" alt="Official Background" />
             )}
@@ -111,36 +111,46 @@ const PosterCanvas: React.FC<{
                     </h3>
                 </div>
 
-                {/* Winners Zone */}
-                {/* mt-[14px] provides approximately 0.4 cm gap from the Item Name block */}
-                {/* space-y-[8px] slightly increased gap between winner rows to 8px (~0.2cm) */}
-                <div className="mt-[14px] ml-[205px] space-y-[8px] pr-[110px]">
+                {/* Winners Zone - Optimized for Column Alignment and Precise Spacing */}
+                {/* 
+                   Grid Layout Specifications: 
+                   - mt-[35px]: 35px gap between Item Name and first prize holder
+                   - gap-y-[45px]: 45px vertical gap between winners
+                   - grid-cols-[minmax(335px,_max-content)_auto]: 
+                        - Ensures grade starts after center (540px total poster width - 205px left margin = 335px min col width)
+                        - Aligns all grades based on the longest name in the view
+                   - gap-x-[15px]: 15px horizontal gap between Name and Grade
+                */}
+                <div className="mt-[35px] ml-[205px] pr-[110px] grid grid-cols-[minmax(335px,_max-content)_auto] gap-x-[15px] gap-y-[45px] items-start">
                     {data.winners.slice(0, 3).map((winner, idx) => (
-                        <div key={idx} className="flex items-center justify-start gap-[20px] min-h-[115px]">
-                            
-                            {/* Identity Column (Name, Place, Team) */}
-                            {/* w-[290px] preserves the shift of grade badges towards the right while keeping names in place. */}
-                            <div className="w-[290px] shrink-0 min-w-0 pt-0">
-                                <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1] mb-0 text-[#283618]">
+                        <React.Fragment key={idx}>
+                            {/* Column 1: Identity & Metadata */}
+                            <div className="min-w-0">
+                                <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap">
                                     {winner.name}
                                 </h4>
-                                <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight mt-0.5">
-                                    {winner.place}
-                                </p>
-                                <p className="text-[17px] font-medium italic opacity-70 leading-tight mt-0.5">
-                                    {winner.team}
-                                </p>
+                                <div className="mt-[-2px] flex items-center gap-3">
+                                    <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight">
+                                        {winner.place}
+                                    </p>
+                                    <span className="text-zinc-400 font-light text-xl">|</span>
+                                    <p className="text-[17px] font-medium italic opacity-70 leading-tight">
+                                        {winner.team}
+                                    </p>
+                                </div>
                             </div>
 
-                            {/* Grade Column - Centered vertically */}
-                            {winner.grade && (
-                                <div className="shrink-0 flex items-center">
-                                    <div className="bg-[#9AAD59] text-[#283618] px-6 py-2 rounded-[4px] font-black text-[20px] shadow-sm whitespace-nowrap tracking-wider">
+                            {/* Column 2: Grade Badge - Aligned with Name Line */}
+                            <div className="pt-[10px]">
+                                {winner.grade ? (
+                                    <div className="shrink-0 bg-[#9AAD59] text-[#283618] px-5 py-1.5 rounded-[4px] font-black text-[20px] shadow-sm whitespace-nowrap tracking-wider">
                                         GRADE {winner.grade.toUpperCase()}
                                     </div>
-                                </div>
-                            )}
-                        </div>
+                                ) : (
+                                    <div className="h-[40px] w-1" />
+                                )}
+                            </div>
+                        </React.Fragment>
                     ))}
                 </div>
             </div>
@@ -165,7 +175,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     useEffect(() => {
         const calculateScale = () => {
             if (mainContainerRef.current) {
-                const padding = isMobile ? 24 : 100;
+                const padding = window.innerWidth >= 768 ? 80 : 32;
                 const availableWidth = mainContainerRef.current.offsetWidth - padding; 
                 const availableHeight = mainContainerRef.current.offsetHeight - padding;
                 const widthScale = availableWidth / 1080;
@@ -299,112 +309,131 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     return (
         <div className="flex flex-col h-full bg-amazio-light-bg dark:bg-amazio-bg animate-in fade-in duration-500 overflow-hidden relative">
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 sm:p-4 bg-amazio-light-bg dark:bg-amazio-bg z-30">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
-                        <Palette size={16} className="sm:w-6 sm:h-6" />
+            {/* Header Toolbar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 sm:p-5 bg-white dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 z-30">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 shrink-0">
+                        <Palette size={20} className="sm:w-6 sm:h-6" />
                     </div>
                     <div className="min-w-0">
-                        <h2 className="text-xs sm:text-lg font-black uppercase tracking-tight text-zinc-900 dark:text-zinc-100 leading-none truncate">Studio</h2>
+                        <h2 className="text-base sm:text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-zinc-100 leading-none truncate font-serif">Poster Studio</h2>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Registry-Populated Graphics</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                    <div className="relative flex-grow sm:flex-none group">
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="relative flex-grow md:flex-none group">
                         <select 
                             value={selectedItemId} 
                             onChange={(e) => setSelectedItemId(e.target.value)}
-                            className="w-full appearance-none bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg pl-2 pr-6 py-1.5 text-[10px] font-black uppercase tracking-widest focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer sm:min-w-[160px]"
+                            className="w-full appearance-none bg-zinc-100 dark:bg-zinc-800 border-2 border-transparent focus:border-indigo-500 rounded-xl pl-3 pr-8 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer md:min-w-[240px]"
                         >
-                            <option value="">-- Result --</option>
+                            <option value="">-- Choose Item --</option>
                             {declaredItems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                         </select>
-                        <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={10} />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={12} />
                     </div>
                     
                     <button 
                         disabled={!selectedItemId}
                         onClick={handleDownload} 
-                        className="bg-amazio-primary text-white p-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amazio-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center gap-1.5 shrink-0"
+                        className="bg-amazio-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amazio-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 shrink-0"
                     >
-                        <Download size={12} strokeWidth={3} /> <span className="hidden sm:inline">Save HQ</span>
+                        <Download size={14} strokeWidth={3} /> <span className="hidden sm:inline">Download HQ</span>
                     </button>
                 </div>
             </div>
             
-            <div className="flex-grow flex flex-col lg:flex-row overflow-hidden relative">
+            {/* Main Content Area */}
+            <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
                 
+                {/* Mobile Backdrop for Sidebar */}
                 {isMobile && isControlsOpen && (
                     <div 
-                        className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-40 animate-in fade-in duration-300"
+                        className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-40 animate-in fade-in duration-300"
                         onClick={() => setIsControlsOpen(false)}
                     />
                 )}
 
+                {/* Sidebar - Collapsible Side Drawer for Tablets/Desktop */}
                 <aside className={`
-                    fixed lg:relative bottom-0 left-0 right-0 lg:right-auto lg:w-72 
-                    bg-white dark:bg-zinc-900 border-t lg:border-t-0 lg:border-r border-zinc-200 dark:border-zinc-800 
+                    fixed md:relative bottom-0 left-0 right-0 md:right-auto md:w-72 lg:w-80
+                    bg-white dark:bg-[#121412] border-t md:border-t-0 md:border-r border-zinc-200 dark:border-zinc-800 
                     flex flex-col z-50 transition-transform duration-300 ease-out
-                    ${isMobile ? (isControlsOpen ? 'translate-y-0 h-[60vh] rounded-t-3xl shadow-2xl' : 'translate-y-full h-0') : 'h-full translate-y-0'}
+                    ${isMobile ? (isControlsOpen ? 'translate-y-0 h-[60vh] rounded-t-[2.5rem] shadow-2xl' : 'translate-y-full h-0') : 'h-full translate-y-0'}
                 `}>
                     {isMobile && (
-                        <div className="flex justify-center p-2" onClick={() => setIsControlsOpen(false)}>
-                            <div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                        <div className="flex justify-center p-3" onClick={() => setIsControlsOpen(false)}>
+                            <div className="w-12 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
                         </div>
                     )}
 
-                    <div className="flex-grow overflow-y-auto custom-scrollbar p-4 space-y-6">
+                    <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-8">
                         <div>
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Layout Assets</h3>
-                                <button onClick={() => bgInputRef.current?.click()} className="p-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-md"><Plus size={14}/></button>
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center gap-2">
+                                    <ImageIcon size={14} className="text-indigo-500" />
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Background Layers</h3>
+                                </div>
+                                <button onClick={() => bgInputRef.current?.click()} className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform"><Plus size={16}/></button>
                                 <input type="file" id="bg-upload-input" ref={bgInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
                             </div>
                             
-                            <div className="flex lg:grid lg:grid-cols-3 gap-1.5 overflow-x-auto lg:overflow-x-visible pb-1 no-scrollbar">
+                            <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                                 <button 
                                     onClick={() => setSelectedBgUrl(null)}
-                                    className={`shrink-0 w-12 h-12 lg:w-auto lg:aspect-square rounded-lg border flex items-center justify-center transition-all ${!selectedBgUrl ? 'border-indigo-500 bg-indigo-50' : 'border-zinc-100 bg-zinc-50'}`}
+                                    className={`aspect-square rounded-2xl border-2 flex items-center justify-center transition-all ${!selectedBgUrl ? 'border-indigo-500 bg-indigo-50 shadow-inner' : 'border-zinc-100 bg-zinc-50 dark:bg-white/5 dark:border-white/5'}`}
                                 >
-                                    <Layers size={14} className="text-zinc-400" />
+                                    <Layers size={18} className="text-zinc-400" />
                                 </button>
                                 {(state.settings.customBackgrounds || []).map((bg, idx) => (
-                                    <div key={idx} className="relative shrink-0 w-12 h-12 lg:w-auto lg:aspect-square">
+                                    <div key={idx} className="relative aspect-square">
                                         <img 
                                             src={bg} 
                                             onClick={() => setSelectedBgUrl(bg)}
-                                            className={`w-full h-full object-cover rounded-lg cursor-pointer border transition-all ${selectedBgUrl === bg ? 'border-indigo-500' : 'border-transparent'}`} 
+                                            className={`w-full h-full object-cover rounded-2xl cursor-pointer border-2 transition-all ${selectedBgUrl === bg ? 'border-indigo-500 scale-95 shadow-lg' : 'border-transparent'}`} 
+                                            alt={`BG ${idx + 1}`}
                                         />
                                         <button 
                                             onClick={() => handleDeleteBg(idx)}
-                                            className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white p-0.5 rounded-full shadow-lg"
+                                            className="absolute -top-1 -right-1 bg-rose-500 text-white p-1 rounded-full shadow-lg hover:scale-110 transition-transform"
                                         >
-                                            <X size={8} strokeWidth={4}/>
+                                            <X size={10} strokeWidth={4}/>
                                         </button>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div>
-                            <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3">Active Design</h3>
-                            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl flex items-center justify-between">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Rooted Tree Official</span>
-                                <Check size={12} strokeWidth={4} className="text-indigo-600 dark:text-indigo-400" />
+                        <div className="pt-6 border-t border-zinc-100 dark:border-white/5">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2"><Palette size={14} className="text-emerald-500" /> System Template</h3>
+                            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-[2rem] flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-black uppercase tracking-tighter text-emerald-800 dark:text-emerald-400">Rooted Tree v1.0</span>
+                                    <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-0.5">Built-in Official Layout</p>
+                                </div>
+                                <CheckCircle2 size={18} strokeWidth={3} className="text-emerald-500" />
                             </div>
+                        </div>
+
+                        <div className="mt-auto pt-6 text-center">
+                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                                <Settings2 size={10} /> Rendering Engine 6.5
+                            </p>
                         </div>
                     </div>
                 </aside>
 
-                <main ref={mainContainerRef} className="flex-grow overflow-hidden flex flex-col items-center justify-center bg-zinc-200/50 dark:bg-black relative p-2 sm:p-10">
+                {/* Main Canvas Area */}
+                <main ref={mainContainerRef} className="flex-grow overflow-hidden flex flex-col items-center justify-center bg-zinc-200/50 dark:bg-black/80 relative p-4 sm:p-8 lg:p-12">
                     {posterData ? (
-                        <div className="relative flex flex-col items-center animate-in zoom-in-95 duration-500">
+                        <div className="relative flex flex-col items-center animate-in zoom-in-95 duration-700">
                             <div 
-                                className="bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[1rem] shadow-2xl overflow-hidden border border-white/10"
+                                className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10"
                                 style={{ 
                                     width: `${1080 * scale}px`, 
                                     height: `${1080 * scale}px`,
-                                    transition: 'all 0.2s ease-out'
+                                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                 }}
                             >
                                 <div id="poster-canvas-el" className="w-full h-full">
@@ -415,22 +444,31 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                     />
                                 </div>
                             </div>
+                            
+                            {/* Visual Hint */}
+                            <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 dark:text-zinc-600 hidden md:block">
+                                High Resolution Preview • 1080x1080px
+                            </p>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center opacity-20 text-zinc-500 text-center px-6">
-                            <ImageIcon size={64} strokeWidth={1} />
-                            <p className="text-sm font-black uppercase tracking-widest mt-4">Registry Query Required</p>
+                        <div className="flex flex-col items-center justify-center opacity-20 text-zinc-500 text-center px-6 max-w-sm">
+                            <div className="w-24 h-24 rounded-[2.5rem] bg-zinc-100 dark:bg-white/5 flex items-center justify-center mb-8">
+                                <ImageIcon size={48} strokeWidth={1} />
+                            </div>
+                            <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Awaiting Data</h3>
+                            <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Choose an item from the top toolbar to generate its official poster.</p>
                         </div>
                     )}
                 </main>
 
+                {/* Mobile/Tablet Controls Toggle FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-[60]">
+                    <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-[60]">
                         <button 
                             onClick={toggleControls}
-                            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 ${isControlsOpen ? 'bg-zinc-800 text-white' : 'bg-indigo-600 text-white'}`}
+                            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 border-4 border-white dark:border-zinc-800 ${isControlsOpen ? 'bg-zinc-900 text-white' : 'bg-indigo-600 text-white'}`}
                         >
-                            {isControlsOpen ? <X size={18} /> : <Settings2 size={18} />}
+                            {isControlsOpen ? <X size={20} strokeWidth={3} /> : <Settings2 size={20} strokeWidth={3} />}
                         </button>
                     </div>
                 )}
@@ -439,6 +477,9 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             <style>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
             `}</style>
         </div>
     );

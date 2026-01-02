@@ -7,7 +7,7 @@ import {
     Calendar as CalendarIcon, Clock, MapPin, Sparkles, X, Plus, 
     ChevronDown, AlertCircle, Trash2, Edit2, Search, ChevronUp, 
     Check, RefreshCw, Layers, Settings2, CheckCircle2, ClipboardList,
-    AlertTriangle
+    AlertTriangle, ArrowRightLeft, Layout
 } from 'lucide-react';
 
 // --- Color Helpers ---
@@ -164,6 +164,8 @@ const SchedulePage: React.FC = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<ScheduledEvent | null>(null);
 
+    const isTimePrimary = state?.settings.scheduleDisplayPriority === 'TIME_FIRST';
+
     const manualItemsGrouped = useMemo(() => {
         if (!state) return { onStage: [], offStage: [] };
         const scheduledItemIds = new Set(state.schedule.map(s => s.itemId));
@@ -194,11 +196,18 @@ const SchedulePage: React.FC = () => {
             });
         }
         
+        const days = state.settings.eventDays || [];
+        const times = state.settings.timeSlots || [];
+
         data.sort((a, b) => {
-            const dateA = a.date;
-            const dateB = b.date;
-            if (dateA !== dateB) return dateA.localeCompare(dateB);
-            return a.time.localeCompare(b.time);
+            // Constant Sort Logic: Date then Time (ascending indices from settings)
+            const dIdxA = days.indexOf(a.date);
+            const dIdxB = days.indexOf(b.date);
+            if (dIdxA !== dIdxB) return dIdxA - dIdxB;
+            
+            const tIdxA = times.indexOf(a.time);
+            const tIdxB = times.indexOf(b.time);
+            return tIdxA - tIdxB;
         });
         
         return data;
@@ -237,6 +246,11 @@ const SchedulePage: React.FC = () => {
 
     const handleEditSave = () => { if (!state || !editFormData) return; setSchedule(state.schedule.map(s => s.id === editFormData.id ? editFormData : s)); setEditingId(null); };
 
+    const togglePriority = async () => {
+        const next = isTimePrimary ? 'DATE_FIRST' : 'TIME_FIRST';
+        await updateSettings({ scheduleDisplayPriority: next });
+    };
+
     if (!state) return <div className="p-10 text-center italic text-zinc-500">Synchronizing timeline...</div>;
 
     const selectClasses = "w-full rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-amazio-surface py-2 sm:py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 focus:ring-2 outline-none transition-all appearance-none font-black uppercase tracking-widest";
@@ -268,7 +282,7 @@ const SchedulePage: React.FC = () => {
                         <div className="flex justify-between items-center mb-1 px-1">
                             <label className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Target Item</label>
                             <label className="flex items-center gap-1 cursor-pointer">
-                                <input type="checkbox" checked={hideScheduled} onChange={e => e.target.checked} className="rounded border-zinc-300 h-2.5 w-2.5" />
+                                <input type="checkbox" checked={hideScheduled} onChange={e => setHideScheduled(e.target.checked)} className="rounded border-zinc-300 h-2.5 w-2.5" />
                                 <span className="text-[7px] sm:text-[9px] font-black text-zinc-400 uppercase tracking-wider">Hide</span>
                             </label>
                         </div>
@@ -311,9 +325,18 @@ const SchedulePage: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-                <div className="flex justify-between items-center px-2">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 gap-4">
                     <SectionTitle title="2. Scheduled Events" icon={ClipboardList} accentColor="indigo" />
-                    <div className="text-[8px] sm:text-[10px] font-black uppercase text-zinc-400 tracking-widest">{processedSchedule.length} Entries</div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <button 
+                            onClick={togglePriority}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-indigo-600 transition-all shadow-sm"
+                        >
+                            <ArrowRightLeft size={14} strokeWidth={3} />
+                            <span>Swap Priority</span>
+                        </button>
+                        <div className="text-[8px] sm:text-[10px] font-black uppercase text-zinc-400 tracking-widest shrink-0">{processedSchedule.length} Entries</div>
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -345,9 +368,18 @@ const SchedulePage: React.FC = () => {
                                     <>
                                         <div className="p-4 sm:p-6 pb-0">
                                             <div className="flex justify-between items-start mb-2 sm:mb-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter leading-none">{event.time}</span>
-                                                    <span className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 sm:mt-1">{event.date}</span>
+                                                <div className="flex flex-col min-w-0">
+                                                    {isTimePrimary ? (
+                                                        <>
+                                                            <span className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter leading-none truncate">{event.time}</span>
+                                                            <span className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 sm:mt-1 truncate">{event.date}</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-lg sm:text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter leading-none truncate">{event.date}</span>
+                                                            <span className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 sm:mt-1 truncate">{event.time}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => { setEditingId(event.id); setEditFormData(event); }} className="p-1.5 text-zinc-400 hover:text-indigo-600 transition-all"><Edit2 size={14}/></button>
@@ -360,11 +392,11 @@ const SchedulePage: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="mt-auto p-4 sm:p-6 pt-3 sm:pt-4 border-t border-zinc-50 dark:border-white/5 flex items-center justify-between">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 min-w-0">
                                                 <MapPin size={10} sm:size={14} style={{ color: stageColor }} />
-                                                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest" style={{ color: stageColor }}>{event.stage}</span>
+                                                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest truncate" style={{ color: stageColor }}>{event.stage}</span>
                                             </div>
-                                            <div className="text-[7px] sm:text-[9px] font-bold text-zinc-400 uppercase">{item?.performanceType === PerformanceType.ON_STAGE ? 'On' : 'Off'}</div>
+                                            <div className="text-[7px] sm:text-[9px] font-bold text-zinc-400 uppercase shrink-0">{item?.performanceType === PerformanceType.ON_STAGE ? 'On' : 'Off'}</div>
                                         </div>
                                     </>
                                 )}
@@ -394,10 +426,38 @@ const SchedulePage: React.FC = () => {
 
             <div className="bg-white/60 dark:bg-zinc-900/60 rounded-[1.5rem] sm:rounded-[2.5rem] border border-amazio-primary/5 dark:border-white/5 p-4 sm:p-8 shadow-glass-light dark:shadow-2xl">
                 <SectionTitle title="3. Configuration" icon={Settings2} />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 items-start">
                     <ChipInput label="Competition Days" description="Define the festival dates." values={state.settings.eventDays || []} onChange={(d) => updateSettings({ eventDays: d })} icon={CalendarIcon} colorScheme="indigo" />
                     <ChipInput label="Stages & Venues" description="Map performance areas." values={state.settings.stages || []} onChange={(s) => updateSettings({ stages: s })} icon={MapPin} colorScheme="emerald" />
                     <ChipInput label="Standard Slots" description="Time periods for sessions." values={state.settings.timeSlots || []} onChange={(t) => updateSettings({ timeSlots: t })} icon={Clock} colorScheme="amber" />
+                </div>
+                
+                <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-white/5">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-6 bg-zinc-50/50 dark:bg-black/20 rounded-[2rem] border border-zinc-100 dark:border-white/5">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                                <Layout size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-amazio-primary dark:text-white">Primary Display Identity</h4>
+                                <p className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400">Rearrange the visual order of Time and Date on schedule cards.</p>
+                            </div>
+                        </div>
+                        <div className="flex bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm shrink-0">
+                            <button 
+                                onClick={() => updateSettings({ scheduleDisplayPriority: 'TIME_FIRST' })}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isTimePrimary ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'}`}
+                            >
+                                Time First
+                            </button>
+                            <button 
+                                onClick={() => updateSettings({ scheduleDisplayPriority: 'DATE_FIRST' })}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isTimePrimary ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'}`}
+                            >
+                                Date First
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

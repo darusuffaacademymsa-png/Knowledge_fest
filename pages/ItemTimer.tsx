@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { useTimer } from '../store/TimerContext';
@@ -5,7 +6,7 @@ import { PerformanceType } from '../types';
 import { 
     Play, Pause, RotateCcw, Search, ChevronRight, 
     ArrowRightLeft, Clock, AlertTriangle, 
-    Volume2, VolumeX, Bell, Layers, X
+    Volume2, VolumeX, Bell, Layers, X, Mic2, Monitor, PlayCircle, History, Command
 } from 'lucide-react';
 
 const formatTime = (totalSeconds: number) => {
@@ -30,7 +31,7 @@ const getCategoryHex = (categoryId: string) => {
 const ItemTimerPage: React.FC = () => {
     const { state, globalSearchTerm, globalFilters } = useFirebase();
     const { 
-        activeItem, timeLeft, isRunning, isMuted,
+        activeItem, timeLeft, isRunning, isMuted, initialDuration,
         startTimer, togglePause, resetTimer, clearTimer, toggleMute, triggerManualBell
     } = useTimer();
     
@@ -49,6 +50,7 @@ const ItemTimerPage: React.FC = () => {
         };
     }, [state, globalSearchTerm, globalFilters]);
 
+    const progress = initialDuration > 0 ? (timeLeft / initialDuration) * 100 : 0;
     const isWarning = timeLeft <= 60 && timeLeft > 0;
     const isEnded = timeLeft <= 0;
     const isOvertimeCritical = timeLeft <= -60;
@@ -58,38 +60,56 @@ const ItemTimerPage: React.FC = () => {
 
     if (!activeItem) {
         return (
-            <div className="h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-y-auto no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+            <div className="h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-y-auto custom-scrollbar pb-24">
+                <div className="mb-10">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                            <Command size={20} />
+                        </div>
+                        <h2 className="text-3xl font-black font-serif uppercase tracking-tighter text-amazio-primary dark:text-white">Timer Control Deck</h2>
+                    </div>
+                    <p className="text-zinc-500 dark:text-zinc-400 font-medium italic">Initialize stage clock for a registered discipline.</p>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                     {[
-                        { label: 'On Stage', items: filteredItems.onStage, color: 'bg-indigo-500' },
-                        { label: 'Off Stage', items: filteredItems.offStage, color: 'bg-zinc-400' }
+                        { label: 'On Stage Registry', items: filteredItems.onStage, icon: Mic2, color: 'bg-indigo-500' },
+                        { label: 'Off Stage Registry', items: filteredItems.offStage, icon: Monitor, color: 'bg-zinc-500' }
                     ].map((section) => {
                         if (section.items.length === 0) return null;
                         return (
-                            <div key={section.label} className="space-y-4">
-                                <div className="flex items-center gap-2 px-2">
-                                    <h3 className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{section.label}</h3>
+                            <div key={section.label} className="space-y-5">
+                                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-white/5 pb-3">
+                                    <div className="flex items-center gap-3">
+                                        <section.icon size={16} className="text-zinc-400" />
+                                        <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">{section.label}</h3>
+                                    </div>
+                                    <span className="text-[10px] font-black text-zinc-300 uppercase">{section.items.length} Entries</span>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {section.items.map(item => {
                                         const catHex = getCategoryHex(item.categoryId);
                                         return (
                                             <button
                                                 key={item.id}
                                                 onClick={() => startTimer(item)}
-                                                className="flex items-center justify-between p-3.5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-white/5 hover:border-indigo-500/30 transition-all group shadow-sm"
+                                                className="group relative flex flex-col p-5 bg-white dark:bg-zinc-900/40 rounded-[2rem] border-2 border-zinc-50 dark:border-white/5 hover:border-indigo-500/30 transition-all text-left shadow-sm hover:shadow-xl hover:-translate-y-1"
                                             >
-                                                <div className="min-w-0 pr-4">
-                                                    <h4 className="font-black text-black dark:text-zinc-100 text-sm uppercase tracking-tight truncate leading-tight">
-                                                        {item.name}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[8px] font-black text-zinc-400 uppercase">{state.categories.find(c => c.id === item.categoryId)?.name}</span>
-                                                        <span className="text-[8px] font-bold text-zinc-300">•</span>
-                                                        <span className="text-[8px] font-black text-zinc-400 uppercase">{item.duration}m</span>
-                                                    </div>
+                                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <PlayCircle size={20} className="text-indigo-500" />
                                                 </div>
-                                                <ChevronRight size={14} className="text-zinc-300 group-hover:text-indigo-500" strokeWidth={3} />
+                                                <div className="mb-3">
+                                                    <span className="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border" style={{ backgroundColor: `${catHex}10`, color: catHex, borderColor: `${catHex}30` }}>
+                                                        {state.categories.find(c => c.id === item.categoryId)?.name}
+                                                    </span>
+                                                </div>
+                                                <h4 className="font-black text-zinc-800 dark:text-zinc-100 text-sm sm:text-base uppercase tracking-tight leading-tight mb-2 line-clamp-2">
+                                                    {item.name}
+                                                </h4>
+                                                <div className="mt-auto pt-3 border-t border-zinc-50 dark:border-white/5 flex items-center gap-2">
+                                                    <Clock size={10} className="text-zinc-400" />
+                                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{item.duration} MINS</span>
+                                                </div>
                                             </button>
                                         );
                                     })}
@@ -103,93 +123,163 @@ const ItemTimerPage: React.FC = () => {
     }
 
     return (
-        <div className="h-full flex flex-col transition-all duration-700 bg-white dark:bg-[#0F1210] relative overflow-hidden">
+        <div className="h-full flex flex-col transition-all duration-700 bg-[#030403] text-white relative overflow-hidden">
+            {/* Ambient Lighting Overlay */}
             <div 
-                className={`absolute inset-0 transition-colors duration-1000 opacity-[0.03] dark:opacity-[0.06]`} 
-                style={{ backgroundColor: activeCategoryHex }}
+                className="absolute inset-0 transition-all duration-1000 opacity-[0.08]" 
+                style={{ background: `radial-gradient(circle at center, ${activeCategoryHex} 0%, transparent 70%)` }}
             ></div>
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none"></div>
 
-            {/* Header */}
-            <div className="relative z-10 px-6 py-4 flex justify-between items-center border-b border-zinc-50 dark:border-white/5">
-                <button 
-                    onClick={() => { if(!isRunning || confirm("Switch item?")) clearTimer(); }}
-                    className="flex items-center gap-2 text-zinc-400 hover:text-black dark:hover:text-white transition-all font-black uppercase text-[9px] tracking-widest"
-                >
-                    <ArrowRightLeft size={14} strokeWidth={3} /> <span className="hidden sm:inline">Switch Event</span>
-                </button>
+            {/* Top Toolbar */}
+            <div className="relative z-10 px-6 py-5 flex justify-between items-center bg-black/40 backdrop-blur-xl border-b border-white/5">
+                <div className="flex items-center gap-6">
+                    <button 
+                        onClick={() => { if(!isRunning || confirm("This will stop the current clock. Switch event?")) clearTimer(); }}
+                        className="flex items-center gap-2 text-zinc-500 hover:text-white transition-all group"
+                    >
+                        <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
+                            <ArrowRightLeft size={16} strokeWidth={3} />
+                        </div>
+                        <span className="font-black uppercase text-[10px] tracking-[0.2em] hidden sm:inline">Switch Deck</span>
+                    </button>
+                    <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
+                    <div className="hidden sm:flex items-center gap-3">
+                         <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse' : 'bg-rose-500'}`}></div>
+                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{isRunning ? 'Running' : 'Paused'}</span>
+                    </div>
+                </div>
+
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={toggleMute}
-                        className={`p-2 rounded-xl transition-all border ${isMuted ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-zinc-50 text-zinc-400 border-zinc-100 dark:bg-white/5 dark:border-white/10'}`}
+                        className={`p-2.5 rounded-xl transition-all border-2 ${isMuted ? 'bg-rose-600/20 text-rose-500 border-rose-500/20' : 'bg-white/5 text-zinc-400 border-transparent hover:bg-white/10'}`}
+                        title={isMuted ? "Unmute" : "Mute"}
                     >
-                        {isMuted ? <VolumeX size={16} strokeWidth={2.5} /> : <Volume2 size={16} strokeWidth={2.5} />}
+                        {isMuted ? <VolumeX size={18} strokeWidth={2.5} /> : <Volume2 size={18} strokeWidth={2.5} />}
+                    </button>
+                    <div className="h-6 w-px bg-white/10 mx-1"></div>
+                    <button 
+                        onClick={clearTimer}
+                        className="p-2.5 rounded-xl bg-rose-600 text-white shadow-lg active:scale-95 transition-all"
+                        title="Close Timer"
+                    >
+                        <X size={18} strokeWidth={3} />
                     </button>
                 </div>
             </div>
 
-            {/* Timer Core */}
+            {/* Cinematic Main Display */}
             <div className="flex-grow flex flex-col items-center justify-center p-6 text-center relative z-10">
-                <div className="mb-4">
-                    <span 
-                        className="inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border mb-2"
+                <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div 
+                        className="inline-block px-6 py-2 rounded-full text-[11px] md:text-xs font-black uppercase tracking-[0.4em] border-2 mb-6 backdrop-blur-md"
                         style={{ backgroundColor: `${activeCategoryHex}10`, color: activeCategoryHex, borderColor: `${activeCategoryHex}30` }}
                     >
                         {state.categories.find(c => c.id === activeItem?.categoryId)?.name}
-                    </span>
-                    <h1 className="text-2xl sm:text-4xl font-black font-serif text-black dark:text-white leading-none tracking-tight uppercase max-w-2xl px-4">
+                    </div>
+                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black font-serif text-white leading-none tracking-tighter uppercase max-w-5xl px-4 drop-shadow-2xl">
                         {activeItem?.name}
                     </h1>
                 </div>
 
-                <div className="relative">
+                <div className="relative flex flex-col items-center group">
+                    {/* Visual Progress Ring Backdrop */}
+                    <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] md:w-[60vh] md:h-[60vh] -rotate-90 opacity-20 transition-all duration-1000">
+                        <circle
+                            cx="50%" cy="50%" r="48%"
+                            stroke="currentColor" strokeWidth="1" fill="transparent"
+                            className="text-white/10"
+                        />
+                        <circle
+                            cx="50%" cy="50%" r="48%"
+                            stroke="currentColor" strokeWidth="4" fill="transparent"
+                            strokeDasharray="301.59"
+                            strokeDashoffset={301.59 - (progress / 100 * 301.59)}
+                            strokeLinecap="round"
+                            className={`transition-all duration-1000 ${isOvertimeCritical ? 'text-rose-600' : isEnded ? 'text-amber-500' : 'text-emerald-500'}`}
+                            style={{ strokeDasharray: 'calc(48% * 2 * 3.14159)' }}
+                        />
+                    </svg>
+
                     <div 
-                        className={`text-[8rem] sm:text-[12rem] md:text-[15rem] font-black font-mono leading-none tracking-tighter transition-all duration-500 tabular-nums ${isOvertimeCritical ? 'text-rose-600' : isEnded ? 'text-amber-600' : 'text-black dark:text-white'}`}
-                        /* Fixed Error: Removed redundant style prop that used undefined 'theme' variable; colors are already handled by Tailwind classes above. */
+                        className={`text-[8rem] sm:text-[14rem] md:text-[20rem] font-black font-mono leading-none tracking-tighter transition-all duration-700 tabular-nums drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${isOvertimeCritical ? 'text-rose-600' : isEnded ? 'text-amber-500' : isWarning ? 'text-white' : 'text-white'}`}
                     >
                         {formatTime(timeLeft)}
                     </div>
-                    <div className="absolute -bottom-6 left-0 right-0">
-                         {isOvertimeCritical ? (
-                            <span className="text-rose-600 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Critical Overtime</span>
+                    
+                    <div className="mt-4 flex flex-col items-center gap-1">
+                        {isOvertimeCritical ? (
+                            <span className="text-rose-600 text-[10px] md:text-sm font-black uppercase tracking-[0.5em] animate-pulse">Critical Overtime</span>
                         ) : isEnded ? (
-                            <span className="text-amber-600 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Session Over</span>
+                            <span className="text-amber-600 text-[10px] md:text-sm font-black uppercase tracking-[0.5em] animate-pulse">Time Expired</span>
                         ) : isWarning ? (
-                            <span className="text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Final Minute</span>
-                        ) : null}
+                            <span className="text-amber-500 text-[10px] md:text-sm font-black uppercase tracking-[0.5em] animate-pulse">Final Minute</span>
+                        ) : isRunning ? (
+                            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Live Countdown</span>
+                        ) : (
+                            <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Ready to start</span>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="relative z-10 flex flex-col items-center gap-6 pb-12 px-6">
-                <div className="flex gap-2 p-1 bg-zinc-50 dark:bg-white/5 rounded-2xl border border-zinc-100 dark:border-white/10">
-                    {[
-                        { count: 1, label: 'Wait', style: 'text-amber-600' },
-                        { count: 2, label: 'End', style: 'text-amber-700' },
-                        { count: 4, label: 'Ex.', style: 'text-rose-600' }
-                    ].map(bell => (
-                        <button 
-                            key={bell.count}
-                            onClick={() => triggerManualBell(bell.count)}
-                            className={`px-4 py-2 rounded-xl font-black uppercase tracking-widest text-[8px] transition-all flex items-center gap-1.5 hover:bg-white dark:hover:bg-zinc-800 ${bell.style}`}
-                        >
-                            <Bell size={10} fill="currentColor" /> {bell.label}
-                        </button>
-                    ))}
-                </div>
+            {/* Tactile Control Console */}
+            <div className="relative z-10 bg-black/60 backdrop-blur-3xl border-t border-white/5 pb-12 pt-8 px-6">
+                <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
+                    
+                    {/* Bell Station */}
+                    <div className="flex gap-3 p-1.5 bg-white/5 rounded-[1.5rem] border border-white/10">
+                        {[
+                            { count: 1, label: 'Warning', icon: Bell, color: 'text-amber-400' },
+                            { count: 2, label: 'Final', icon: Bell, color: 'text-amber-600' },
+                            { count: 4, label: 'Critical', icon: AlertTriangle, color: 'text-rose-600' }
+                        ].map(bell => (
+                            <button 
+                                key={bell.count}
+                                onClick={() => triggerManualBell(bell.count)}
+                                className={`group px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all flex items-center gap-2.5 hover:bg-white/10 ${bell.color}`}
+                            >
+                                <bell.icon size={14} fill="currentColor" className="group-hover:scale-125 transition-transform" />
+                                {bell.label}
+                            </button>
+                        ))}
+                    </div>
 
-                <div className="flex justify-center items-center gap-8">
-                    <button onClick={resetTimer} className="p-4 rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-400 hover:text-black transition-all active:scale-90 border border-zinc-100 shadow-sm"><RotateCcw size={24} strokeWidth={3} /></button>
-                    <button 
-                        onClick={togglePause}
-                        className={`w-24 h-24 rounded-[2.5rem] shadow-2xl transform transition-all active:scale-95 flex items-center justify-center border-4 border-white dark:border-zinc-800 ${isRunning ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'}`}
-                    >
-                        {isRunning ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" className="ml-2" />}
-                    </button>
-                    {/* Fixed Error: Added missing X icon to imports from lucide-react */}
-                    <button onClick={clearTimer} className="p-4 rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-400 hover:text-rose-600 transition-all active:scale-90 border border-zinc-100 shadow-sm"><X size={24} strokeWidth={3} /></button>
+                    {/* Master Actions */}
+                    <div className="flex justify-center items-center gap-10 md:gap-16">
+                        <button 
+                            onClick={resetTimer} 
+                            className="p-5 md:p-6 rounded-full bg-white/5 text-zinc-500 hover:text-white hover:bg-white/10 transition-all active:scale-90 border border-white/5 shadow-xl"
+                            title="Reset Timer"
+                        >
+                            <History size={24} md:size={32} strokeWidth={2.5} />
+                        </button>
+                        
+                        <button 
+                            onClick={togglePause}
+                            className={`w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-all active:scale-95 flex items-center justify-center border-4 border-white/10 ${isRunning ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white shadow-emerald-500/20'}`}
+                        >
+                            {isRunning ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" className="ml-2" />}
+                        </button>
+
+                        <button 
+                            onClick={clearTimer} 
+                            className="p-5 md:p-6 rounded-full bg-white/5 text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all active:scale-90 border border-white/5 shadow-xl"
+                            title="Abort Process"
+                        >
+                            <RotateCcw size={24} md:size={32} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+            `}</style>
         </div>
     );
 };

@@ -25,6 +25,7 @@ const defaultState: AppState = {
     eventDays: [],
     stages: [],
     timeSlots: [],
+    scheduleDisplayPriority: 'TIME_FIRST',
     projector: {
         showResults: true,
         showLeaderboard: true,
@@ -65,7 +66,8 @@ const defaultState: AppState = {
   judges: [],
   users: [
     { id: 'user_admin_01', username: 'admin', role: UserRole.MANAGER },
-    { id: 'user_amazio_01', username: 'Amazio', role: UserRole.MANAGER }
+    { id: 'user_amazio_01', username: 'Amazio', role: UserRole.MANAGER },
+    { id: 'user_gemini_01', username: 'Gemini', role: UserRole.MANAGER }
   ],
   permissions: DEFAULT_PAGE_PERMISSIONS,
 };

@@ -39,7 +39,6 @@ const iconMap: { [key: string]: React.ElementType } = {
     [TABS.ITEM_TIMER]: Timer,
 };
 
-// Vibrant Chromatic Themes
 const getTabTheme = (color: string, isActive: boolean) => {
     const themes: Record<string, any> = {
         emerald: { active: 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20', icon: 'text-emerald-500' },
@@ -57,8 +56,14 @@ const getTabTheme = (color: string, isActive: boolean) => {
     };
     
     const t = themes[color] || themes.zinc;
-    // Standardized inactive text and icon color to zinc-400 for better visibility in dark mode
     return isActive ? t.active : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5';
+};
+
+const GROUP_TITLE_COLORS: Record<string, string> = {
+    'Core': 'text-sky-500 dark:text-sky-400',
+    'Setup & Registry': 'text-emerald-500 dark:text-emerald-400',
+    'Live Operations': 'text-amber-500 dark:text-amber-400',
+    'Analytics & Media': 'text-rose-500 dark:text-rose-400'
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -90,6 +95,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (!state) return;
     const newMode = state.settings.mobileSidebarMode === 'sticky' ? 'floating' : 'sticky';
     await updateSettings({ mobileSidebarMode: newMode });
+  };
+
+  const handleTabClick = (tab: string) => {
+    setActiveTab(tab);
+    // Auto-hide sidebar on mobile after clicking a tab
+    if (isMobile && isExpanded && !isStickyMode) {
+        toggleSidebar();
+    }
   };
 
   return (
@@ -145,10 +158,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 if (visibleTabs.length === 0) return null;
 
+                const groupColorClass = GROUP_TITLE_COLORS[group.title] || 'text-zinc-500';
+
                 return (
-                    <div key={group.title} className="space-y-0">
+                    <div key={group.title} className="space-y-0 mb-4">
                         {isExpanded && !isStickyMode && (
-                            <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1.5 mt-2">
+                            <h3 className={`px-4 text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 mt-2 ${groupColorClass}`}>
                                 {group.title}
                             </h3>
                         )}
@@ -163,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 return (
                                     <button
                                         key={tab}
-                                        onClick={() => { setActiveTab(tab); if(isMobile && !isStickyMode) toggleSidebar(); }}
+                                        onClick={() => handleTabClick(tab)}
                                         className={`
                                             group relative flex items-center w-full rounded-2xl transition-all duration-300
                                             ${themeClass}
@@ -190,7 +205,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             </span>
                                         )}
 
-                                        {/* Tooltip for rail mode */}
                                         {(!isExpanded || isStickyMode) && !isMobile && (
                                             <div className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-black uppercase rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[1000] shadow-2xl">
                                                 {displayName}
@@ -209,7 +223,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className={`mt-auto p-4 transition-all duration-500 ${isExpanded && !isStickyMode ? 'mb-2' : 'mb-4'}`}>
             <div className={`
                 relative flex items-center bg-zinc-50 dark:bg-black/20 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 overflow-hidden transition-all duration-500
-                ${isExpanded && !isStickyMode ? 'p-3' : 'p-2 justify-center'}
+                ${isExpanded && !isStickyMode ? 'p-3' : 'p-2 flex-col justify-center gap-2'}
             `}>
                 <div className={`
                     shrink-0 rounded-full bg-gradient-to-tr from-[#283618] to-amazio-accent p-[1.5px] transition-all duration-500
@@ -227,40 +241,39 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                 )}
 
-                {/* Mobile Rail Toggle & Logout Integrated */}
-                {(isExpanded && !isStickyMode) || isStickyMode ? (
-                    <div className={`flex items-center gap-1 ${isStickyMode ? 'flex-col mt-4' : ''}`}>
-                         {isMobile && (
-                            <button 
-                                onClick={toggleMobileSticky}
-                                className="p-2 rounded-xl text-zinc-500 hover:text-amazio-accent hover:bg-amazio-accent/10 transition-all"
-                                title={isStickyMode ? "Floating Mode" : "Pin to Rail"}
-                            >
-                                {isStickyMode ? <PinOff size={18} /> : <Pin size={18} />}
-                            </button>
-                        )}
+                <div className={`flex items-center gap-1 ${isStickyMode || (!isExpanded && !isMobile) ? 'flex-col' : ''}`}>
+                    {!isMobile && (
                         <button 
-                            onClick={handleLogout}
-                            className="p-2 rounded-xl text-zinc-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-                            title="Sign Out"
+                            onClick={toggleSidebar}
+                            className="p-2 rounded-xl text-zinc-500 hover:text-amazio-primary dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                            title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
                         >
-                            <LogOut size={18} />
+                            {isExpanded ? <ChevronLeft size={18}/> : <ChevronRight size={18}/>}
                         </button>
-                    </div>
-                ) : null}
+                    )}
+
+                    {(isExpanded && !isStickyMode) || isStickyMode ? (
+                        <>
+                             {isMobile && (
+                                <button 
+                                    onClick={toggleMobileSticky}
+                                    className="p-2 rounded-xl text-zinc-500 hover:text-amazio-accent hover:bg-amazio-accent/10 transition-all"
+                                    title={isStickyMode ? "Floating Mode" : "Pin to Rail"}
+                                >
+                                    {isStickyMode ? <PinOff size={18} /> : <Pin size={18} />}
+                                </button>
+                            )}
+                            <button 
+                                onClick={handleLogout}
+                                className="p-2 rounded-xl text-zinc-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                                title="Sign Out"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                        </>
+                    ) : null}
+                </div>
             </div>
-            
-            {/* Expansion Controls (Desktop Only) */}
-            {!isMobile && (
-                <button 
-                    onClick={toggleSidebar}
-                    className={`
-                        mt-4 w-full flex items-center justify-center p-3 rounded-xl text-zinc-500 hover:text-amazio-primary dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all
-                    `}
-                >
-                    {isExpanded ? <ChevronLeft size={18}/> : <ChevronRight size={18}/>}
-                </button>
-            )}
         </div>
       </div>
       
