@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback } fro
 import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
-import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType } from '../types';
+import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType, FontConfig, GeneralFontConfig, Template } from '../types';
 import { DEFAULT_PAGE_PERMISSIONS, TABS, GUEST_PERMISSIONS } from '../constants';
 
 // --- Default State Template ---
@@ -46,13 +46,13 @@ const defaultState: AppState = {
       footer: 'Amazio 2026 Edition',
     },
     institutionDetails: { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' },
-    branding: { typographyUrl: '', teamLogoUrl: '' },
-    customFonts: {},
-    generalCustomFonts: [], 
-    customTemplates: [], 
-    customFooters: [], 
-    customBackgrounds: [], 
+    branding: { typographyUrl: '', teamLogoUrl: '' }
   },
+  customFonts: {},
+  generalCustomFonts: [], 
+  customTemplates: [], 
+  customFooters: [], 
+  customBackgrounds: [], 
   categories: [],
   teams: [],
   items: [],
@@ -109,6 +109,9 @@ interface FirebaseContextType {
   login: (username: string, pass: string, rememberMe: boolean) => Promise<void>;
   logout: () => Promise<void>;
   updateSettings: (payload: Partial<AppState['settings']>) => Promise<void>;
+  updateCustomFonts: (payload: AppState['customFonts']) => Promise<void>;
+  updateGeneralCustomFonts: (payload: GeneralFontConfig[]) => Promise<void>;
+  updateCustomBackgrounds: (payload: string[]) => Promise<void>;
   addCategory: (payload: Omit<Category, 'id'>) => Promise<void>;
   addMultipleCategories: (payload: Category[]) => Promise<void>;
   updateCategory: (payload: Category) => Promise<void>;
@@ -169,7 +172,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [authLoading, setAuthLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [error, setError] = useState<string | null>(null);
   
   const [globalFilters, setGlobalFilters] = useState({ 
     teamId: [] as string[], 
@@ -224,7 +226,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       }, (e) => {
-        console.warn(`Listener failed for ${key}, falling back to default values. Error: ${e.message}`);
+        console.warn(`Listener failed for ${key}, falling back to default values.`);
         setState(prev => {
           const current = prev || defaultState;
           return { ...current, [key]: (defaultState as any)[key] };
@@ -259,9 +261,22 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const writeDoc = async (key: string, value: any) => {
-    const docRef = doc(db, BASE_COLLECTION, key);
-    const sanitizedValue = cleanData(value);
-    await setDoc(docRef, { value: sanitizedValue }, { merge: false });
+    try {
+        const docRef = doc(db, BASE_COLLECTION, key);
+        const sanitizedValue = cleanData(value);
+        
+        // Dynamic capacity check: allow up to 1MB per document
+        const sizeEstimate = JSON.stringify(sanitizedValue).length;
+        if (sizeEstimate > 1000000) {
+            throw new Error(`Data block '${key}' is too large to synchronize. Try uploading a smaller file.`);
+        }
+        
+        await setDoc(docRef, { value: sanitizedValue }, { merge: false });
+    } catch (err: any) {
+        console.error(`Error writing document ${key}:`, err);
+        alert(err.message || `System synchronization failed for ${key}.`);
+        throw err;
+    }
   };
 
   const genericOps = (listName: keyof AppState) => ({
@@ -295,6 +310,9 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, gradeSubView, setGradeSubView,
     scoringSubView, setScoringSubView, judgesSubView, setJudgesSubView, settingsSubView, setSettingsSubView,
     updateSettings: (p) => writeDoc('settings', { ...state?.settings, ...p }),
+    updateCustomFonts: (p) => writeDoc('customFonts', p),
+    updateGeneralCustomFonts: (p) => writeDoc('generalCustomFonts', p),
+    updateCustomBackgrounds: (p) => writeDoc('customBackgrounds', p),
     addCategory: catOps.add, addMultipleCategories: async (p) => writeDoc('categories', [...(state?.categories || []), ...p]),
     updateCategory: catOps.update, reorderCategories: (p) => writeDoc('categories', p), deleteMultipleCategories: catOps.deleteMultiple,
     addTeam: teamOps.add, addMultipleTeams: async (p) => writeDoc('teams', [...(state?.teams || []), ...p]),
@@ -380,18 +398,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         reader.readAsText(file);
     }
   };
-
-  if (error) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-zinc-900 p-4">
-            <div className="text-center text-red-700 dark:text-red-200">
-                <h2 className="text-2xl font-bold mb-2">Sync Connection Error</h2>
-                <p className="mb-4">{error}</p>
-                <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-600 text-white rounded-xl">Retry</button>
-            </div>
-        </div>
-    );
-  }
 
   return <FirebaseContext.Provider value={contextValue}>{children}</FirebaseContext.Provider>;
 };

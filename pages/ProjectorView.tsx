@@ -144,7 +144,7 @@ const ResultSlide: React.FC<{ result: any; revealStep: number }> = ({ result, re
                 </div>
             </div>
 
-            <div className="flex flex-row items-end justify-center w-full max-w-[1300px] gap-[1vh] lg:gap-[4vh] relative z-20 px-[2vh]">
+            <div className="flex flex-row items-end justify-center w-full max-w-1300px gap-[1vh] lg:gap-[4vh] relative z-20 px-[2vh]">
                 <div className="flex-1 flex justify-center order-1"><PodiumCard rank={2} winner={rank2} isVisible={revealStep >= 2} /></div>
                 <div className="flex-1.3 flex justify-center order-2"><PodiumCard rank={1} winner={rank1} isVisible={revealStep >= 3} isChampion /></div>
                 <div className="flex-1 flex justify-center order-3"><PodiumCard rank={3} winner={rank3} isVisible={revealStep >= 1} /></div>
@@ -152,59 +152,6 @@ const ResultSlide: React.FC<{ result: any; revealStep: number }> = ({ result, re
         </div>
     );
 };
-
-const RecentVerdictsSlide: React.FC<{ results: any[] }> = ({ results }) => (
-    <div className="h-full w-full flex flex-col p-[5vh] lg:p-[10vh] overflow-hidden select-none">
-        <div className="mb-[5vh] animate-in fade-in slide-in-from-top-4 duration-700">
-            <div className="flex items-center gap-3 mb-2">
-                <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)] animate-pulse"></div>
-                <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-indigo-500">OFFICIAL LEDGER</h2>
-            </div>
-            <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">RECENT VERDICTS</h1>
-        </div>
-        
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[2vh] lg:gap-[3.5vh]">
-            {results.map((r, i) => {
-                const winner = r.winners.find((w: any) => w.position === 1);
-                return (
-                    <div 
-                        key={r.id} 
-                        className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-[3vh] p-[3vh] flex flex-col justify-between group hover:border-white/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-12 fill-mode-backwards"
-                        style={{ animationDelay: `${i * 120}ms` }}
-                    >
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-start">
-                                <span className="text-[1vh] lg:text-[1.3vh] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">{r.categoryName}</span>
-                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform"><Trophy size={16}/></div>
-                            </div>
-                            <h3 className="text-[2.2vh] lg:text-[3.2vh] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight min-h-[2.4em]">{r.itemName}</h3>
-                        </div>
-                        
-                        <div className="border-t border-white/10 pt-[2vh] mt-[2vh]">
-                            <div className="flex justify-between items-end">
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Champion Participant</p>
-                                    <p className="text-[1.8vh] lg:text-[2.6vh] font-black text-emerald-400 truncate uppercase tracking-tighter leading-none">{winner?.participantName || '---'}</p>
-                                    <p className="text-[1vh] lg:text-[1.3vh] font-bold text-zinc-600 uppercase tracking-widest truncate mt-1">{winner?.teamName || '---'}</p>
-                                </div>
-                                <div className="ml-4 flex flex-col items-center">
-                                     <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Score</p>
-                                     <div className="text-[2.5vh] lg:text-[4vh] font-black text-white tabular-nums leading-none tracking-tighter">{winner?.totalPoints || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
-            {results.length === 0 && (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-[1.5vh] font-black uppercase tracking-widest">
-                    <Activity size={48} className="mb-4" />
-                    Awaiting final verdicts
-                </div>
-            )}
-        </div>
-    </div>
-);
 
 // --- LEADERBOARD RACE LOGIC ---
 
@@ -224,7 +171,8 @@ const LeaderboardSlide: React.FC<{
     items: any[]; 
     calculateItemScores: any;
     baselinePoints: Record<string, number>;
-}> = ({ teams, active, timeline, items, calculateItemScores, baselinePoints }) => {
+    baselineCount: number;
+}> = ({ teams, active, timeline, items, calculateItemScores, baselinePoints, baselineCount }) => {
     const [teamStates, setTeamStates] = useState<TeamRaceState[]>([]);
     const [progressIndex, setProgressIndex] = useState(-1); // -1 = Surge Phase, 0+ = Relay Phase
     const [isReplaying, setIsReplaying] = useState(false);
@@ -295,7 +243,13 @@ const LeaderboardSlide: React.FC<{
                         };
                     }));
                 }
-                setProgressIndex(prev => prev + 1);
+                setProgressIndex(prev => {
+                    if (prev >= timeline.length - 1) {
+                         // End of relay
+                         return prev + 1;
+                    }
+                    return prev + 1;
+                });
             }
         }, getNextStepDelay());
 
@@ -310,6 +264,9 @@ const LeaderboardSlide: React.FC<{
     const visibleCount = Math.min(8, teams.length);
     const ROW_HEIGHT_VH = 65 / visibleCount;
 
+    // Correctly count how many items have been processed into the current visual points
+    const itemsProcessedCount = baselineCount + (progressIndex >= 0 ? Math.min(progressIndex + 1, timeline.length) : 0);
+
     return (
         <div className="h-full w-full flex flex-col p-[5vh] lg:p-[8vh] relative overflow-hidden select-none">
             {/* Background Surge Glow */}
@@ -321,7 +278,16 @@ const LeaderboardSlide: React.FC<{
                         <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-sky-500 shadow-[0_0_25px_#0ea5e9] animate-pulse"></div>
                         <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-sky-500">LIVE POINT RACE</h2>
                     </div>
-                    <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">LEADERBOARD</h1>
+                    <div className="flex items-center gap-[4vh]">
+                        <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">LEADERBOARD</h1>
+                        {progressIndex >= 0 && (
+                            <div className="px-[3vh] py-[1vh] bg-emerald-500/10 rounded-[2.5vh] border border-emerald-500/20 animate-in fade-in zoom-in duration-700 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                                <span className="text-[1.8vh] lg:text-[2.8vh] font-black text-emerald-400 tabular-nums uppercase tracking-widest whitespace-nowrap">
+                                    After {itemsProcessedCount} Result Points
+                                </span>
+                            </div>
+                        )}
+                    </div>
                     <p className="text-[1.2vh] lg:text-[1.6vh] font-bold text-zinc-600 uppercase tracking-[0.4em] mt-[1.5vh]">
                         {progressIndex === -1 ? 'IGNITING ENGINE...' : 
                          progressIndex < timeline.length ? `LIVE REPLAY: VERDICT ${progressIndex + 1} OF ${timeline.length}` : 'FINAL STANDINGS'}
@@ -537,6 +503,8 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const progressRef = useRef<number>(0);
     const lastTickRef = useRef<number>(Date.now());
 
+    // CALCULATE ONLY DECLARED POINTS:
+    // This callback is used during relay construction and stats generation.
     const calculateItemScores = useCallback((item: any, winners: any[]) => {
         if (!state) return [];
         const gradesConfig = item.type === ItemType.SINGLE ? (state.gradePoints?.single || []) : (state.gradePoints?.group || []);
@@ -563,11 +531,16 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const data = useMemo(() => {
         if (!state) return null;
         
-        const declaredOnly = state.results.filter(r => r.status === ResultStatus.DECLARED);
+        // REINFORCED: Filter results strictly for DECLARED status AND ensure the item exists in current registry
+        const declaredOnly = state.results.filter(r => {
+            const item = state.items.find(i => i.id === r.itemId);
+            return r.status === ResultStatus.DECLARED && !!item;
+        });
+
         const rotationLimit = state.settings.projector?.resultsLimit || 3;
         const raceLimit = state.settings.projector?.pointsLimit || 10;
         
-        // Results slides
+        // Individual Results Slides (Limited to validated DECLARED results)
         const resultsSlidesData = declaredOnly.slice(-rotationLimit).reverse().map(r => {
             const item = state.items.find(i => i.id === r.itemId);
             const category = state.categories.find(c => c.id === item?.categoryId);
@@ -578,9 +551,11 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             };
         }).filter(Boolean);
 
-        // Leaderboard Race Data:
+        // Leaderboard Race Relay Data:
+        // We divide validated DECLARED results into "Baseline" (instant points) and "Timeline" (progressive reveal)
         const timeline = declaredOnly.slice(-raceLimit);
         const baselineResults = declaredOnly.slice(0, Math.max(0, declaredOnly.length - raceLimit));
+        const baselineCount = baselineResults.length;
 
         const baselinePoints: Record<string, number> = {};
         state.teams.forEach(t => baselinePoints[t.id] = 0);
@@ -594,7 +569,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             }
         });
 
-        // Current Total Points
+        // Compute Total Sum (Stats slide uses this, ensuring ONLY validated DECLARED are counted)
         const totalPointsMap: Record<string, number> = { ...baselinePoints };
         timeline.forEach(r => {
             const item = state.items.find(i => i.id === r.itemId);
@@ -609,6 +584,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             results: resultsSlidesData,
             timeline: timeline,
             baselinePoints: baselinePoints,
+            baselineCount: baselineCount,
             teams: state.teams.map(t => ({ id: t.id, name: t.name })),
             stats: {
                 participants: state.participants.length, items: state.items.length,
@@ -627,9 +603,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
         const config = state?.settings.projector;
         const slides: SlideType[] = [];
         if (config?.showResults !== false && data?.results) {
-            // Include summary slide if more than one result exists
-            if (data.results.length > 1) slides.push('RECENT_VERDICTS');
-            // Cycle through individual cinematic results
             data.results.forEach((_, i) => slides.push(`RESULT_${i}`));
         }
         if (config?.showLeaderboard !== false) slides.push('LEADERBOARD');
@@ -676,22 +649,20 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
     return (
         <div ref={containerRef} className="h-screen w-screen overflow-hidden relative font-sans select-none bg-black text-white flex flex-col p-0 m-0">
-            {/* High-Fidelity Background Effects */}
+            {/* Ambient FX */}
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-emerald-500/10 rounded-full blur-[160px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-indigo-500/15 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '3s' }}></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-emerald-50/10 rounded-full blur-[160px] animate-pulse"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-indigo-50/15 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '3s' }}></div>
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
             </div>
 
             <main className="relative z-10 flex-grow w-full overflow-hidden flex flex-col">
                 {SLIDE_ORDER.map((key, index) => {
                     const isActive = index === currentSlideIndex;
-                    // Using dynamic keys to force re-render entrance animations when slide loops back
                     const renderKey = isActive ? `${key}_active` : `${key}_idle`;
 
                     return (
                         <div key={renderKey} className={`absolute inset-0 transition-all duration-[1200ms] ease-in-out flex items-center justify-center ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}>
-                            {key === 'RECENT_VERDICTS' && <RecentVerdictsSlide results={data.results} />}
                             {key.startsWith('RESULT_') && <ResultSlide result={data.results[parseInt(key.split('_')[1])]} revealStep={revealStep} />}
                             {key === 'LEADERBOARD' && (
                                 <LeaderboardSlide 
@@ -701,6 +672,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                                     items={state.items} 
                                     calculateItemScores={calculateItemScores} 
                                     baselinePoints={data.baselinePoints} 
+                                    baselineCount={data.baselineCount}
                                 />
                             )}
                             {key === 'STATS' && <StatsSlide stats={data.stats} />}

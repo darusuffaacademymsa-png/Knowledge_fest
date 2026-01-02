@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
@@ -178,7 +179,8 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ isOpen, onClose, title, con
     
     const contentToPrint = reportContentRef.current?.innerHTML || content;
     const reportSettings = state?.settings.reportSettings;
-    const globalFontCss = getGlobalFontCSS(state?.settings);
+    // Fix: Pass state instead of state.settings to getGlobalFontCSS
+    const globalFontCss = getGlobalFontCSS(state);
 
     const reportHtml = `
       <!DOCTYPE html>

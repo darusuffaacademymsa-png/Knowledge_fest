@@ -1,9 +1,12 @@
+
 import React from 'react';
 import { useFirebase } from '../hooks/useFirebase';
-import { Settings } from '../types';
+// Use AppState instead of Settings as custom fonts are stored at the top level of the state
+import { AppState } from '../types';
 
-export const getGlobalFontCSS = (settings: Settings | undefined) => {
-    if (!settings) return '';
+// Updated to accept AppState to access customFonts and generalCustomFonts
+export const getGlobalFontCSS = (state: AppState | null | undefined) => {
+    if (!state) return '';
 
     const MALAYALAM_RANGE = "U+0D00-0D7F";
     const ARABIC_RANGE = "U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF";
@@ -12,22 +15,24 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
     let fontFaces = '';
 
     // Language-specific fonts (GlobalAutoFont uses unicode-range)
-    if (settings.customFonts?.malayalam?.url) {
+    // Fix: access customFonts from AppState instead of Settings
+    if (state.customFonts?.malayalam?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'GlobalAutoFont';
-                src: url('${settings.customFonts.malayalam.url}');
+                src: url('${state.customFonts.malayalam.url}');
                 unicode-range: ${MALAYALAM_RANGE};
                 font-display: swap;
             }
         `;
     }
 
-    if (settings.customFonts?.arabic?.url) {
+    // Fix: access customFonts from AppState instead of Settings
+    if (state.customFonts?.arabic?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'GlobalAutoFont';
-                src: url('${settings.customFonts.arabic.url}');
+                src: url('${state.customFonts.arabic.url}');
                 unicode-range: ${ARABIC_RANGE};
                 font-display: swap;
             }
@@ -35,11 +40,12 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
     }
 
     // Default global English (Latin) font
-    if (settings.customFonts?.english?.url) {
+    // Fix: access customFonts from AppState instead of Settings
+    if (state.customFonts?.english?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'GlobalAutoFont';
-                src: url('${settings.customFonts.english.url}');
+                src: url('${state.customFonts.english.url}');
                 unicode-range: ${LATIN_RANGE};
                 font-display: swap;
             }
@@ -47,30 +53,33 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
     }
 
     // Primary English
-    if (settings.customFonts?.englishPrimary?.url) {
+    // Fix: access customFonts from AppState instead of Settings
+    if (state.customFonts?.englishPrimary?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'EnglishPrimary';
-                src: url('${settings.customFonts.englishPrimary.url}');
+                src: url('${state.customFonts.englishPrimary.url}');
                 font-display: swap;
             }
         `;
     }
 
     // Secondary English
-    if (settings.customFonts?.englishSecondary?.url) {
+    // Fix: access customFonts from AppState instead of Settings
+    if (state.customFonts?.englishSecondary?.url) {
         fontFaces += `
             @font-face {
                 font-family: 'EnglishSecondary';
-                src: url('${settings.customFonts.englishSecondary.url}');
+                src: url('${state.customFonts.englishSecondary.url}');
                 font-display: swap;
             }
         `;
     }
 
     // General Custom Fonts (for explicit selection, using their defined family names)
-    if (settings.generalCustomFonts && settings.generalCustomFonts.length > 0) {
-        settings.generalCustomFonts.forEach(font => {
+    // Fix: access generalCustomFonts from AppState instead of Settings
+    if (state.generalCustomFonts && state.generalCustomFonts.length > 0) {
+        state.generalCustomFonts.forEach(font => {
             if (font.url && font.family) {
                 fontFaces += `
                     @font-face {
@@ -118,7 +127,8 @@ export const getGlobalFontCSS = (settings: Settings | undefined) => {
 
 const GlobalFontManager: React.FC = () => {
     const { state } = useFirebase();
-    const css = getGlobalFontCSS(state?.settings);
+    // Fix: Pass the whole state instead of state.settings
+    const css = getGlobalFontCSS(state);
     return <style dangerouslySetInnerHTML={{ __html: css }} />;
 };
 

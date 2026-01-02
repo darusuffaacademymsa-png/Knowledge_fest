@@ -23,12 +23,11 @@ export enum UserRole {
 }
 
 export interface User {
-    id: string; // This will be the Firestore document ID
+    id: string; 
     username: string;
-    // Password removed. Auth is handled via Firebase Authentication.
     role: UserRole;
-    teamId?: string; // Only for Team Leaders
-    judgeId?: string; // Only for Judges
+    teamId?: string; 
+    judgeId?: string; 
 }
 
 export interface Judge {
@@ -39,69 +38,62 @@ export interface Judge {
 }
 
 export interface FontConfig {
-    url: string; // Base64 Data URI or URL
-    name: string; // File name
-    family: string; // CSS Font Family name
+    url: string; 
+    name: string; 
+    family: string; 
 }
 
-// Custom Font with ID for lists like generalCustomFonts
 export interface GeneralFontConfig extends FontConfig {
     id: string;
 }
 
-// Canvas Element definition for Creative Studio
 export interface CanvasElement {
     id: string;
     type: 'text' | 'image' | 'shape';
-    content: string; // Text content or Image URL
-    x: number; // Percent 0-100
-    y: number; // Percent 0-100
-    width?: number; // Percent 0-100 (for all types)
-    height?: number; // Percent 0-100 (for all types)
-    
-    // Text specific
-    fontSize?: number; // px
+    content: string; 
+    x: number; 
+    y: number; 
+    width?: number; 
+    height?: number; 
+    fontSize?: number; 
     color?: string;
-    fontWeight?: string; // 'normal', 'bold', '900'
-    fontStyle?: string; // 'normal', 'italic'
-    textDecoration?: 'none' | 'underline' | 'line-through'; // 'none', 'underline', 'line-through'
-    textTransform?: 'none' | 'uppercase' | 'lowercase'; // 'none', 'uppercase', 'lowercase'
+    fontWeight?: string; 
+    fontStyle?: string; 
+    textDecoration?: 'none' | 'underline' | 'line-through'; 
+    textTransform?: 'none' | 'uppercase' | 'lowercase'; 
     textAlign?: 'left' | 'center' | 'right';
-    fontFamily?: string; // Custom font family for text elements
-    backgroundColor?: string; // For text background
-    backgroundPadding?: number; // Padding for text background
-    textStroke?: { color: string; width: number }; // For text outline (simulated)
-    textShadow?: { color: string; blur: number; offsetX: number; offsetY: number }; // For text shadow
-    lineHeight?: number; // Added: e.g., 1.2
-    letterSpacing?: number; // Added: e.g., 0 (normal), 1 (1px)
+    fontFamily?: string; 
+    backgroundColor?: string; 
+    backgroundPadding?: number; 
+    textStroke?: { color: string; width: number }; 
+    textShadow?: { color: string; blur: number; offsetX: number; offsetY: number }; 
+    lineHeight?: number; 
+    letterSpacing?: number; 
 
-    // Image/Shape specific
-    borderRadius?: number; // px or %
-    borderColor?: string; // For shapes, or image border
-    borderWidth?: number; // px, for shapes or image border
+    borderRadius?: number; 
+    borderColor?: string; 
+    borderWidth?: number; 
 
-    // Shape specific
-    shapeType?: 'rectangle' | 'circle'; // For shape elements
+    shapeType?: 'rectangle' | 'circle'; 
 
-    // General
     zIndex: number;
     locked?: boolean;
-    opacity?: number; // 0-1
-    rotation?: number; // 0-360 degrees
+    opacity?: number; 
+    rotation?: number; 
 }
 
 export interface Template {
     id: string;
     name: string;
     bg: string;
-    bgImage?: string; // Optional background image
+    bgImage?: string; 
     text: string;
     accent: string;
     border: string;
     description: string;
     isCustom?: boolean;
-    elements?: CanvasElement[]; // Stored design elements
-    canvasConfig?: { // Stored dimensions
+    elements?: CanvasElement[]; 
+    canvasConfig?: { 
         width: number; 
         height: number;
         orientation: 'portrait' | 'landscape';
@@ -114,36 +106,34 @@ export interface ProjectorSettings {
     showStats: boolean;
     showUpcoming: boolean;
     resultsLimit: number;
-    pointsLimit: number; // Added: Limit for total points calculation
-    rotationSpeed: number; // ms per slide
+    pointsLimit: number; 
+    rotationSpeed: number; 
 }
 
 export interface Settings {
   organizingTeam: string;
   heading: string;
   description: string;
-  eventDates?: string[]; // Official dates of the festival
+  eventDates?: string[]; 
   maxItemsPerParticipant: {
     onStage: number;
     offStage: number;
   };
-  maxTotalItemsPerParticipant?: number | null; // Global total limit
+  maxTotalItemsPerParticipant?: number | null; 
   defaultParticipantsPerItem: number;
   instructions: { [page: string]: string };
   generalInstructions: string;
-  rankingStrategy?: string; // 'highest_mark' | 'share_points'
+  rankingStrategy?: string; 
   autoCodeAssignment?: boolean;
-  enableFloatingNav?: boolean; // New setting for Mobile Floating Rail
-  mobileSidebarMode?: 'floating' | 'sticky'; // New setting for Mobile Sidebar Style
-  lotEligibleCodes?: string[]; // Array of code strings enabled for Lot System
+  enableFloatingNav?: boolean; 
+  mobileSidebarMode?: 'floating' | 'sticky'; 
+  lotEligibleCodes?: string[]; 
   
-  // Schedule Configuration
   eventDays?: string[];
   stages?: string[];
   timeSlots?: string[];
   scheduleDisplayPriority?: 'TIME_FIRST' | 'DATE_FIRST';
 
-  // Projector Customization
   projector?: ProjectorSettings;
 
   defaultPoints: {
@@ -164,49 +154,28 @@ export interface Settings {
     header: string;
     footer: string;
   };
-  // New Branding Fields
   institutionDetails?: {
       name: string;
       address: string;
       email: string;
       contactNumber: string;
       description?: string;
-      logoUrl?: string; // Base64 string
+      logoUrl?: string; 
   };
   branding?: {
-      typographyUrl?: string; // Legacy Fallback
-      typographyUrlLight?: string; // Theme Light
-      typographyUrlDark?: string; // Theme Dark
-      teamLogoUrl?: string; // Base64 string for Organizing Team
+      typographyUrl?: string; 
+      typographyUrlLight?: string; 
+      typographyUrlDark?: string; 
+      teamLogoUrl?: string; 
   };
-  // Custom Fonts
-  customFonts?: {
-      malayalam?: FontConfig;
-      arabic?: FontConfig;
-      english?: FontConfig;
-      englishPrimary?: FontConfig;
-      englishSecondary?: FontConfig;
-  };
-  generalCustomFonts?: GeneralFontConfig[]; // New: For Creative Studio explicit font selection
-  // Custom Templates for Creative Studio
-  customTemplates?: Template[];
-  // Multi-device synced assets for Creative Studio
-  customFooters?: string[]; // Footers (Base64)
-  customBackgrounds?: string[]; // Backgrounds (Base64)
 }
 
 export interface Category {
   id: string;
   name: string;
-  // Legacy/Alternative structure kept for compatibility if needed, but flattened preferred for UI
-  maxItemsPerParticipant?: {
-    onStage?: number;
-    offStage?: number;
-  };
-  // New specific limits
   maxOnStage?: number;
   maxOffStage?: number;
-  maxCombined?: number; // Total items allowed for this category
+  maxCombined?: number; 
   isGeneralCategory?: boolean;
 }
 
@@ -218,7 +187,7 @@ export interface Team {
 export interface Item {
   id: string;
   name: string;
-  code?: string; // Unique Item Code (e.g. A1, 105)
+  code?: string; 
   description: string;
   categoryId: string;
   type: ItemType;
@@ -228,11 +197,11 @@ export interface Item {
     second: number;
     third: number;
   };
-  gradePointsOverride?: { [gradeId: string]: number }; // Map gradeId -> Custom Points
+  gradePointsOverride?: { [gradeId: string]: number }; 
   maxParticipants: number;
-  maxGroupsPerTeam?: number; // New field: How many groups a team can field (default 1)
+  maxGroupsPerTeam?: number; 
   medium: string;
-  duration: number; // in minutes
+  duration: number; 
 }
 
 export interface Grade {
@@ -258,13 +227,13 @@ export interface Participant {
   id: string;
   chestNumber: string;
   name: string;
-  place?: string; // Location or Place name
+  place?: string; 
   teamId: string;
   categoryId: string;
   itemIds: string[];
-  groupLeaderItemIds?: string[]; // IDs of items where this participant is the leader
-  itemGroups?: { [itemId: string]: number }; // Map itemId -> Group Number (1, 2, etc.)
-  groupChestNumbers?: { [itemId: string]: string }; // Map itemId -> Custom Chest Number for the group led by this participant
+  groupLeaderItemIds?: string[]; 
+  itemGroups?: { [itemId: string]: number }; 
+  groupChestNumbers?: { [itemId: string]: string }; 
   role?: 'leader' | 'assistant';
 }
 
@@ -278,19 +247,19 @@ export interface ScheduledEvent {
 }
 
 export interface JudgeAssignment {
-  id: string; // Composite key: `${itemId}-${categoryId}`
+  id: string; 
   itemId: string;
   categoryId: string;
   judgeIds: string[];
 }
 
 export interface TabulationEntry {
-  id: string; // Composite key: `${itemId}-${participantId}`
+  id: string; 
   itemId: string;
   categoryId: string;
   participantId: string;
   codeLetter: string;
-  customChestNumber?: string; // Specific chest number for group items
+  customChestNumber?: string; 
   marks: { [judgeId: string]: number | null };
   finalMark: number | null;
   position: number | null;
@@ -311,6 +280,19 @@ export interface Result {
 
 export interface AppState {
   settings: Settings;
+  // High-volume assets moved to top level for split-document storage
+  customFonts: {
+      malayalam?: FontConfig;
+      arabic?: FontConfig;
+      english?: FontConfig;
+      englishPrimary?: FontConfig;
+      englishSecondary?: FontConfig;
+  };
+  generalCustomFonts: GeneralFontConfig[];
+  customBackgrounds: string[];
+  customTemplates: Template[];
+  customFooters: string[];
+  
   categories: Category[];
   teams: Team[];
   items: Item[];

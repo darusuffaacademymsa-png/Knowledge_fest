@@ -1,9 +1,7 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
 import { useFirebase } from '../../hooks/useFirebase';
-/* Added Layers to lucide-react imports */
 import { 
     X, Users, Trash2, BookText, Database, Info, FileDown, Upload, ArrowRight, 
     Building2, Briefcase, Image as ImageIcon, Check, LayoutTemplate, RotateCcw, 
@@ -153,8 +151,8 @@ const LanguageFontCard = ({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) { 
-                alert("Font file too large! Please upload a file smaller than 2MB.");
+            if (file.size > 800 * 1024) { 
+                alert("Font file too large! Please upload a file smaller than 800KB.");
                 return;
             }
             const reader = new FileReader();
@@ -410,7 +408,7 @@ const TAB_ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const GeneralSettings: React.FC = () => {
-    const { state, updateSettings, addUser, updateUser, deleteUser, updatePermissions, updateInstruction, backupData, restoreData, settingsSubView: activeTab } = useFirebase();
+    const { state, updateSettings, updateCustomFonts, updateGeneralCustomFonts, addUser, updateUser, deleteUser, updatePermissions, updateInstruction, backupData, restoreData, settingsSubView: activeTab } = useFirebase();
     const restoreInputRef = useRef<HTMLInputElement>(null);
     const [isEditingInst, setIsEditingInst] = useState(false);
     const [instData, setInstData] = useState(state?.settings.institutionDetails || { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' });
@@ -478,12 +476,10 @@ const GeneralSettings: React.FC = () => {
     };
 
     const handleUpdateCustomFont = async (lang: string, font: FontConfig | undefined) => {
-        const currentFonts = state.settings.customFonts || {};
-        await updateSettings({
-            customFonts: {
-                ...currentFonts,
-                [lang]: font
-            }
+        const currentFonts = state.customFonts || {};
+        await updateCustomFonts({
+            ...currentFonts,
+            [lang]: font
         });
     };
 
@@ -499,8 +495,8 @@ const GeneralSettings: React.FC = () => {
                 url: base64,
                 family: newFontName.trim()
             };
-            const existing = state.settings.generalCustomFonts || [];
-            await updateSettings({ generalCustomFonts: [...existing, newFont] });
+            const existing = state.generalCustomFonts || [];
+            await updateGeneralCustomFonts([...existing, newFont]);
             setNewFontName('');
         };
         reader.readAsDataURL(file);
@@ -508,8 +504,8 @@ const GeneralSettings: React.FC = () => {
     };
 
     const handleDeleteGenericFont = async (id: string) => {
-        const filtered = (state.settings.generalCustomFonts || []).filter(f => f.id !== id);
-        await updateSettings({ generalCustomFonts: filtered });
+        const filtered = (state.generalCustomFonts || []).filter(f => f.id !== id);
+        await updateGeneralCustomFonts(filtered);
     };
 
     const handleAddEventDate = (date: string) => {
@@ -721,7 +717,7 @@ const GeneralSettings: React.FC = () => {
                                     language="englishPrimary"
                                     fontFamilyName="EnglishPrimary"
                                     previewText="English Primary Title"
-                                    currentFont={state.settings.customFonts?.englishPrimary}
+                                    currentFont={state.customFonts?.englishPrimary}
                                     onSave={(f) => handleUpdateCustomFont('englishPrimary', f)}
                                 />
                                 <LanguageFontCard 
@@ -730,7 +726,7 @@ const GeneralSettings: React.FC = () => {
                                     language="englishSecondary"
                                     fontFamilyName="EnglishSecondary"
                                     previewText="English Secondary Text"
-                                    currentFont={state.settings.customFonts?.englishSecondary}
+                                    currentFont={state.customFonts?.englishSecondary}
                                     onSave={(f) => handleUpdateCustomFont('englishSecondary', f)}
                                 />
                                 <LanguageFontCard 
@@ -738,7 +734,7 @@ const GeneralSettings: React.FC = () => {
                                     subtitle="Applied to ML Glyphs"
                                     language="malayalam"
                                     previewText="മലയാളം ഫോണ്ട് പ്രിവ്യൂ"
-                                    currentFont={state.settings.customFonts?.malayalam}
+                                    currentFont={state.customFonts?.malayalam}
                                     onSave={(f) => handleUpdateCustomFont('malayalam', f)}
                                 />
                                 <LanguageFontCard 
@@ -746,7 +742,7 @@ const GeneralSettings: React.FC = () => {
                                     subtitle="Applied to AR Glyphs"
                                     language="arabic"
                                     previewText="معاينة خط اللغة العربية"
-                                    currentFont={state.settings.customFonts?.arabic}
+                                    currentFont={state.customFonts?.arabic}
                                     onSave={(f) => handleUpdateCustomFont('arabic', f)}
                                 />
                             </div>
@@ -782,7 +778,7 @@ const GeneralSettings: React.FC = () => {
 
                                 {/* List of Generic Fonts */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {(state.settings.generalCustomFonts || []).map(font => (
+                                    {(state.generalCustomFonts || []).map(font => (
                                         <div key={font.id} className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col gap-4 relative group">
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-3">
@@ -805,7 +801,7 @@ const GeneralSettings: React.FC = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    {(state.settings.generalCustomFonts || []).length === 0 && (
+                                    {(state.generalCustomFonts || []).length === 0 && (
                                         <div className="col-span-full py-12 flex flex-col items-center justify-center opacity-30 italic text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem]">
                                             <RefreshCw size={24} className="mb-2" />
                                             Library empty

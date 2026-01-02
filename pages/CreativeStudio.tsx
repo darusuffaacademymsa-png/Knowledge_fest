@@ -11,7 +11,7 @@ import { ResultStatus, ItemType } from '../types';
 
 // --- Utils ---
 
-const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, quality = 0.8): Promise<string> => {
+const compressBgImage = (base64Str: string, maxWidth = 1080, maxHeight = 1080, quality = 0.4): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
         img.src = base64Str;
@@ -26,7 +26,11 @@ const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, q
             }
             canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
+            if (ctx) {
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, width, height);
+            }
             resolve(canvas.toDataURL('image/jpeg', quality));
         };
         img.onerror = () => resolve(base64Str); 
@@ -34,8 +38,6 @@ const compressBgImage = (base64Str: string, maxWidth = 1920, maxHeight = 1080, q
 };
 
 // --- Types ---
-
-type TemplateType = 'ROOTED_TREE';
 
 interface PosterData {
     itemId: string;
@@ -65,7 +67,9 @@ const PosterCanvas: React.FC<{
     const prefix = parts[0] || '';
     const suffix = parts.slice(1).join(' ');
 
-    const textStyle = { fontFamily: fontFamily && fontFamily.includes(' ') ? `'${fontFamily}'` : fontFamily };
+    const textStyle = { 
+        fontFamily: fontFamily.includes(' ') || fontFamily.startsWith('English') ? `'${fontFamily}'` : fontFamily 
+    };
 
     return (
         <div 
@@ -128,7 +132,7 @@ const PosterCanvas: React.FC<{
 
 // --- Main Page Component ---
 const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
-    const { state, updateSettings } = useFirebase();
+    const { state, updateCustomBackgrounds } = useFirebase();
     const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [selectedBgUrl, setSelectedBgUrl] = useState<string | null>(null);
     const [selectedFont, setSelectedFont] = useState<string>('font-slab');
@@ -183,8 +187,8 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             if (declaredItems.length > 0) {
                 setSelectedItemId(declaredItems[declaredItems.length - 1].id);
             }
-            if (state.settings.customBackgrounds?.length) {
-                setSelectedBgUrl(state.settings.customBackgrounds[0]);
+            if (state.customBackgrounds?.length) {
+                setSelectedBgUrl(state.customBackgrounds[0]);
             }
             setHasInitialized(true);
         }
@@ -248,12 +252,13 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             });
 
             const compressed = await compressBgImage(result);
-            const existingBgs = state.settings.customBackgrounds || [];
-            await updateSettings({ customBackgrounds: [...existingBgs, compressed] });
+            const existingBgs = state.customBackgrounds || [];
+            
+            await updateCustomBackgrounds([...existingBgs, compressed]);
             setSelectedBgUrl(compressed);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Upload failed", err);
-            alert("Failed to process background image.");
+            alert(err.message || "Failed to process background image.");
         } finally {
             setIsUploading(false);
             if (bgInputRef.current) bgInputRef.current.value = '';
@@ -262,10 +267,10 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     const handleDeleteBg = async (idx: number) => {
         if (!state) return;
-        const bgs = [...(state.settings.customBackgrounds || [])];
+        const bgs = [...(state.customBackgrounds || [])];
         const removed = bgs.splice(idx, 1)[0];
         if (selectedBgUrl === removed) setSelectedBgUrl(null);
-        await updateSettings({ customBackgrounds: bgs });
+        await updateCustomBackgrounds(bgs);
     };
 
     const handleDownload = async () => {
@@ -273,7 +278,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         if (!canvas) return;
         try {
             const captured = await html2canvas(canvas as HTMLElement, { 
-                scale: 3, useCORS: true, backgroundColor: null, logging: false
+                scale: 2.5, useCORS: true, backgroundColor: null, logging: false
             });
             const link = document.createElement('a');
             link.download = `artfest-poster-${selectedItemId}.png`;
@@ -291,12 +296,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         { label: 'System Slab', value: 'font-slab' },
         { label: 'System Serif', value: 'font-serif' },
         { label: 'System Sans', value: 'font-sans' },
-        ...(state.settings.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.settings.customFonts.englishPrimary.family}`, value: 'EnglishPrimary' }] : []),
-        ...(state.settings.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.settings.customFonts.englishSecondary.family}`, value: 'EnglishSecondary' }] : []),
-        ...(state.settings.generalCustomFonts || []).map(f => ({ label: f.family, value: f.family })),
-        ...(state.settings.customFonts?.english?.family ? [{ label: state.settings.customFonts.english.family, value: state.settings.customFonts.english.family }] : []),
-        ...(state.settings.customFonts?.malayalam?.family ? [{ label: state.settings.customFonts.malayalam.family, value: state.settings.customFonts.malayalam.family }] : []),
-        ...(state.settings.customFonts?.arabic?.family ? [{ label: state.settings.customFonts.arabic.family, value: state.settings.customFonts.arabic.family }] : []),
+        ...(state.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.customFonts.englishPrimary.family}`, value: 'EnglishPrimary' }] : []),
+        ...(state.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.customFonts.englishSecondary.family}`, value: 'EnglishSecondary' }] : []),
+        ...(state.generalCustomFonts || []).map(f => ({ label: f.family, value: f.family })),
+        ...(state.customFonts?.malayalam?.family ? [{ label: `ML: ${state.customFonts.malayalam.family}`, value: state.customFonts.malayalam.family }] : []),
+        ...(state.customFonts?.arabic?.family ? [{ label: `AR: ${state.customFonts.arabic.family}`, value: state.customFonts.arabic.family }] : []),
     ];
 
     return (
@@ -374,7 +378,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                     disabled={isUploading}
                                     className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform disabled:opacity-50"
                                 >
-                                    {/* Added missing RefreshCw icon import and usage for background upload button */}
                                     {isUploading ? <RefreshCw className="animate-spin" size={16}/> : <Plus size={16}/>}
                                 </button>
                                 <input type="file" ref={bgInputRef} className="hidden" accept="image/*" onChange={handleBgUpload} />
@@ -387,7 +390,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 >
                                     <Layers size={18} className="text-zinc-400" />
                                 </button>
-                                {(state.settings.customBackgrounds || []).map((bg, idx) => (
+                                {(state.customBackgrounds || []).map((bg, idx) => (
                                     <div key={idx} className="relative aspect-square">
                                         <img 
                                             src={bg} 
