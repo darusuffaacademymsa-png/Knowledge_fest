@@ -425,12 +425,16 @@ const LeaderboardSlide: React.FC<{
 };
 
 const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
-    <div className="h-full w-full flex flex-col items-center justify-center p-[5vh] lg:p-[12vh] overflow-hidden select-none">
-        <div className="text-center mb-[8vh] animate-float">
-            <h2 className="text-[1.8vh] lg:text-[3vh] font-black uppercase tracking-[1em] text-indigo-500 mb-[1.5vh] ml-[1em] animate-in fade-in slide-in-from-top-4 duration-700">SYSTEM TELEMETRY</h2>
-            <h1 className="text-[8vh] lg:text-[15vh] font-black font-serif uppercase tracking-tighter leading-none text-white drop-shadow-2xl animate-in fade-in zoom-in-95 duration-1000 delay-200">FESTIVAL DATA</h1>
+    <div className="h-full w-full flex flex-col p-[5vh] lg:p-[10vh] overflow-hidden select-none">
+        <div className="mb-[5vh] animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse"></div>
+                <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-emerald-500">SYSTEM TELEMETRY</h2>
+            </div>
+            <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">FESTIVAL DATA</h1>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-[3vh] lg:gap-[5vh] w-full max-w-[95vw]">
+        
+        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-[2vh] lg:gap-[3.5vh]">
             {[
                 { icon: Users, label: 'TOTAL DELEGATES', value: stats.participants, color: 'text-emerald-500' },
                 { icon: Trophy, label: 'VERDICTS DECLARED', value: stats.declared, color: 'text-amber-500' },
@@ -439,12 +443,27 @@ const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
                 { icon: Layers, label: 'DISCIPLINES', value: stats.items, color: 'text-sky-500' },
                 { icon: Calendar, label: 'TIMELINE SLOTS', value: stats.scheduled, color: 'text-purple-500' }
             ].map((stat, i) => (
-                <div key={i} className="flex flex-col items-center p-[4vh] lg:p-[6vh] rounded-[4vh] lg:rounded-[6vh] bg-zinc-950/80 border border-white/10 backdrop-blur-3xl shadow-2xl transition-all group animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${i * 100}ms` }}>
-                    <stat.icon size={30} className={`${stat.color} mb-[2.5vh] lg:mb-[5vh] lg:w-[8vh] lg:h-[8vh] group-hover:scale-125 transition-transform duration-500`} />
-                    <div className="text-[4.5vh] lg:text-[10vh] font-black mb-[0.8vh] tabular-nums leading-none text-white tracking-tighter">
-                        <CountUp end={stat.value} duration={3000} />
+                <div 
+                    key={i} 
+                    className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-[3vh] p-[4vh] flex flex-col items-center justify-center group hover:border-white/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-12 fill-mode-backwards"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                >
+                    <div className={`p-4 rounded-2xl bg-white/5 border border-white/5 mb-6 group-hover:scale-110 transition-transform duration-500 ${stat.color}`}>
+                        <stat.icon size={32} />
                     </div>
-                    <p className="text-[1vh] lg:text-[1.5vh] font-black uppercase tracking-[0.4em] text-zinc-600 text-center truncate w-full ml-[0.4em]">{stat.label}</p>
+                    
+                    <div className="text-center">
+                        <div className="text-[5vh] lg:text-[8vh] font-black mb-[0.8vh] tabular-nums leading-none text-white tracking-tighter">
+                            <CountUp end={stat.value} duration={3000} />
+                        </div>
+                        <p className="text-[1vh] lg:text-[1.4vh] font-black uppercase tracking-[0.4em] text-zinc-500 ml-[0.4em]">
+                            {stat.label}
+                        </p>
+                    </div>
+                    
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                         <stat.icon size={120} />
+                    </div>
                 </div>
             ))}
         </div>
@@ -452,48 +471,55 @@ const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
 );
 
 const UpcomingSlide: React.FC<{ events: any[] }> = ({ events }) => (
-    <div className="h-full w-full flex flex-col p-[5vh] lg:p-[10vh] overflow-hidden bg-black relative select-none">
-         <div className="mb-[6vh] flex justify-between items-end gap-[5vh] px-[2vh] z-10 relative animate-in fade-in slide-in-from-left-8 duration-700">
-            <div>
-                <h2 className="text-[1.5vh] lg:text-[2.5vh] font-black uppercase tracking-[0.6em] text-amber-500 mb-[1vh] flex items-center gap-[2vh]">
-                    <Clock size={24} className="animate-pulse" /> STAGE TIMELINE
-                </h2>
-                <h1 className="text-[8vh] lg:text-[12vh] font-black font-serif uppercase tracking-tighter leading-none text-white text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-300 to-zinc-600">
-                    UPCOMING
-                </h1>
+    <div className="h-full w-full flex flex-col p-[5vh] lg:p-[10vh] overflow-hidden select-none">
+        <div className="mb-[5vh] animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse"></div>
+                <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-amber-500">STAGE FLOW</h2>
             </div>
-            <div className="px-[4vh] py-[1.5vh] rounded-[2vh] lg:rounded-[3.5vh] bg-emerald-600 text-white text-[1.2vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] animate-pulse shadow-2xl border border-white/20 hidden sm:block">
-                LIVE NOW
-            </div>
-         </div>
-
-         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-[3vh] lg:gap-[4vh] pb-[6vh] z-10 relative">
-            {events.slice(0, 6).map((ev, i) => {
-                const gradient = ['from-purple-600 to-indigo-700', 'from-emerald-600 to-teal-800', 'from-rose-600 to-orange-800', 'from-blue-600 to-cyan-800'][i % 4];
-                return (
-                    <div key={i} className="relative overflow-hidden rounded-[3.5vh] bg-zinc-950/80 border border-white/10 p-[3.5vh] lg:p-[5.5vh] flex flex-col justify-between group transition-all duration-700 hover:border-white/30 hover:bg-zinc-900 animate-in fade-in slide-in-from-bottom-12 duration-1000 fill-mode-backwards" style={{ animationDelay: `${i * 150}ms` }}>
-                        <div className={`absolute top-0 right-0 w-[25vh] h-[25vh] bg-gradient-to-br ${gradient} opacity-[0.06] blur-[60px] rounded-full group-hover:opacity-[0.12] transition-opacity duration-700`}></div>
-                        <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-[2.5vh]">
-                                <div className="px-[2vh] py-[0.8vh] rounded-full border border-white/15 bg-white/5 text-[1vh] lg:text-[1.4vh] font-black uppercase tracking-[0.3em] text-white/80">{ev.categoryName}</div>
-                                <div className="text-right">
-                                    <div className="text-[3.5vh] lg:text-[5.5vh] font-black text-white leading-none tracking-tight group-hover:scale-110 transition-transform duration-500 origin-right">{ev.time}</div>
-                                    <div className="text-[1vh] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-2">{ev.date}</div>
-                                </div>
-                            </div>
-                            <h3 className="text-[3vh] lg:text-[4.8vh] font-black font-serif text-white uppercase tracking-tighter leading-[1.05] mb-[3vh] line-clamp-2 transition-all duration-500 group-hover:translate-x-2">{ev.itemName}</h3>
+            <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">UPCOMING EVENTS</h1>
+        </div>
+        
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[2vh] lg:gap-[3.5vh]">
+            {events.slice(0, 6).map((ev, i) => (
+                <div 
+                    key={i} 
+                    className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-[3vh] p-[3vh] flex flex-col justify-between group hover:border-white/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-12 fill-mode-backwards"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                >
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                            <span className="text-[1vh] lg:text-[1.3vh] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">{ev.categoryName}</span>
+                            <div className="p-2 bg-amber-600 rounded-xl text-white shadow-lg shadow-amber-600/20 group-hover:scale-110 transition-transform"><Clock size={16}/></div>
                         </div>
-                        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-[3vh] mt-auto">
-                            <div className="flex items-center gap-[1.5vh] text-zinc-400 group-hover:text-white transition-colors duration-500">
-                                <MapPin size={16} className="text-zinc-500 group-hover:text-emerald-500" />
-                                <span className="text-[1.2vh] lg:text-[1.6vh] font-black uppercase tracking-[0.3em]">{ev.stage}</span>
+                        <h3 className="text-[2.2vh] lg:text-[3.2vh] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight min-h-[2.4em]">{ev.itemName}</h3>
+                    </div>
+                    
+                    <div className="border-t border-white/10 pt-[2vh] mt-[2vh]">
+                        <div className="flex justify-between items-end">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-2">Target Venue</p>
+                                <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-amber-500 text-black rounded-xl shadow-lg border border-amber-400">
+                                    <MapPin size={16} fill="currentColor" />
+                                    <p className="text-[1.8vh] lg:text-[2.6vh] font-black truncate uppercase tracking-tighter leading-none">{ev.stage || 'TBA'}</p>
+                                </div>
+                                <p className="text-[1vh] lg:text-[1.3vh] font-bold text-zinc-500 uppercase tracking-widest truncate mt-2.5 opacity-60">{ev.date || 'TBA'}</p>
                             </div>
-                            <ChevronRight size={24} className="text-zinc-600 group-hover:translate-x-2 group-hover:text-white transition-all duration-500" />
+                            <div className="ml-4 flex flex-col items-center">
+                                 <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Time</p>
+                                 <div className="text-[2.5vh] lg:text-[4vh] font-black text-amber-400 tabular-nums leading-none tracking-tighter">{ev.time || '--:--'}</div>
+                            </div>
                         </div>
                     </div>
-                );
-            })}
-         </div>
+                </div>
+            ))}
+            {events.length === 0 && (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-[1.5vh] font-black uppercase tracking-widest">
+                    <Calendar size={48} className="mb-4" />
+                    Timeline finalized
+                </div>
+            )}
+        </div>
     </div>
 );
 
