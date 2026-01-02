@@ -153,6 +153,59 @@ const ResultSlide: React.FC<{ result: any; revealStep: number }> = ({ result, re
     );
 };
 
+const RecentVerdictsSlide: React.FC<{ results: any[] }> = ({ results }) => (
+    <div className="h-full w-full flex flex-col p-[5vh] lg:p-[10vh] overflow-hidden select-none">
+        <div className="mb-[5vh] animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)] animate-pulse"></div>
+                <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-indigo-500">OFFICIAL LEDGER</h2>
+            </div>
+            <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">RECENT VERDICTS</h1>
+        </div>
+        
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[2vh] lg:gap-[3.5vh]">
+            {results.map((r, i) => {
+                const winner = r.winners.find((w: any) => w.position === 1);
+                return (
+                    <div 
+                        key={r.id} 
+                        className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-[3vh] p-[3vh] flex flex-col justify-between group hover:border-white/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-12 fill-mode-backwards"
+                        style={{ animationDelay: `${i * 120}ms` }}
+                    >
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                                <span className="text-[1vh] lg:text-[1.3vh] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">{r.categoryName}</span>
+                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform"><Trophy size={16}/></div>
+                            </div>
+                            <h3 className="text-[2.2vh] lg:text-[3.2vh] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight min-h-[2.4em]">{r.itemName}</h3>
+                        </div>
+                        
+                        <div className="border-t border-white/10 pt-[2vh] mt-[2vh]">
+                            <div className="flex justify-between items-end">
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Champion Participant</p>
+                                    <p className="text-[1.8vh] lg:text-[2.6vh] font-black text-emerald-400 truncate uppercase tracking-tighter leading-none">{winner?.participantName || '---'}</p>
+                                    <p className="text-[1vh] lg:text-[1.3vh] font-bold text-zinc-600 uppercase tracking-widest truncate mt-1">{winner?.teamName || '---'}</p>
+                                </div>
+                                <div className="ml-4 flex flex-col items-center">
+                                     <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Score</p>
+                                     <div className="text-[2.5vh] lg:text-[4vh] font-black text-white tabular-nums leading-none tracking-tighter">{winner?.totalPoints || 0}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+            {results.length === 0 && (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-[1.5vh] font-black uppercase tracking-widest">
+                    <Activity size={48} className="mb-4" />
+                    Awaiting final verdicts
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 // --- LEADERBOARD RACE LOGIC ---
 
 interface TeamRaceState {
@@ -547,7 +600,12 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const SLIDE_ORDER: SlideType[] = useMemo(() => {
         const config = state?.settings.projector;
         const slides: SlideType[] = [];
-        if (config?.showResults !== false && data?.results) data.results.forEach((_, i) => slides.push(`RESULT_${i}`));
+        if (config?.showResults !== false && data?.results) {
+            // Include summary slide if more than one result exists
+            if (data.results.length > 1) slides.push('RECENT_VERDICTS');
+            // Cycle through individual cinematic results
+            data.results.forEach((_, i) => slides.push(`RESULT_${i}`));
+        }
         if (config?.showLeaderboard !== false) slides.push('LEADERBOARD');
         if (config?.showStats !== false) slides.push('STATS');
         if (config?.showUpcoming !== false) slides.push('UPCOMING');
@@ -607,6 +665,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
                     return (
                         <div key={renderKey} className={`absolute inset-0 transition-all duration-[1200ms] ease-in-out flex items-center justify-center ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}>
+                            {key === 'RECENT_VERDICTS' && <RecentVerdictsSlide results={data.results} />}
                             {key.startsWith('RESULT_') && <ResultSlide result={data.results[parseInt(key.split('_')[1])]} revealStep={revealStep} />}
                             {key === 'LEADERBOARD' && (
                                 <LeaderboardSlide 
@@ -657,7 +716,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                                     <button 
                                         key={s.label}
                                         onClick={() => setSlideTempo(s)}
-                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${slideTempo.value === s.value ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'border-white/5 text-zinc-500 hover:text-zinc-300'}`}
+                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${slideTempo.value === s.value ? 'bg-indigo-600 text-white shadow-lg' : 'border-white/5 text-zinc-500 hover:text-zinc-300'}`}
                                     >
                                         {s.label}
                                     </button>
