@@ -344,7 +344,15 @@ const LotMachine: React.FC = () => {
         const usedCodes = new Set(lotResults.filter(r => r.code !== '?').map(r => r.code));
         await updateSettings({ lotEligibleCodes: lotPool.filter(c => !usedCodes.has(c)) });
         setAssignmentStatus('success');
-        setTimeout(() => { setAssignmentStatus('idle'); setSelectedParticipantIds(new Set()); setLotResults([]); }, 2000);
+        
+        // Fully clear the window to be ready for the next selection
+        setTimeout(() => { 
+            setAssignmentStatus('idle'); 
+            setSelectedParticipantIds(new Set()); 
+            setLotResults([]); 
+            setSelectedItemId('');
+            setSelectedCategoryId('');
+        }, 1500);
     };
 
     return (
@@ -644,7 +652,7 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
             enrolled.forEach(p => {
                 const groupIdx = p.itemGroups?.[item.id] || 1;
                 const key = `${p.teamId}_${groupIdx}`;
-                if (!groups[key]) groups[key] = [];
+                if(!groups[key]) groups[key] = [];
                 groups[key].push(p);
             });
             return Object.values(groups).map(members => {
