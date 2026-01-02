@@ -114,11 +114,15 @@ const PointsPage: React.FC = () => {
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set()); // Key: teamId-categoryId
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set()); // Key: teamId-catId-itemId
 
-    const { teams, categories, participants, results, items, gradePoints } = state || {};
+    const { teams, categories, participants, results, items, gradePoints, tabulation } = state || {};
 
     const analytics = useMemo(() => {
-        if (!teams || !results || !items || !participants || !gradePoints || !categories) return null;
+        if (!teams || !results || !items || !participants || !gradePoints || !categories || !tabulation) return null;
         
+        // Map tabulation for quick lookup of code letters
+        const codeMap = new Map<string, string>();
+        tabulation.forEach(t => codeMap.set(`${t.itemId}-${t.participantId}`, t.codeLetter));
+
         const teamData: { [teamId: string]: any } = {};
         teams.forEach(t => { 
             teamData[t.id] = { 
@@ -134,12 +138,10 @@ const PointsPage: React.FC = () => {
         });
 
         const declaredItemsSet = new Set<string>();
-        let totalEntryCombinations = 0;
         const participantRawEntries: any[] = [];
         const itemAggregate: Record<string, any> = {};
 
         results.forEach(result => {
-            // Updated Logic: Count both DECLARED and UPDATED status
             if (result.status !== ResultStatus.DECLARED && result.status !== ResultStatus.UPDATED) return;
             
             const item = items.find(i => i.id === result.itemId);
@@ -160,7 +162,6 @@ const PointsPage: React.FC = () => {
                 const p = participants.find(part => part.id === winner.participantId);
                 if (!p) return;
                 
-                totalEntryCombinations++;
                 const team = teamData[p.teamId];
                 if (!team) return;
 
@@ -230,6 +231,7 @@ const PointsPage: React.FC = () => {
                         participantId: p.id, 
                         participantName: item.type === ItemType.GROUP ? `${p.name} & Party` : p.name, 
                         chestNumber: p.chestNumber, 
+                        codeLetter: codeMap.get(`${item.id}-${p.id}`) || '',
                         teamId: p.teamId, 
                         teamName: team.teamName,
                         rank: winner.position, 
@@ -288,7 +290,7 @@ const PointsPage: React.FC = () => {
                 totalPoints: finalTeamData.reduce((sum, t) => sum + t.totalPoints, 0)
             } 
         };
-    }, [teams, categories, participants, results, items, gradePoints, globalFilters.teamId]);
+    }, [teams, categories, participants, results, items, gradePoints, tabulation, globalFilters.teamId]);
 
     const sortedTeams = useMemo(() => {
         if (!analytics) return [];
@@ -312,12 +314,9 @@ const PointsPage: React.FC = () => {
                 });
             }
             const p = map.get(entry.participant.id);
-            
-            // Only add points to personal total if the item type is SINGLE
             if (entry.item.type === ItemType.SINGLE) {
                 p.total += entry.total;
             }
-            
             p.items.push(entry);
         });
         return Array.from(map.values()).sort((a,b) => b.total - a.total);
@@ -572,7 +571,9 @@ const PointsPage: React.FC = () => {
                                     </div>
                                     <div className="min-w-0">
                                         <h5 className="font-black text-amazio-primary dark:text-zinc-100 uppercase text-sm truncate">{w.participantName}</h5>
-                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">#{w.chestNumber} • {w.teamName}</p>
+                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                                            #{w.chestNumber} • {w.teamName} {w.codeLetter && `• Code: ${w.codeLetter}`}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="text-right">
