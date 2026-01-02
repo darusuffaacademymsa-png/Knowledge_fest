@@ -23,7 +23,6 @@ const SPEEDS = [
 ];
 
 const REVEAL_DELAY = 1000; 
-const RACE_STEP_DURATION = 1800; // Time spent on each item in the race replay
 
 type SlideType = string;
 
@@ -151,66 +150,55 @@ const ResultSlide: React.FC<{ result: any; revealStep: number }> = ({ result, re
     );
 };
 
-interface TeamRaceState {
+interface TeamStanding {
     id: string;
     name: string;
-    points: number;
-    lastGain: number;
-    lastItem: string;
-    isLeading: boolean;
+    totalPoints: number;
 }
 
 const LeaderboardSlide: React.FC<{ 
-    initialTeams: any[]; 
-    active: boolean; 
-    timeline: any[]; 
-    items: any[]; 
-    calculateItemScores: any 
-}> = ({ initialTeams, active, timeline, items, calculateItemScores }) => {
-    const [teamStates, setTeamStates] = useState<TeamRaceState[]>([]);
-    const [progressIndex, setProgressIndex] = useState(0);
-    const [isFinished, setIsFinished] = useState(false);
+    teams: TeamStanding[]; 
+    active: boolean;
+}> = ({ teams, active }) => {
+    // Current points for animation (starts at 0 when active becomes true)
+    const [animatedPoints, setAnimatedPoints] = useState<Record<string, number>>({});
 
     useEffect(() => {
         if (active) {
-            setTeamStates(initialTeams.map(t => ({ id: t.id, name: t.name, points: 0, lastGain: 0, lastItem: '', isLeading: false })));
-            setProgressIndex(0);
-            setIsFinished(false);
-        }
-    }, [active, initialTeams]);
-
-    useEffect(() => {
-        if (!active || isFinished) return;
-        if (progressIndex < timeline.length) {
-            const timer = setTimeout(() => {
-                const currentResult = timeline[progressIndex];
-                const item = items.find(i => i.id === currentResult.itemId);
-                if (item) {
-                    const winnersWithPoints = calculateItemScores(item, currentResult.winners);
-                    setTeamStates(prev => {
-                        const nextStates = prev.map(t => {
-                            const teamWins = winnersWithPoints.filter((w: any) => w.teamId === t.id);
-                            const gain = teamWins.reduce((sum: number, w: any) => sum + w.totalPoints, 0);
-                            return gain > 0 ? { ...t, points: t.points + gain, lastGain: gain, lastItem: item.name } : { ...t, lastGain: 0, lastItem: '' };
-                        });
-                        const maxPoints = Math.max(...nextStates.map(s => s.points));
-                        return nextStates.map(s => ({ ...s, isLeading: s.points > 0 && s.points === maxPoints }));
-                    });
+            // Animate each team's points to its total over 2 seconds
+            const duration = 2500;
+            const startTime = performance.now();
+            
+            const animate = (time: number) => {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease out expo
+                const easedProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                
+                const nextPoints: Record<string, number> = {};
+                teams.forEach(t => {
+                    nextPoints[t.id] = Math.floor(t.totalPoints * easedProgress);
+                });
+                
+                setAnimatedPoints(nextPoints);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
                 }
-                setProgressIndex(prev => prev + 1);
-            }, RACE_STEP_DURATION);
-            return () => clearTimeout(timer);
+            };
+            
+            requestAnimationFrame(animate);
         } else {
-            setIsFinished(true);
+            setAnimatedPoints({});
         }
-    }, [active, progressIndex, timeline, items, calculateItemScores, isFinished]);
+    }, [active, teams]);
 
-    const sortedIndices = useMemo(() => {
-        return teamStates.map((_, i) => i).sort((a, b) => teamStates[b].points - teamStates[a].points);
-    }, [teamStates]);
+    const sortedTeams = useMemo(() => {
+        return [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
+    }, [teams]);
 
-    const currentMax = Math.max(...teamStates.map(t => t.points), 1);
-    const visibleCount = Math.min(8, teamStates.length);
+    const maxPoints = Math.max(...teams.map(t => t.totalPoints), 1);
+    const visibleCount = Math.min(8, teams.length);
     const ROW_HEIGHT_VH = 65 / visibleCount; 
 
     return (
@@ -219,21 +207,21 @@ const LeaderboardSlide: React.FC<{
                 <div>
                     <div className="flex items-center gap-[1.5vh] mb-[1.5vh]">
                         <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-sky-500 shadow-[0_0_20px_#0ea5e9] animate-pulse"></div>
-                        <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-sky-500">LIVE POINT RACE</h2>
+                        <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-sky-500">LIVE STANDINGS</h2>
                     </div>
                     <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">LEADERBOARD</h1>
                     <p className="text-[1.2vh] lg:text-[1.6vh] font-bold text-zinc-600 uppercase tracking-[0.4em] mt-[1.5vh]">
-                        {isFinished ? 'FINAL STANDINGS' : `PROCESSING VERDICT ${progressIndex + 1} OF ${timeline.length}...`}
+                        GLOBAL FESTIVAL POINTS RACE
                     </p>
                 </div>
                 
-                {teamStates.length > 0 && (
-                    <div className={`flex items-center gap-[3vh] p-[2.5vh] rounded-[4vh] bg-indigo-600 text-white shadow-2xl border border-white/10 shrink-0 transition-all duration-700 ${!isFinished ? 'animate-float' : ''}`}>
+                {sortedTeams.length > 0 && (
+                    <div className={`flex items-center gap-[3vh] p-[2.5vh] rounded-[4vh] bg-indigo-600 text-white shadow-2xl border border-white/10 shrink-0 transition-all duration-700 animate-float`}>
                         <Crown size={40} className="hidden lg:block shrink-0 animate-pulse" fill="currentColor" />
                         <div className="min-w-0">
                             <div className="text-[1vh] lg:text-[1.2vh] font-black uppercase tracking-[0.4em] opacity-80 mb-[0.5vh]">TOPPER</div>
                             <div className="text-[2.5vh] lg:text-[4vh] font-black uppercase tracking-tight truncate max-w-[15ch]">
-                                {teamStates[sortedIndices[0]]?.name || '---'}
+                                {sortedTeams[0].name}
                             </div>
                         </div>
                     </div>
@@ -241,14 +229,15 @@ const LeaderboardSlide: React.FC<{
             </div>
 
             <div className="flex-1 relative w-full">
-                {teamStates.map((team, actualIdx) => {
-                    const rankIdx = sortedIndices.indexOf(actualIdx);
+                {sortedTeams.map((team, rankIdx) => {
                     if (rankIdx >= visibleCount) return null; 
 
                     const isWinner = rankIdx === 0;
                     const medalColor = isWinner ? 'text-[#FFD700]' : rankIdx === 1 ? 'text-[#C0C0C0]' : rankIdx === 2 ? 'text-[#CD7F32]' : 'text-zinc-800';
                     const barColor = isWinner ? 'bg-gradient-to-r from-[#FFD700] to-yellow-600' : rankIdx === 1 ? 'bg-gradient-to-r from-[#C0C0C0] to-slate-500' : rankIdx === 2 ? 'bg-gradient-to-r from-[#CD7F32] to-orange-800' : 'bg-gradient-to-r from-sky-600 to-indigo-700';
-                    const percentage = (team.points / currentMax) * 100;
+                    
+                    const currentPoints = animatedPoints[team.id] || 0;
+                    const percentage = (currentPoints / maxPoints) * 100;
 
                     return (
                         <div 
@@ -257,36 +246,27 @@ const LeaderboardSlide: React.FC<{
                             style={{ 
                                 top: `${rankIdx * (ROW_HEIGHT_VH + 2)}vh`,
                                 height: `${ROW_HEIGHT_VH}vh`,
-                                zIndex: team.lastGain > 0 ? 50 : 10
+                                zIndex: 10
                             }}
                         >
                             <div className={`w-[8vh] lg:w-[15vh] shrink-0 flex items-center justify-center font-black text-[3vh] lg:text-[6vh] font-mono ${medalColor}`}>
                                 {(rankIdx + 1).toString().padStart(2, '0')}
                             </div>
 
-                            <div className={`flex-grow h-full bg-zinc-950 border border-white/10 rounded-[2vh] relative overflow-hidden flex items-center px-[3vh] lg:px-[5vh] transition-all duration-500 ${team.lastGain > 0 ? 'ring-2 ring-emerald-500 ring-offset-4 ring-offset-black' : ''}`}>
+                            <div className={`flex-grow h-full bg-zinc-950 border border-white/10 rounded-[2vh] relative overflow-hidden flex items-center px-[3vh] lg:px-[5vh] transition-all duration-500`}>
                                 <div className="flex justify-between items-center relative z-10 w-full">
                                     <span className={`text-[2vh] lg:text-[3.5vh] font-black uppercase tracking-tight truncate pr-[3vh] transition-colors duration-500 ${isWinner ? 'text-white' : 'text-zinc-400'}`}>
                                         {team.name}
                                     </span>
                                     <div className={`text-[3vh] lg:text-[5.5vh] font-black tabular-nums tracking-tighter leading-none transition-colors duration-500 ${medalColor}`}>
-                                        <CountUp end={team.points} duration={1200} />
+                                        {currentPoints.toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="absolute bottom-0 left-0 h-[0.8vh] bg-white/5 w-full"></div>
                                 <div 
-                                    className={`absolute bottom-0 left-0 h-[0.8vh] transition-all duration-1200 ease-out ${barColor} ${isWinner ? 'shadow-[0_0_20px_rgba(255,215,0,0.4)]' : ''}`}
+                                    className={`absolute bottom-0 left-0 h-[0.8vh] transition-all duration-300 ease-out ${barColor} ${isWinner ? 'shadow-[0_0_20px_rgba(255,215,0,0.4)]' : ''}`}
                                     style={{ width: `${Math.max(percentage, 1)}%` }}
                                 ></div>
-
-                                {team.lastGain > 0 && (
-                                    <div className="absolute right-[2vh] top-1/2 -translate-y-1/2 animate-in fade-in zoom-in slide-in-from-right-8 duration-500 bg-emerald-500 text-white px-[2vh] py-[0.8vh] rounded-[1.5vh] shadow-2xl flex items-center gap-[1.5vh] border border-emerald-400">
-                                        <Zap size={20} fill="currentColor" className="animate-pulse" />
-                                        <span className="text-[2vh] lg:text-[2.8vh] font-black">+{team.lastGain}</span>
-                                        <div className="h-[2.5vh] w-[1px] bg-white/30 hidden lg:block"></div>
-                                        <span className="text-[1vh] lg:text-[1.2vh] font-black uppercase tracking-widest max-w-[12vh] truncate hidden lg:block">{team.lastItem}</span>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     );
@@ -408,9 +388,15 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
     const data = useMemo(() => {
         if (!state) return null;
-        const declared = state.results.filter(r => r.status === ResultStatus.DECLARED);
+        
+        // Filter results that contribute to visible tallies (Declared and Updated)
+        const validResults = state.results.filter(r => r.status === ResultStatus.DECLARED || r.status === ResultStatus.UPDATED);
+        const declaredOnly = state.results.filter(r => r.status === ResultStatus.DECLARED);
+        
         const rotationLimit = state.settings.projector?.resultsLimit || 3;
-        const resultsSlidesData = declared.slice(-rotationLimit).reverse().map(r => {
+        
+        // Results slides are only from DECLARED results
+        const resultsSlidesData = declaredOnly.slice(-rotationLimit).reverse().map(r => {
             const item = state.items.find(i => i.id === r.itemId);
             const category = state.categories.find(c => c.id === item?.categoryId);
             if (!item || !category) return null;
@@ -420,26 +406,30 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             };
         }).filter(Boolean);
 
-        const timeline = declared.slice(0, state.settings.projector?.pointsLimit || 10);
-        const teamPointsMap: Record<string, number> = {};
-        state.teams.forEach(t => teamPointsMap[t.id] = 0);
-        timeline.forEach(r => {
+        // Global stats and standing map: uses BOTH declared and updated for accuracy
+        const teamStandingsMap: Record<string, TeamStanding> = {};
+        state.teams.forEach(t => teamStandingsMap[t.id] = { id: t.id, name: t.name, totalPoints: 0 });
+        
+        validResults.forEach(r => {
             const item = state.items.find(i => i.id === r.itemId);
             if (item) {
                 calculateItemScores(item, r.winners).forEach(w => {
-                    if (w.teamId) teamPointsMap[w.teamId] = (teamPointsMap[w.teamId] || 0) + w.totalPoints;
+                    if (w.teamId && teamStandingsMap[w.teamId]) {
+                        teamStandingsMap[w.teamId].totalPoints += w.totalPoints;
+                    }
                 });
             }
         });
 
+        const sortedStandings = Object.values(teamStandingsMap).sort((a, b) => b.totalPoints - a.totalPoints);
+
         return { 
             results: resultsSlidesData,
-            timeline: timeline,
-            leaderboardInitial: state.teams.map(t => ({ id: t.id, name: t.name })),
+            standings: sortedStandings,
             stats: {
                 participants: state.participants.length, items: state.items.length,
-                declared: declared.length, categories: state.categories.length,
-                totalPoints: Object.values(teamPointsMap).reduce((a, b) => a + b, 0),
+                declared: declaredOnly.length, categories: state.categories.length,
+                totalPoints: sortedStandings.reduce((sum, t) => sum + t.totalPoints, 0),
                 scheduled: state.schedule.length
             },
             upcoming: state.schedule.map(ev => ({ 
@@ -513,7 +503,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                     return (
                         <div key={renderKey} className={`absolute inset-0 transition-all duration-[1200ms] ease-in-out flex items-center justify-center ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}>
                             {key.startsWith('RESULT_') && <ResultSlide result={data.results[parseInt(key.split('_')[1])]} revealStep={revealStep} />}
-                            {key === 'LEADERBOARD' && <LeaderboardSlide initialTeams={data.leaderboardInitial} active={isActive} timeline={data.timeline} items={state.items} calculateItemScores={calculateItemScores} />}
+                            {key === 'LEADERBOARD' && <LeaderboardSlide teams={data.standings} active={isActive} />}
                             {key === 'STATS' && <StatsSlide stats={data.stats} />}
                             {key === 'UPCOMING' && <UpcomingSlide events={data.upcoming} />}
                         </div>

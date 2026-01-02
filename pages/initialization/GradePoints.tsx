@@ -247,10 +247,10 @@ const LotMachine: React.FC = () => {
              });
              return Object.values(groups).map(members => {
                  let leader = members.find(p => p.groupLeaderItemIds?.includes(item.id)) || members[0];
-                 return { ...leader, displayName: `${leader.name} & Party` };
+                 return { ...leader, id: leader.id, name: leader.name, chestNumber: leader.chestNumber, teamId: leader.teamId, displayName: `${leader.name} & Party` };
              }).sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}));
         }
-        return enrolled.map(p => ({ ...p, displayName: p.name })).sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}));
+        return enrolled.map(p => ({ ...p, id: p.id, name: p.name, chestNumber: p.chestNumber, teamId: p.teamId, displayName: p.name })).sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}));
     }, [selectedItemId, state]);
 
     const conflicts = useMemo(() => {
@@ -271,32 +271,47 @@ const LotMachine: React.FC = () => {
 
     const toggleParticipant = (p: any) => {
         const newSet = new Set(selectedParticipantIds);
-        let newResults = [...lotResults];
-        if (newSet.has(p.id)) {
-            newSet.delete(p.id);
-            newResults = newResults.filter(r => r.participantId !== p.id);
-        } else {
+        const isAdding = !newSet.has(p.id);
+        
+        if (isAdding) {
             newSet.add(p.id);
-            const existingTab = state?.tabulation.find(t => t.itemId === selectedItemId && t.participantId === p.id);
+        } else {
+            newSet.delete(p.id);
+        }
+
+        setSelectedParticipantIds(newSet);
+
+        // Auto-Sync Identity Registry Pool and Results
+        if (state) {
+            const count = newSet.size;
+            // Get all possible codes from registry sorted
+            const allRegCodes = [...state.codeLetters].sort((a,b) => a.code.localeCompare(b.code)).map(c => c.code);
+            // Select exactly the first N codes to match participant count
+            const nextPool = allRegCodes.slice(0, count);
             
-            // New logic: Automatically assign an available code from the pool
-            let assignedCode = existingTab?.codeLetter || '';
-            if (!assignedCode) {
-                // Find a code from lotPool that is not currently in our newResults list
-                const currentUsedCodes = new Set(newResults.map(r => r.code));
-                const availableFromPool = lotPool.find(c => !currentUsedCodes.has(c));
-                assignedCode = availableFromPool || '?';
+            // 1. Update the global pool in settings
+            if (JSON.stringify(state.settings.lotEligibleCodes) !== JSON.stringify(nextPool)) {
+                updateSettings({ lotEligibleCodes: nextPool });
             }
 
-            newResults.push({ 
-                participantId: p.id, 
-                name: p.displayName || p.name, 
-                code: assignedCode, 
-                isLocked: !!existingTab?.codeLetter 
+            // 2. Refresh the local lotResults to map participants to the new pool
+            // Ensure we maintain sorting to match selection list or chest number
+            const sortedSelections = Array.from(newSet).map(pid => {
+                const participant = participants.find(part => part.id === pid);
+                return participant;
+            }).filter(Boolean).sort((a: any, b: any) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}));
+
+            const newResults = sortedSelections.map((part: any, idx) => {
+                const existingTab = state.tabulation.find(t => t.itemId === selectedItemId && t.participantId === part.id);
+                return {
+                    participantId: part.id,
+                    name: part.displayName || part.name,
+                    code: existingTab?.codeLetter || nextPool[idx] || '?',
+                    isLocked: !!existingTab?.codeLetter
+                };
             });
+            setLotResults(newResults);
         }
-        setSelectedParticipantIds(newSet);
-        setLotResults(newResults);
     };
 
     const handleSpin = () => {
