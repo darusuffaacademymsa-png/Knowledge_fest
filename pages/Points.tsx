@@ -438,7 +438,10 @@ const PointsPage: React.FC = () => {
                                                                                         <div key={c.participantId} className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white transition-colors">
                                                                                             <div className="flex items-center gap-3">
                                                                                                 <span className="text-[9px] font-black text-zinc-400 w-8">#{c.chestNumber}</span>
-                                                                                                <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">{c.participantName}</span>
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">{c.participantName}</span>
+                                                                                                    {c.codeLetter && <span className="text-[8px] font-black bg-zinc-100 dark:bg-zinc-800 px-1 rounded text-indigo-500 shadow-sm border border-zinc-200 dark:border-zinc-700">CODE: {c.codeLetter}</span>}
+                                                                                                </div>
                                                                                             </div>
                                                                                             <div className="flex items-center gap-2">
                                                                                                 {c.rank > 0 && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100">Rank {c.rank}</span>}
@@ -570,9 +573,16 @@ const PointsPage: React.FC = () => {
                                         {w.rank || '-'}
                                     </div>
                                     <div className="min-w-0">
-                                        <h5 className="font-black text-amazio-primary dark:text-zinc-100 uppercase text-sm truncate">{w.participantName}</h5>
+                                        <div className="flex items-center gap-2">
+                                            <h5 className="font-black text-amazio-primary dark:text-zinc-100 uppercase text-sm truncate">{w.participantName}</h5>
+                                            {w.codeLetter && (
+                                                <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black border border-indigo-100 dark:border-indigo-800 shadow-sm">
+                                                    {w.codeLetter}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
-                                            #{w.chestNumber} • {w.teamName} {w.codeLetter && `• Code: ${w.codeLetter}`}
+                                            #{w.chestNumber} • {w.teamName}
                                         </p>
                                     </div>
                                 </div>
