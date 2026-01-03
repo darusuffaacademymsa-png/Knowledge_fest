@@ -588,6 +588,13 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Scoring Terminal</h2>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">Manage competition verdicts and global standings.</p>
                 </div>
+                <div className="flex items-center gap-3 pb-1">
+                    <div className="px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Registry:</span>
+                        <span className="ml-2 text-sm font-black text-amazio-primary dark:text-white tabular-nums">{filteredItems.length}</span>
+                        <span className="ml-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Events</span>
+                    </div>
+                </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredItems.map(item => (
