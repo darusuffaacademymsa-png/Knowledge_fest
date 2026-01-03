@@ -58,12 +58,11 @@ interface PosterData {
 
 const PosterCanvas: React.FC<{ 
     data: PosterData; 
-    scale?: number;
     id?: string;
     customBg?: string | null;
     fontFamily?: string;
     isDownloadMode?: boolean;
-}> = ({ data, scale = 1, id, customBg, fontFamily = 'font-slab', isDownloadMode = false }) => {
+}> = ({ data, id, customBg, fontFamily = 'font-slab', isDownloadMode = false }) => {
     const parts = data.categoryName.split(' ');
     const prefix = parts[0] || '';
     const suffix = parts.slice(1).join(' ');
@@ -74,7 +73,6 @@ const PosterCanvas: React.FC<{
     else if (fontFamily === 'font-serif') resolvedFont = 'Playfair Display';
     else if (fontFamily === 'font-sans') resolvedFont = 'Inter';
 
-    // Helper for applying font strictly to all children
     const textStyle: React.CSSProperties = { 
         fontFamily: resolvedFont ? `'${resolvedFont}', sans-serif` : 'inherit',
     };
@@ -86,8 +84,6 @@ const PosterCanvas: React.FC<{
             style={{ 
                 width: '1080px', 
                 height: '1080px', 
-                transform: isDownloadMode ? 'none' : `scale(${scale})`, 
-                transformOrigin: 'top left',
                 flexShrink: 0,
                 ...textStyle
             }}
@@ -114,17 +110,19 @@ const PosterCanvas: React.FC<{
                     </h3>
                 </div>
 
-                {/* Winners Zone - Gaps adjusted to 30px. Typography refined for better vertical buffer. */}
+                {/* Winners Zone - Gaps set to exactly 30px. 
+                    Using leading-none and explicit padding/margins for consistent rasterization across environments.
+                 */}
                 <div className="mt-[30px] ml-[205px] pr-[110px] space-y-[30px]">
                     {data.winners.slice(0, 3).map((winner, idx) => (
-                        <div key={idx} className="min-w-0">
+                        <div key={idx} className="min-w-0 flex flex-col">
                             <h4 
-                                className={`text-[46px] font-black uppercase tracking-tighter leading-[1.3] text-[#283618] whitespace-nowrap pt-1 pb-1 ${isDownloadMode ? 'overflow-visible' : 'truncate'}`} 
+                                className={`text-[46px] font-black uppercase tracking-tighter leading-tight text-[#283618] whitespace-nowrap mb-1 ${isDownloadMode ? 'overflow-visible' : 'truncate'}`} 
                                 style={textStyle}
                             >
                                 {winner.name}
                             </h4>
-                            <div className="mt-[-4px] flex items-center gap-3">
+                            <div className="flex items-center gap-3">
                                 <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight" style={textStyle}>
                                     {winner.place}
                                 </p>
@@ -291,11 +289,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         
         setIsDownloading(true);
         try {
-            // Wait slightly for any pending font layout recalculations
-            await new Promise(r => setTimeout(r, 500));
+            // Delay slightly for font assets to settle
+            await new Promise(r => setTimeout(r, 600));
 
             const captured = await html2canvas(sourceElement, { 
-                scale: 2, // Higher quality for download
+                scale: 1, // Capture at native 1080px (we force 1:1 below)
                 useCORS: true, 
                 backgroundColor: null, 
                 logging: false,
@@ -304,28 +302,40 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById('poster-canvas-render-target');
                     if (el) {
-                        // CRITICAL: Strip the scale transform and set dimensions to 1080px exactly for capture
+                        // CRITICAL: Ensure the cloned element is exactly 1080x1080 at 1:1 scale.
+                        // This bypasses scaling transforms from the preview UI.
                         el.style.transform = 'none';
                         el.style.width = '1080px';
                         el.style.height = '1080px';
+                        el.style.position = 'fixed';
+                        el.style.top = '0';
+                        el.style.left = '0';
+                        el.style.zIndex = '9999';
                         el.style.overflow = 'visible';
                         
-                        // Ensure all text containers are visible and not clipped
+                        // Strip transforms from all parent wrappers in the cloned document
+                        let parent = el.parentElement;
+                        while (parent) {
+                            parent.style.transform = 'none';
+                            parent.style.overflow = 'visible';
+                            parent = parent.parentElement;
+                        }
+
+                        // Remove specific manual overrides that were shifting text vertically.
+                        // We rely on the core component's styles for "exact" look.
                         const winners = el.querySelectorAll('h4');
                         winners.forEach(w => {
                             w.style.overflow = 'visible';
                             w.style.whiteSpace = 'nowrap';
-                            w.style.paddingTop = '10px';
-                            w.style.paddingBottom = '10px';
-                            w.style.lineHeight = '1.4';
                         });
                     }
                 }
             });
             
             const link = document.createElement('a');
-            link.download = `amazio-poster-${selectedItemId}.png`;
-            link.href = captured.toDataURL('image/png', 1.0);
+            link.download = `amazio-poster-${selectedItemId}.jpg`;
+            // Using image/jpeg with high quality
+            link.href = captured.toDataURL('image/jpeg', 0.95);
             link.click();
         } catch (err) {
             console.error("Capture failed:", err);
@@ -380,7 +390,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                         className="bg-amazio-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amazio-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-2 shrink-0"
                     >
                         {isDownloading ? <RefreshCw className="animate-spin" size={14}/> : <Download size={14} strokeWidth={3} />}
-                        <span className="hidden sm:inline">Download HQ</span>
+                        <span className="hidden sm:inline">Download JPG</span>
                     </button>
                 </div>
             </div>
@@ -489,13 +499,15 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                 }}
                             >
-                                <PosterCanvas 
-                                    id="poster-canvas-render-target"
-                                    data={posterData} 
-                                    scale={scale} 
-                                    customBg={selectedBgUrl}
-                                    fontFamily={selectedFont}
-                                />
+                                <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                                    <PosterCanvas 
+                                        id="poster-canvas-render-target"
+                                        data={posterData} 
+                                        customBg={selectedBgUrl}
+                                        fontFamily={selectedFont}
+                                        isDownloadMode={false}
+                                    />
+                                </div>
                             </div>
                             
                             {/* Meta Info */}
