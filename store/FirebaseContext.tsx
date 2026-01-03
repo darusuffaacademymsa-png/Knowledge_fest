@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback } fro
 import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
-import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType, FontConfig, GeneralFontConfig, Template } from '../types';
+import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType, FontConfig, GeneralFontConfig, Template, Settings } from '../types';
 import { DEFAULT_PAGE_PERMISSIONS, TABS, GUEST_PERMISSIONS } from '../constants';
 
 const defaultState: AppState = {
@@ -70,6 +70,20 @@ const defaultState: AppState = {
     { id: 'user_gemini_01', username: 'Gemini', role: UserRole.MANAGER }
   ],
   permissions: DEFAULT_PAGE_PERMISSIONS,
+};
+
+// Map Settings keys to specific Firestore document IDs for splitting
+// Fix: Corrected type from string | keyof Settings to (keyof Settings)[] to match the array values.
+const SETTINGS_DOC_MAPPING: Record<string, (keyof Settings)[]> = {
+  'settings_core': ['organizingTeam', 'heading', 'description', 'eventDates'],
+  'settings_constraints': ['maxItemsPerParticipant', 'maxTotalItemsPerParticipant', 'defaultParticipantsPerItem'],
+  'settings_logistics': ['eventDays', 'stages', 'timeSlots', 'scheduleDisplayPriority'],
+  'settings_scoring': ['defaultPoints', 'rankingStrategy', 'autoCodeAssignment'],
+  'settings_projector': ['projector'],
+  'settings_institution': ['institutionDetails'],
+  'settings_branding': ['branding'],
+  'settings_reports': ['reportSettings'],
+  'settings_ux': ['generalInstructions', 'enableFloatingNav', 'mobileSidebarMode'],
 };
 
 const cleanData = (data: any): any => {
@@ -215,25 +229,39 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   useEffect(() => {
-    const dataKeys = Object.keys(defaultState);
+    const dataKeys = Object.keys(defaultState).filter(k => k !== 'settings');
+    const settingsDocIds = Object.keys(SETTINGS_DOC_MAPPING);
+    const allKeys = [...dataKeys, ...settingsDocIds];
+    
     const initialLoading: Record<string, boolean> = {};
-    dataKeys.forEach(k => initialLoading[k] = true);
+    allKeys.forEach(k => initialLoading[k] = true);
     setLoadingMap(initialLoading);
 
-    const unsubscribers = dataKeys.map(key => {
+    const unsubscribers = allKeys.map(key => {
       return onSnapshot(doc(db, BASE_COLLECTION, key), (snapshot) => {
         const data = snapshot.data();
+        const value = data ? data.value : null;
+
         setState(prev => {
           const current = prev || defaultState;
-          return { ...current, [key]: data ? data.value : defaultState[key as keyof AppState] };
+          
+          // Handle merged settings logic
+          if (key.startsWith('settings_')) {
+              return {
+                ...current,
+                settings: {
+                  ...current.settings,
+                  ...(value || {})
+                }
+              };
+          }
+
+          // Handle standard keys
+          return { ...current, [key]: value !== null ? value : (defaultState as any)[key] };
         });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       }, (e) => {
         console.warn(`Listener failed for ${key}`);
-        setState(prev => {
-          const current = prev || defaultState;
-          return { ...current, [key]: (defaultState as any)[key] };
-        });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       });
     });
@@ -309,7 +337,35 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     login, logout, globalFilters, setGlobalFilters, globalSearchTerm, setGlobalSearchTerm,
     dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, teamsSubView, setTeamsSubView, gradeSubView, setGradeSubView,
     scoringSubView, setScoringSubView, judgesSubView, setJudgesSubView, settingsSubView, setSettingsSubView,
-    updateSettings: (p) => writeDoc('settings', { ...state?.settings, ...p }),
+    
+    updateSettings: async (p) => {
+        if (!state) return;
+        // Identify which setting docs need updating based on the keys in payload
+        const affectedDocs = new Set<string>();
+        Object.keys(p).forEach(key => {
+            for (const [docId, keys] of Object.entries(SETTINGS_DOC_MAPPING)) {
+                // Fix: Properly typed keys is now recognised as a subtype of string[].
+                if ((keys as string[]).includes(key)) {
+                    affectedDocs.add(docId);
+                }
+            }
+        });
+
+        // Update each affected document by merging with current state values
+        const promises = Array.from(affectedDocs).map(docId => {
+            // Fix: No longer needs an overlap-mistake-prone cast since SETTINGS_DOC_MAPPING[docId] is now correctly typed as an array.
+            const keysForThisDoc = SETTINGS_DOC_MAPPING[docId];
+            const updatedDataForDoc: any = {};
+            keysForThisDoc.forEach(k => {
+                // Use new value if provided in payload, else fallback to current state
+                updatedDataForDoc[k] = (p as any)[k] !== undefined ? (p as any)[k] : (state.settings as any)[k];
+            });
+            return writeDoc(docId, updatedDataForDoc);
+        });
+
+        await Promise.all(promises);
+    },
+
     updateLotPool: (p) => writeDoc('lotPool', p),
     updateCustomFonts: (p) => writeDoc('customFonts', p),
     updateGeneralCustomFonts: (p) => writeDoc('generalCustomFonts', p),
