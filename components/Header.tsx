@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Menu, LogOut, ChevronDown, Sun, Moon, Laptop, Search, X, ArrowLeft, Milestone, Gavel, Palette, BookText, Database, ShieldCheck, User as UserIcon, ClipboardList, LayoutList, Users, Hash, Medal, Info, Wifi, WifiOff, Cloud, Home } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Sun, Moon, Laptop, Search, X, ArrowLeft, Milestone, Gavel, Palette, BookText, Database, ShieldCheck, User as UserIcon, ClipboardList, LayoutList, Users, Hash, Medal, Info, Wifi, WifiOff, Cloud, Home, Layers } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { useFirebase } from '../hooks/useFirebase';
 import { PAGES_WITH_GLOBAL_FILTERS, TABS, TAB_DISPLAY_NAMES } from '../constants';
@@ -31,6 +32,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
         state, isOnline, setGlobalFilters, globalSearchTerm, setGlobalSearchTerm, 
         dataEntryView, setDataEntryView,
         itemsSubView, setItemsSubView,
+        teamsSubView, setTeamsSubView,
         gradeSubView, setGradeSubView,
         judgesSubView, setJudgesSubView,
         settingsSubView, setSettingsSubView
@@ -46,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
     ].includes(pageTitle);
 
     const hasSubNavigation = [
-        TABS.DATA_ENTRY, TABS.ITEMS, TABS.GRADE_POINTS, TABS.JUDGES_MANAGEMENT, TABS.GENERAL_SETTINGS
+        TABS.DATA_ENTRY, TABS.ITEMS, TABS.TEAMS_CATEGORIES, TABS.GRADE_POINTS, TABS.JUDGES_MANAGEMENT, TABS.GENERAL_SETTINGS
     ].includes(pageTitle);
 
     useEffect(() => {
@@ -83,6 +85,11 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                     { id: 'ITEMS', label: 'Item Registry', icon: LayoutList, active: itemsSubView === 'ITEMS', onClick: () => setItemsSubView('ITEMS') },
                     { id: 'PARTICIPANTS', label: 'Participants Registry', icon: Users, active: itemsSubView === 'PARTICIPANTS', onClick: () => setItemsSubView('PARTICIPANTS') }
                 ];
+            case TABS.TEAMS_CATEGORIES:
+                return [
+                    { id: 'TEAMS', label: 'Teams', icon: Users, active: teamsSubView === 'TEAMS', onClick: () => setTeamsSubView('TEAMS') },
+                    { id: 'CATEGORIES', label: 'Categories', icon: Layers, active: teamsSubView === 'CATEGORIES', onClick: () => setTeamsSubView('CATEGORIES') }
+                ];
             case TABS.GRADE_POINTS:
                 return [
                     { id: 'CODES', label: 'Registry & Lots', icon: Hash, active: gradeSubView === 'CODES', onClick: () => setGradeSubView('CODES') },
@@ -103,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                 ];
             default: return [];
         }
-    }, [pageTitle, dataEntryView, itemsSubView, gradeSubView, judgesSubView, settingsSubView]);
+    }, [pageTitle, dataEntryView, itemsSubView, teamsSubView, gradeSubView, judgesSubView, settingsSubView]);
 
     return (
         <header className={`fixed md:relative top-0 left-0 right-0 z-40 w-full transition-all duration-300 ease-in-out transform-gpu bg-amazio-light-bg dark:bg-amazio-bg md:bg-transparent pt-[env(safe-area-inset-top)] ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 md:translate-y-0 md:opacity-100'}`}>

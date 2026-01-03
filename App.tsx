@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TABS, SIDEBAR_GROUPS } from './constants';
 import { useFirebase } from './hooks/useFirebase';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
     state, currentUser, loading, logout, hasPermission,
     dataEntryView, setDataEntryView,
     itemsSubView, setItemsSubView,
+    teamsSubView, setTeamsSubView,
     gradeSubView, setGradeSubView,
     judgesSubView, setJudgesSubView,
     settingsSubView, setSettingsSubView,
@@ -197,6 +199,13 @@ const App: React.FC = () => {
         setItemsSubView(views[nextIdx]);
         break;
       }
+      case TABS.TEAMS_CATEGORIES: {
+        const views: ('TEAMS' | 'CATEGORIES')[] = ['TEAMS', 'CATEGORIES'];
+        const idx = views.indexOf(teamsSubView);
+        const nextIdx = (idx + delta + views.length) % views.length;
+        setTeamsSubView(views[nextIdx]);
+        break;
+      }
       case TABS.GRADE_POINTS: {
         const views: ('CODES' | 'GRADES')[] = ['CODES', 'GRADES'];
         const idx = views.indexOf(gradeSubView);
@@ -219,7 +228,7 @@ const App: React.FC = () => {
         break;
       }
     }
-  }, [activeTab, dataEntryView, itemsSubView, gradeSubView, judgesSubView, settingsSubView, setDataEntryView, setItemsSubView, setGradeSubView, setJudgesSubView, setSettingsSubView]);
+  }, [activeTab, dataEntryView, itemsSubView, teamsSubView, gradeSubView, judgesSubView, settingsSubView, setDataEntryView, setItemsSubView, setTeamsSubView, setGradeSubView, setJudgesSubView, setSettingsSubView]);
 
   const navigateMainTab = useCallback((direction: 'next' | 'prev') => {
     const flatTabs = SIDEBAR_GROUPS.flatMap(g => g.tabs).filter(t => hasPermission(t));

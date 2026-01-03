@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../../hooks/useFirebase';
@@ -324,7 +325,7 @@ const TeamFormModal: React.FC<TeamFormModalProps> = ({ isOpen, onClose, onSave, 
                         </div>
                     </div>
                 </div>
-                <div className="p-7 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-4">
+                <div className="p-7 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-border flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
                     <button onClick={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all active:scale-95">Save Team</button>
                 </div>
@@ -403,7 +404,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({ isOpen, onClose, 
                         <div><span className="text-sm font-black uppercase tracking-tight text-zinc-800 dark:text-zinc-200 block leading-none mb-1">General Category</span><span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Global scope open to all participants</span></div>
                     </div>
                 </div>
-                <div className="p-7 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-4">
+                <div className="p-7 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-border flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Discard</button>
                     <button onClick={handleSave} className="px-10 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 transition-all active:scale-95">Save Scope</button>
                 </div>
@@ -419,10 +420,10 @@ const TeamsAndCategories: React.FC = () => {
         state, 
         addMultipleTeams, updateTeam, deleteMultipleTeams, 
         addCategory, updateCategory, deleteMultipleCategories,
-        addMultipleParticipants, updateMultipleParticipants
+        addMultipleParticipants, updateMultipleParticipants,
+        teamsSubView: activeTab
     } = useFirebase();
 
-    const [activeTab, setActiveTab] = useState<'TEAMS' | 'CATEGORIES'>('TEAMS');
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [editingTeam, setEditingTeam] = useState<Team | undefined>(undefined);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -502,47 +503,22 @@ const TeamsAndCategories: React.FC = () => {
     if (!state) return <div className="p-8 text-center text-zinc-500">Loading modules...</div>;
 
     return (
-        <div className="space-y-0 pb-24 animate-in fade-in duration-700">
-            {/* Header Bar Navigation */}
-            <div className="sticky top-0 z-30 -mx-2 -mt-2 sm:-mx-4 sm:-mt-3 lg:-mx-4 bg-white/80 dark:bg-amazio-bg/80 backdrop-blur-xl border-b border-amazio-primary/5 dark:border-white/5 px-4 py-3 flex items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-6">
-                    <h2 className="text-xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none border-r border-amazio-primary/10 dark:border-white/10 pr-6 hidden sm:block">Teams & Scopes</h2>
-                    <nav className="flex items-center gap-1">
-                        <button 
-                            onClick={() => setActiveTab('TEAMS')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'TEAMS' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5'}`}
-                        >
-                            <Users size={14} strokeWidth={3} /> <span className="hidden xs:inline">Organizational Teams</span>
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('CATEGORIES')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${activeTab === 'CATEGORIES' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5'}`}
-                        >
-                            <Layers size={14} strokeWidth={3} /> <span className="hidden xs:inline">Participation Scopes</span>
-                        </button>
-                    </nav>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                    <div className="hidden md:flex items-center gap-4 mr-2">
-                        <div className="text-right">
-                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Active {activeTab === 'TEAMS' ? 'Houses' : 'Levels'}</p>
-                            <p className="text-sm font-black text-amazio-primary dark:text-white leading-none">{activeTab === 'TEAMS' ? state.teams.length : state.categories.length}</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => activeTab === 'TEAMS' ? setIsTeamModalOpen(true) : setIsCategoryModalOpen(true)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-xl text-white shadow-lg transition-all active:scale-95 ${activeTab === 'TEAMS' ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-amber-600 shadow-amber-500/20'}`}
-                    >
-                        <Plus size={20} strokeWidth={3} />
-                    </button>
+        <div className="space-y-6 sm:space-y-10 pb-24 animate-in fade-in duration-700 relative">
+            <div className="hidden md:flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div>
+                    <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">
+                        {activeTab === 'TEAMS' ? 'Organizational Units' : 'Participation Scopes'}
+                    </h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">
+                        {activeTab === 'TEAMS' ? 'Management of house teams and leadership.' : 'Configuration of participation levels and limits.'}
+                    </p>
                 </div>
             </div>
 
-            <div className="space-y-8 px-2 sm:px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <StatCard label="Live Teams" value={state.teams.length} icon={Users} color="bg-emerald-500" />
-                    <StatCard label="Registered Scopes" value={state.categories.length} icon={Layers} color="bg-amber-500" />
+                    <StatCard label="Active Levels" value={state.categories.length} icon={Layers} color="bg-amber-500" />
                 </div>
 
                 {activeTab === 'TEAMS' ? (

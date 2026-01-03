@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -97,6 +98,8 @@ interface FirebaseContextType {
   setDataEntryView: (view: 'ITEMS' | 'PARTICIPANTS') => void;
   itemsSubView: 'ITEMS' | 'PARTICIPANTS';
   setItemsSubView: (v: 'ITEMS' | 'PARTICIPANTS') => void;
+  teamsSubView: 'TEAMS' | 'CATEGORIES';
+  setTeamsSubView: (v: 'TEAMS' | 'CATEGORIES') => void;
   gradeSubView: 'CODES' | 'GRADES';
   setGradeSubView: (v: 'CODES' | 'GRADES') => void;
   scoringSubView: 'QUEUE' | 'LEDGER';
@@ -187,6 +190,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   
   const [dataEntryView, setDataEntryView] = useState<'ITEMS' | 'PARTICIPANTS'>('ITEMS');
   const [itemsSubView, setItemsSubView] = useState<'ITEMS' | 'PARTICIPANTS'>('ITEMS');
+  const [teamsSubView, setTeamsSubView] = useState<'TEAMS' | 'CATEGORIES'>('TEAMS');
   const [gradeSubView, setGradeSubView] = useState<'CODES' | 'GRADES'>('CODES');
   const [scoringSubView, setScoringSubView] = useState<'QUEUE' | 'LEDGER'>('QUEUE');
   const [judgesSubView, setJudgesSubView] = useState<'ASSIGNMENTS' | 'REGISTRY' | 'OVERVIEW'>('ASSIGNMENTS');
@@ -303,7 +307,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const contextValue: FirebaseContextType = {
     state, currentUser, firebaseUser, loading: isLoading, isOnline,
     login, logout, globalFilters, setGlobalFilters, globalSearchTerm, setGlobalSearchTerm,
-    dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, gradeSubView, setGradeSubView,
+    dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, teamsSubView, setTeamsSubView, gradeSubView, setGradeSubView,
     scoringSubView, setScoringSubView, judgesSubView, setJudgesSubView, settingsSubView, setSettingsSubView,
     updateSettings: (p) => writeDoc('settings', { ...state?.settings, ...p }),
     updateLotPool: (p) => writeDoc('lotPool', p),
