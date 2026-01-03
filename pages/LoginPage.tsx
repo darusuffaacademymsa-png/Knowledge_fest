@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { User, Lock, Sun, Moon, Laptop, ArrowRight, LogOut, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useFirebase } from '../hooks/useFirebase';
@@ -26,7 +27,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ theme, toggleTheme, settings }) =
         setError('');
         setLoading(true);
         try {
-            await login(username, password);
+            /**
+             * Fixed: Added missing `rememberMe` argument to satisfy `login` function signature.
+             */
+            await login(username, password, rememberMe);
         } catch (err: any) {
             setError(err.message || 'Login failed. Please check your credentials.');
         } finally {

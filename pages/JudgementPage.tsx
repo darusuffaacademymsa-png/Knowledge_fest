@@ -1,3 +1,4 @@
+
 import { AlertTriangle, ArrowLeft, Award, Calculator, CheckCircle2, ChevronDown, ClipboardEdit, Clock, Edit3, Eye, FileText, Filter, LayoutGrid, Lock, LockOpen, Medal, Megaphone, Save, Search, ShieldAlert, Tag, Trash2, Trophy, UserCheck, Users, User, Star, RefreshCw, UploadCloud } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Card from '../components/Card';
@@ -368,7 +369,10 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     else if (rank === 3) prizePoints = item.points?.third || 0;
                 }
             }
-            return { ...score, rank, prizePoints, totalPoints: prizePoints + score.gradePoints };
+            /**
+             * Fixed: Added contributesToIndividualTally to satisfy ScoredParticipant interface requirements.
+             */
+            return { ...score, rank, prizePoints, totalPoints: prizePoints + score.gradePoints, contributesToIndividualTally: !score.isGroup };
         }).sort((a,b) => a.codeLetter.localeCompare(b.codeLetter));
     }, [state]);
 
@@ -562,7 +566,7 @@ const JudgementPage: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 </div>
                                 <div className="p-3 bg-zinc-50/50 dark:bg-black/20 rounded-b-[1.2rem] border-t border-zinc-100 dark:border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        {sp.rank > 0 && <div className={`flex items-center gap-1 px-2 py-1 rounded-md font-black text-[8px] uppercase tracking-widest shadow-md ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : 'bg-orange-200 text-orange-800'}`}>Rank {sp.rank}</div>}
+                                        {sp.rank > 0 && <div className={`flex items-center gap-1 px-2 py-1 rounded-md font-black text-[8px] uppercase tracking-widest shadow-md ${sp.rank === 1 ? 'bg-amber-400 text-amber-950' : sp.rank === 2 ? 'bg-slate-200 text-slate-700' : sp.rank === 3 ? 'bg-orange-200 text-orange-800' : ''}`}>Rank {sp.rank}</div>}
                                         {sp.grade && <div className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-800 uppercase tracking-widest">Tier {sp.grade.name}</div>}
                                     </div>
                                     <div className="text-right">

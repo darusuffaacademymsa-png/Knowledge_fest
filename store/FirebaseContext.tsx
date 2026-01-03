@@ -151,6 +151,10 @@ interface FirebaseContextType {
   updateCodeLetter: (payload: CodeLetter) => Promise<void>;
   reorderCodeLetters: (payload: CodeLetter[]) => Promise<void>;
   deleteCodeLetter: (id: string) => Promise<void>;
+  /**
+   * Added deleteMultipleCodeLetters to resolve "Property 'deleteMultipleCodeLetters' does not exist on type 'FirebaseContextType'"
+   */
+  deleteMultipleCodeLetters: (ids: string[]) => Promise<void>;
   addJudge: (payload: { name: string; place?: string; profession?: string; }) => Promise<void>;
   updateJudge: (payload: Judge) => Promise<void>;
   reorderJudges: (payload: Judge[]) => Promise<void>;
@@ -393,6 +397,10 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     updateCodeLetter: async (p) => writeDoc('codeLetters', state!.codeLetters.map(c => c.id === p.id ? p : c)),
     reorderCodeLetters: (p) => writeDoc('codeLetters', p),
     deleteCodeLetter: async (id) => writeDoc('codeLetters', state!.codeLetters.filter(c => c.id !== id)),
+    /**
+     * Implementation of deleteMultipleCodeLetters to resolve missing property error.
+     */
+    deleteMultipleCodeLetters: async (ids) => writeDoc('codeLetters', state!.codeLetters.filter(c => !ids.includes(c.id))),
     addJudge: async (p) => writeDoc('judges', [...state!.judges, { ...p, id: `j_${Date.now()}` }]),
     updateJudge: async (p) => writeDoc('judges', state!.judges.map(j => j.id === p.id ? p : j)),
     reorderJudges: (p) => writeDoc('judges', p),

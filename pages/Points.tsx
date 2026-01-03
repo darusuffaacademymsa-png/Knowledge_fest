@@ -1,3 +1,4 @@
+
 import { 
     Award, BarChart2, CheckCircle2, ChevronDown, ChevronRight, 
     Filter, GraduationCap, Info, Layers, Layout, ListFilter, 
@@ -137,7 +138,7 @@ const PointsPage: React.FC = () => {
             }; 
         });
 
-        const declaredItemsSet = new Set<string>();
+        const activeItemIds = new Set<string>();
         const participantRawEntries: any[] = [];
         const itemAggregate: Record<string, any> = {};
 
@@ -147,8 +148,15 @@ const PointsPage: React.FC = () => {
             const item = items.find(i => i.id === result.itemId);
             const category = categories.find(c => c.id === result.categoryId);
             if (!item || !category) return;
+
+            // Apply Filters: Category, Performance Type, Item ID
+            const matchesCat = globalFilters.categoryId.length === 0 || globalFilters.categoryId.includes(item.categoryId);
+            const matchesPerf = globalFilters.performanceType.length === 0 || globalFilters.performanceType.includes(item.performanceType);
+            const matchesItemId = globalFilters.itemId.length === 0 || globalFilters.itemId.includes(item.id);
+
+            if (!matchesCat || !matchesPerf || !matchesItemId) return;
             
-            declaredItemsSet.add(item.id);
+            activeItemIds.add(item.id);
             if (!itemAggregate[item.id]) {
                 itemAggregate[item.id] = { 
                     item, 
@@ -261,36 +269,46 @@ const PointsPage: React.FC = () => {
             });
         });
 
-        // Final filtering and aggregation
+        // Filter: Team Selection
         let finalTeamData = Object.values(teamData);
         if (globalFilters.teamId.length > 0) finalTeamData = finalTeamData.filter(t => globalFilters.teamId.includes(t.teamId));
 
+        // Filter: Item Aggregate (Search + Active filters already applied)
         let finalItemAggregate = Object.values(itemAggregate);
+        if (globalSearchTerm) {
+            const q = globalSearchTerm.toLowerCase();
+            finalItemAggregate = finalItemAggregate.filter(agg => agg.item.name.toLowerCase().includes(q));
+        }
         if (globalFilters.teamId.length > 0) {
-            finalItemAggregate = finalItemAggregate.filter(agg => 
-                agg.winners.some((w: any) => globalFilters.teamId.includes(w.teamId))
-            ).map(agg => ({
+            finalItemAggregate = finalItemAggregate.map(agg => ({
                 ...agg,
                 winners: agg.winners.filter((w: any) => globalFilters.teamId.includes(w.teamId)),
                 totalPoints: agg.winners.filter((w: any) => globalFilters.teamId.includes(w.teamId)).reduce((s: number, w: any) => s + w.total, 0)
-            }));
+            })).filter(agg => agg.winners.length > 0);
         }
 
+        // Filter: Participant Entries (Team + Search)
         let finalParticipantEntries = [...participantRawEntries];
         if (globalFilters.teamId.length > 0) finalParticipantEntries = finalParticipantEntries.filter(e => globalFilters.teamId.includes(e.participant.teamId));
+        if (globalSearchTerm) {
+            const q = globalSearchTerm.toLowerCase();
+            finalParticipantEntries = finalParticipantEntries.filter(e => 
+                e.participant.name.toLowerCase().includes(q) || e.participant.chestNumber.toLowerCase().includes(q)
+            );
+        }
 
         return { 
             teamData: finalTeamData, 
             participantRawEntries: finalParticipantEntries, 
             itemAggregate: finalItemAggregate.sort((a,b) => b.totalPoints - a.totalPoints),
             stats: { 
-                declaredCount: declaredItemsSet.size, 
+                declaredCount: activeItemIds.size, 
                 contributorsCount: new Set(finalParticipantEntries.map(e => e.participant.id)).size, 
                 totalEntries: finalParticipantEntries.length,
                 totalPoints: finalTeamData.reduce((sum, t) => sum + t.totalPoints, 0)
             } 
         };
-    }, [teams, categories, participants, results, items, gradePoints, tabulation, globalFilters.teamId]);
+    }, [teams, categories, participants, results, items, gradePoints, tabulation, globalFilters, globalSearchTerm]);
 
     const sortedTeams = useMemo(() => {
         if (!analytics) return [];
@@ -494,6 +512,12 @@ const PointsPage: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                        {analytics.itemAggregate.length === 0 && (
+                            <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-xs uppercase font-bold tracking-[0.2em] border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem]">
+                                <SearchX size={48} className="mb-4" />
+                                No matching items
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -541,6 +565,12 @@ const PointsPage: React.FC = () => {
                                 </div>
                             );
                         })}
+                        {participantsAggregated.length === 0 && (
+                            <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-xs uppercase font-bold tracking-[0.2em] border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem]">
+                                <SearchX size={48} className="mb-4" />
+                                No matching contributors
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

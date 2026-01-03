@@ -148,7 +148,10 @@ const FontUpload: React.FC<FontUploadProps> = ({ language, currentFont, onSave, 
             // Check if font family name is unique if it's a new general custom font being added
             // For updates, allow changing name if it's not conflicting with other fonts (excluding itself)
             if (!language) { // Only applies to general custom fonts
-                const isConflict = state?.settings.generalCustomFonts?.some(f => 
+                /**
+                 * Fixed: Access `generalCustomFonts` from state directly instead of `state.settings`.
+                 */
+                const isConflict = state?.generalCustomFonts?.some(f => 
                     (currentFont && 'id' in currentFont && f.id !== currentFont.id) && // Exclude self if updating
                     f.family.toLowerCase() === tempFontFamilyName.trim().toLowerCase()
                 );
@@ -193,7 +196,10 @@ const FontUpload: React.FC<FontUploadProps> = ({ language, currentFont, onSave, 
         
         // Before saving, ensure the font family name is valid/unique if it's a general custom font being updated
         if (!language && tempFont && tempFontFamilyName.trim()) {
-             const isConflict = state?.settings.generalCustomFonts?.some(f => 
+             /**
+              * Fixed: Access `generalCustomFonts` from state directly instead of `state.settings`.
+              */
+             const isConflict = state?.generalCustomFonts?.some(f => 
                 (tempFont && 'id' in tempFont && f.id !== tempFont.id) && 
                 f.family.toLowerCase() === tempFontFamilyName.trim().toLowerCase()
             );
@@ -345,4 +351,25 @@ const FontUpload: React.FC<FontUploadProps> = ({ language, currentFont, onSave, 
                     {onUpload && !languageSpecific && (!tempFont || !('id' in tempFont)) && ( // Only show if we're in "add new general custom font" mode
                         <button 
                             onClick={() => tempFont && handleApply()} // Call handleApply which will then call onUpload
-                            disabled={
+                            disabled={!tempFont || !tempFontFamilyName.trim() || isSaving}
+                            className={`px-4 py-2 rounded text-xs font-bold text-white shadow-sm transition-all ${!tempFont || !tempFontFamilyName.trim() || isSaving ? 'bg-zinc-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                        >
+                            {isSaving ? 'Processing...' : 'Upload & Add to Library'}
+                        </button>
+                    )}
+                    {(!onUpload || (currentFont && 'id' in currentFont)) && ( // Show Apply changes for updates or individual language fonts
+                        <button 
+                            onClick={handleApply}
+                            disabled={languageSpecific ? (!tempFont || isSaving) : isApplyDisabledForGeneralCustomFont || isSaving}
+                            className={`px-6 py-2 rounded text-xs font-bold text-white shadow-sm transition-all ${ (languageSpecific ? (!tempFont || isSaving) : isApplyDisabledForGeneralCustomFont || isSaving) ? 'bg-zinc-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                        >
+                            {isSaving ? 'Applying...' : 'Apply Changes'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ... remaining file content
