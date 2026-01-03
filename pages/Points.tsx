@@ -22,7 +22,7 @@ const getThemeColor = (str: string) => {
     }
     const themes = [
         { bg: 'bg-indigo-500', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800', light: 'bg-indigo-50 dark:bg-indigo-900/20', shadow: 'shadow-indigo-500/10' },
-        { bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', light: 'bg-emerald-50 dark:bg-indigo-900/20', shadow: 'shadow-emerald-500/10' },
+        { bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', light: 'bg-emerald-50 dark:bg-indigo-900/20', shadow: 'shadow-indigo-500/10' },
         { bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800', light: 'bg-amber-50 dark:bg-amber-900/10', shadow: 'shadow-amber-500/10' },
         { bg: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800', light: 'bg-rose-50 dark:bg-rose-900/20', shadow: 'shadow-rose-500/10' },
         { bg: 'bg-purple-500', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800', light: 'bg-purple-50 dark:bg-fuchsia-900/20', shadow: 'shadow-purple-500/10' },
@@ -302,7 +302,7 @@ const PointsPage: React.FC = () => {
             participantRawEntries: finalParticipantEntries, 
             itemAggregate: finalItemAggregate.sort((a,b) => b.totalPoints - a.totalPoints),
             stats: { 
-                declaredCount: activeItemIds.size, 
+                updatedCount: activeItemIds.size, 
                 contributorsCount: new Set(finalParticipantEntries.map(e => e.participant.id)).size, 
                 totalEntries: finalParticipantEntries.length,
                 totalPoints: finalTeamData.reduce((sum, t) => sum + t.totalPoints, 0)
@@ -370,7 +370,7 @@ const PointsPage: React.FC = () => {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
-                <StatBox label="Declared Results" value={analytics.stats.declaredCount} icon={CheckCircle2} colorClass="text-emerald-700 border-emerald-100 bg-emerald-50/50" />
+                <StatBox label="Updated Results" value={analytics.stats.updatedCount} icon={CheckCircle2} colorClass="text-emerald-700 border-emerald-100 bg-emerald-50/50" />
                 <StatBox label="Festival Points" value={analytics.stats.totalPoints} icon={Zap} colorClass="text-amber-700 border-amber-100 bg-amber-50/50" />
                 <StatBox label="Contributors" value={analytics.stats.contributorsCount} icon={Users} colorClass="text-indigo-700 border-indigo-100 bg-indigo-50/50" />
                 <StatBox label="Scoring Entries" value={analytics.stats.totalEntries} icon={PieChart} colorClass="text-rose-700 border-rose-100 bg-rose-50/50" />
