@@ -1,21 +1,17 @@
 
 import React from 'react';
 import { useFirebase } from '../hooks/useFirebase';
-// Use AppState instead of Settings as custom fonts are stored at the top level of the state
 import { AppState } from '../types';
 
-// Updated to accept AppState to access customFonts and generalCustomFonts
 export const getGlobalFontCSS = (state: AppState | null | undefined) => {
     if (!state) return '';
 
     const MALAYALAM_RANGE = "U+0D00-0D7F";
     const ARABIC_RANGE = "U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF";
-    const LATIN_RANGE = "U+0000-007F, U+0080-00FF, U+0100-017F, U+0180-024F"; // Expanded basic & extended latin
+    const LATIN_RANGE = "U+0000-007F, U+0080-00FF, U+0100-017F, U+0180-024F";
     
     let fontFaces = '';
 
-    // Language-specific fonts (GlobalAutoFont uses unicode-range)
-    // Fix: access customFonts from AppState instead of Settings
     if (state.customFonts?.malayalam?.url) {
         fontFaces += `
             @font-face {
@@ -27,7 +23,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         `;
     }
 
-    // Fix: access customFonts from AppState instead of Settings
     if (state.customFonts?.arabic?.url) {
         fontFaces += `
             @font-face {
@@ -39,8 +34,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         `;
     }
 
-    // Default global English (Latin) font
-    // Fix: access customFonts from AppState instead of Settings
     if (state.customFonts?.english?.url) {
         fontFaces += `
             @font-face {
@@ -52,8 +45,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         `;
     }
 
-    // Primary English
-    // Fix: access customFonts from AppState instead of Settings
     if (state.customFonts?.englishPrimary?.url) {
         fontFaces += `
             @font-face {
@@ -64,8 +55,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         `;
     }
 
-    // Secondary English
-    // Fix: access customFonts from AppState instead of Settings
     if (state.customFonts?.englishSecondary?.url) {
         fontFaces += `
             @font-face {
@@ -76,8 +65,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         `;
     }
 
-    // General Custom Fonts (for explicit selection, using their defined family names)
-    // Fix: access generalCustomFonts from AppState instead of Settings
     if (state.generalCustomFonts && state.generalCustomFonts.length > 0) {
         state.generalCustomFonts.forEach(font => {
             if (font.url && font.family) {
@@ -96,24 +83,20 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
         return `
             ${fontFaces}
             
-            /* Apply GlobalAutoFont across the entire application ecosystem */
-            body, html, 
-            .font-sans, .font-serif, .font-slab, .font-mono,
-            h1, h2, h3, h4, h5, h6, 
-            p, span, div, a, li, blockquote,
-            input, button, textarea, select, 
-            table, td, th, thead, tbody, 
-            label, legend,
-            [class*="text-"], [class*="font-"] {
-                font-family: 'GlobalAutoFont', 'Inter', 'Roboto Slab', system-ui, -apple-system, sans-serif !important;
+            html, body {
+                font-family: 'GlobalAutoFont', 'Inter', sans-serif;
+            }
+
+            /* Apply to UI elements without using !important everywhere to allow canvas overrides */
+            h1, h2, h3, h4, h5, h6, p, span, div, a, li, input, button, textarea, select {
+                font-family: 'GlobalAutoFont', inherit;
+            }
+
+            /* Specific class for the Creative Studio canvas to force font override */
+            .studio-canvas-root * {
+                font-family: inherit !important;
             }
             
-            /* Special handling for form elements which often ignore inheritance */
-            input::placeholder, textarea::placeholder {
-                font-family: 'GlobalAutoFont', sans-serif !important;
-            }
-            
-            /* Helper classes for manual override if needed */
             .font-malayalam { font-family: 'GlobalAutoFont', sans-serif !important; }
             .font-arabic { font-family: 'GlobalAutoFont', serif !important; direction: rtl; }
             .font-english { font-family: 'GlobalAutoFont', sans-serif !important; }
@@ -127,7 +110,6 @@ export const getGlobalFontCSS = (state: AppState | null | undefined) => {
 
 const GlobalFontManager: React.FC = () => {
     const { state } = useFirebase();
-    // Fix: Pass the whole state instead of state.settings
     const css = getGlobalFontCSS(state);
     return <style dangerouslySetInnerHTML={{ __html: css }} />;
 };

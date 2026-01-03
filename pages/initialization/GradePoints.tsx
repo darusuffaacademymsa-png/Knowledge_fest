@@ -210,6 +210,7 @@ const LotMachine: React.FC = () => {
         let items = state.items;
         if (selectedCategoryId) items = items.filter(i => i.categoryId === selectedCategoryId);
         if (globalFilters.categoryId?.length > 0) items = items.filter(i => globalFilters.categoryId.includes(i.categoryId));
+        // FIX: Replaced 'item.performanceType' with 'i.performanceType' in the filter callback to fix reference error.
         if (globalFilters.performanceType?.length > 0) items = items.filter(i => globalFilters.performanceType.includes(i.performanceType));
         
         if (globalFilters.assignmentStatus?.length > 0) {
@@ -330,7 +331,7 @@ const LotMachine: React.FC = () => {
 
     const handleAssign = async () => {
         if (!state || !selectedItemId) return;
-        setIsSpinning(true); // Re-use spinning state as a minor block during save
+        setIsSpinning(true); 
         const updates = lotResults.map(res => {
             const entryId = `${selectedItemId}-${res.participantId}`;
             const existing = state.tabulation.find(t => t.id === entryId);
@@ -346,27 +347,27 @@ const LotMachine: React.FC = () => {
         setIsSpinning(false);
         setAssignmentStatus('success');
         
-        // Reset state after showing confirmation
+        // Success Timeout
         setTimeout(() => { 
             setAssignmentStatus('idle'); 
             setSelectedParticipantIds(new Set()); 
             setLotResults([]); 
             setSelectedItemId('');
             setSelectedCategoryId('');
-        }, 2500);
+        }, 3000);
     };
 
     return (
         <div className="bg-white/80 dark:bg-white/[0.02] backdrop-blur-xl rounded-3xl md:rounded-[3rem] border border-amazio-primary/5 dark:border-white/5 p-5 md:p-10 shadow-glass-light dark:shadow-2xl relative overflow-hidden min-h-[500px]">
             {/* SUCCESS OVERLAY */}
             {assignmentStatus === 'success' && (
-                <div className="absolute inset-0 z-50 bg-emerald-600/95 backdrop-blur-xl flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
+                <div className="absolute inset-0 z-[100] bg-emerald-600/95 backdrop-blur-2xl flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
                     <div className="relative mb-6">
                         <div className="absolute inset-0 bg-white/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
                         <CheckCircle2 size={100} strokeWidth={1.5} className="relative z-10 animate-in zoom-in-50 duration-700" />
                     </div>
-                    <h3 className="text-4xl font-black uppercase tracking-tighter font-serif mb-2">Registry Confirmed</h3>
-                    <p className="text-emerald-100 font-bold uppercase tracking-[0.3em] text-xs">Lot Assignment Successfully Saved</p>
+                    <h3 className="text-4xl font-black uppercase tracking-tighter font-serif mb-2">Lots Confirmed</h3>
+                    <p className="text-emerald-100 font-bold uppercase tracking-[0.3em] text-xs">Registry assignments synchronized</p>
                 </div>
             )}
 
@@ -378,7 +379,7 @@ const LotMachine: React.FC = () => {
                     {lotResults.length > 0 && !isSpinning && assignmentStatus === 'idle' && (
                         <div className="flex flex-[2] gap-2">
                              <button onClick={handleAssign} disabled={conflicts.size > 0} className={`flex-1 py-4 md:py-5 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs shadow-xl transition-all flex items-center justify-center gap-2 bg-white text-emerald-600 border-2 border-emerald-100 shadow-emerald-500/5 hover:bg-emerald-50`}>
-                                <CheckCircle2 size={18}/> Confirm
+                                <CheckCircle2 size={18}/> Confirm Assignments
                             </button>
                             <button onClick={() => { setLotResults([]); setSelectedParticipantIds(new Set()); }} className="px-5 py-4 md:py-5 rounded-2xl md:rounded-[1.5rem] bg-rose-50 dark:bg-rose-900/10 text-rose-500 border-2 border-rose-100 dark:border-rose-900/30 shadow-xl transition-all hover:bg-rose-100 active:scale-95 flex items-center justify-center" title="Cancel Lots">
                                 <X size={20} strokeWidth={3} />
@@ -719,7 +720,7 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
             <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="p-7 border-b border-white/5 flex justify-between items-center bg-zinc-50 dark:bg-white/[0.02]">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500 rounded-xl text-white"><Edit2 size={18}/></div>
+                        <div className="p-2 bg-indigo-50 rounded-xl text-white"><Edit2 size={18}/></div>
                         <div><h3 className="text-xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{item.name}</h3><p className="text-[10px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Manual Code Assignment</p></div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl"><X size={20} className="text-zinc-500"/></button>

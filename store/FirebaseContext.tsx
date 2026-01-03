@@ -5,7 +5,6 @@ import { db, auth } from '../firebase/config';
 import { AppState, User, UserRole, ItemType, ResultStatus, Result, TabulationEntry, ScheduledEvent, Team, Grade, Judge, CodeLetter, Participant, JudgeAssignment, Category, Item, PerformanceType, FontConfig, GeneralFontConfig, Template } from '../types';
 import { DEFAULT_PAGE_PERMISSIONS, TABS, GUEST_PERMISSIONS } from '../constants';
 
-// --- Default State Template ---
 const defaultState: AppState = {
   settings: {
     organizingTeam: 'Amazio Committee',
@@ -210,7 +209,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     return () => unsubscribeAuth();
   }, []);
 
-  // Set up individual listeners for each data block
   useEffect(() => {
     const dataKeys = Object.keys(defaultState);
     const initialLoading: Record<string, boolean> = {};
@@ -226,7 +224,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
       }, (e) => {
-        console.warn(`Listener failed for ${key}, falling back to default values.`);
+        console.warn(`Listener failed for ${key}`);
         setState(prev => {
           const current = prev || defaultState;
           return { ...current, [key]: (defaultState as any)[key] };
@@ -264,17 +262,14 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
         const docRef = doc(db, BASE_COLLECTION, key);
         const sanitizedValue = cleanData(value);
-        
-        // Dynamic capacity check: allow up to 1MB per document
         const sizeEstimate = JSON.stringify(sanitizedValue).length;
-        if (sizeEstimate > 1000000) {
-            throw new Error(`Data block '${key}' is too large to synchronize. Try uploading a smaller file.`);
+        if (sizeEstimate > 980000) {
+            throw new Error(`Data block '${key}' is nearing 1MB Firestore limit. Please remove old assets.`);
         }
-        
         await setDoc(docRef, { value: sanitizedValue }, { merge: false });
     } catch (err: any) {
         console.error(`Error writing document ${key}:`, err);
-        alert(err.message || `System synchronization failed for ${key}.`);
+        alert(err.message || `Sync failed for ${key}.`);
         throw err;
     }
   };

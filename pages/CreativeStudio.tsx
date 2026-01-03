@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { 
@@ -62,23 +63,31 @@ const PosterCanvas: React.FC<{
     id?: string;
     customBg?: string | null;
     fontFamily?: string;
-}> = ({ data, scale = 1, id, customBg, fontFamily = 'font-slab' }) => {
+    isDownloadMode?: boolean;
+}> = ({ data, scale = 1, id, customBg, fontFamily = 'font-slab', isDownloadMode = false }) => {
     const parts = data.categoryName.split(' ');
     const prefix = parts[0] || '';
     const suffix = parts.slice(1).join(' ');
 
-    const textStyle = { 
-        fontFamily: fontFamily.includes(' ') || fontFamily.startsWith('English') ? `'${fontFamily}'` : fontFamily 
+    // Precise font family name mapping
+    let resolvedFont = fontFamily;
+    if (fontFamily === 'font-slab') resolvedFont = 'Roboto Slab';
+    else if (fontFamily === 'font-serif') resolvedFont = 'Playfair Display';
+    else if (fontFamily === 'font-sans') resolvedFont = 'Inter';
+
+    // Helper for applying font strictly to all children
+    const textStyle: React.CSSProperties = { 
+        fontFamily: resolvedFont ? `'${resolvedFont}', sans-serif` : 'inherit',
     };
 
     return (
         <div 
             id={id}
-            className="relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618]"
+            className={`relative flex flex-col overflow-hidden bg-[#E3EBD1] text-[#283618] studio-canvas-root`}
             style={{ 
                 width: '1080px', 
                 height: '1080px', 
-                transform: `scale(${scale})`, 
+                transform: isDownloadMode ? 'none' : `scale(${scale})`, 
                 transformOrigin: 'top left',
                 flexShrink: 0,
                 ...textStyle
@@ -92,33 +101,33 @@ const PosterCanvas: React.FC<{
             {/* Dynamic Content Overlay */}
             <div className="relative z-10 w-full h-full flex flex-col p-0">
                 
-                {/* Header Zone: Category (Prefix/Suffix) & Item Name */}
+                {/* Header Zone */}
                 <div className="mt-[232px] ml-[82px] space-y-0">
                     <div className="flex items-center gap-3">
-                         <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]">
+                         <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]" style={textStyle}>
                             <span className="text-[#283618]">{prefix}</span>
                             {suffix && <span className="text-[#99AD59] ml-4">{suffix}</span>}
                          </h2>
                          <Leaf className="w-[62px] h-[62px] text-[#99AD59] fill-current -mt-4" />
                     </div>
-                    <h3 className="text-[52px] font-bold tracking-tight text-[#4D5A2A] mt-[-10px] ml-2">
+                    <h3 className="text-[52px] font-bold tracking-tight text-[#4D5A2A] mt-[-10px] ml-2" style={textStyle}>
                         #{data.itemName}
                     </h3>
                 </div>
 
-                {/* Winners Zone - Grades removed as requested */}
+                {/* Winners Zone */}
                 <div className="mt-[35px] ml-[205px] pr-[110px] space-y-[45px]">
                     {data.winners.slice(0, 3).map((winner, idx) => (
                         <div key={idx} className="min-w-0">
-                            <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap">
+                            <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap" style={textStyle}>
                                 {winner.name}
                             </h4>
                             <div className="mt-[-2px] flex items-center gap-3">
-                                <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight">
+                                <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight" style={textStyle}>
                                     {winner.place}
                                 </p>
                                 <span className="text-zinc-400 font-light text-xl">|</span>
-                                <p className="text-[17px] font-medium italic opacity-70 leading-tight">
+                                <p className="text-[17px] font-medium italic opacity-70 leading-tight" style={textStyle}>
                                     {winner.team}
                                 </p>
                             </div>
@@ -140,9 +149,11 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const [isControlsOpen, setIsControlsOpen] = useState(!isMobile);
     const [hasInitialized, setHasInitialized] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const mainContainerRef = useRef<HTMLDivElement>(null);
     const bgInputRef = useRef<HTMLInputElement>(null);
+    const captureContainerRef = useRef<HTMLDivElement>(null);
 
     const toggleControls = () => setIsControlsOpen(!isControlsOpen);
 
@@ -274,19 +285,43 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     };
 
     const handleDownload = async () => {
-        const canvas = document.getElementById('poster-canvas-el');
-        if (!canvas) return;
+        const captureNode = document.getElementById('capture-render-node');
+        if (!captureNode) return;
+        
+        setIsDownloading(true);
         try {
-            const captured = await html2canvas(canvas as HTMLElement, { 
-                scale: 2.5, useCORS: true, backgroundColor: null, logging: false
+            // Wait a tiny bit for any font re-renders
+            await new Promise(r => setTimeout(r, 200));
+
+            const canvas = await html2canvas(captureNode, {
+                scale: 2, // High resolution
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+                width: 1080,
+                height: 1080,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('capture-render-node');
+                    if (el) {
+                        el.style.display = 'block';
+                        el.style.visibility = 'visible';
+                        el.style.opacity = '1';
+                        el.style.position = 'static';
+                    }
+                }
             });
+
             const link = document.createElement('a');
-            link.download = `artfest-poster-${selectedItemId}.png`;
-            link.href = captured.toDataURL('image/png', 1.0);
+            link.download = `amazio-result-${selectedItemId}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
         } catch (err) {
-            console.error("Capture failed:", err);
-            alert("Failed to generate image.");
+            console.error("Download error:", err);
+            alert("Export failed. Try refreshing.");
+        } finally {
+            setIsDownloading(true); // Small delay to show state
+            setTimeout(() => setIsDownloading(false), 800);
         }
     };
 
@@ -296,16 +331,38 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         { label: 'System Slab', value: 'font-slab' },
         { label: 'System Serif', value: 'font-serif' },
         { label: 'System Sans', value: 'font-sans' },
-        ...(state.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.customFonts.englishPrimary.family}`, value: 'EnglishPrimary' }] : []),
-        ...(state.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.customFonts.englishSecondary.family}`, value: 'EnglishSecondary' }] : []),
+        ...(state.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.customFonts.englishPrimary.family}`, value: state.customFonts.englishPrimary.family }] : []),
+        ...(state.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.customFonts.englishSecondary.family}`, value: state.customFonts.englishSecondary.family }] : []),
         ...(state.generalCustomFonts || []).map(f => ({ label: f.family, value: f.family })),
-        ...(state.customFonts?.malayalam?.family ? [{ label: `ML: ${state.customFonts.malayalam.family}`, value: state.customFonts.malayalam.family }] : []),
-        ...(state.customFonts?.arabic?.family ? [{ label: `AR: ${state.customFonts.arabic.family}`, value: state.customFonts.arabic.family }] : []),
     ];
 
     return (
         <div className="flex flex-col h-full bg-amazio-light-bg dark:bg-amazio-bg animate-in fade-in duration-500 overflow-hidden relative">
             
+            {/* Hidden High-Res Capture Node */}
+            <div 
+                style={{ 
+                    position: 'absolute', 
+                    top: '-9999px', 
+                    left: '-9999px', 
+                    width: '1080px', 
+                    height: '1080px', 
+                    overflow: 'hidden' 
+                }}
+            >
+                {posterData && (
+                    <div id="capture-render-node">
+                        <PosterCanvas 
+                            data={posterData} 
+                            scale={1} 
+                            customBg={selectedBgUrl}
+                            fontFamily={selectedFont}
+                            isDownloadMode={true}
+                        />
+                    </div>
+                )}
+            </div>
+
             {/* Header Toolbar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 sm:p-5 bg-white dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 z-30">
                 <div className="flex items-center gap-3">
@@ -332,11 +389,12 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                     
                     <button 
-                        disabled={!selectedItemId}
+                        disabled={!selectedItemId || isDownloading}
                         onClick={handleDownload} 
-                        className="bg-amazio-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amazio-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 shrink-0"
+                        className="bg-amazio-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amazio-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-2 shrink-0"
                     >
-                        <Download size={14} strokeWidth={3} /> <span className="hidden sm:inline">Download HQ</span>
+                        {isDownloading ? <RefreshCw className="animate-spin" size={14}/> : <Download size={14} strokeWidth={3} />}
+                        <span className="hidden sm:inline">Download HQ</span>
                     </button>
                 </div>
             </div>
@@ -352,7 +410,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     />
                 )}
 
-                {/* Sidebar - Collapsible Side Drawer */}
+                {/* Sidebar */}
                 <aside className={`
                     fixed md:relative bottom-0 left-0 right-0 md:right-auto md:w-72 lg:w-80
                     bg-white dark:bg-[#121412] border-t md:border-t-0 md:border-r border-zinc-200 dark:border-zinc-800 
@@ -427,24 +485,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={14} />
                             </div>
                             <p className="mt-2 text-[8px] text-zinc-500 uppercase font-medium leading-relaxed">
-                                Applied globally to the rendering canvas. Add fonts in General Settings to see them here.
-                            </p>
-                        </div>
-
-                        <div className="pt-6 border-t border-zinc-100 dark:border-white/5">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2"><Palette size={14} className="text-emerald-500" /> Active Template</h3>
-                            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border-2 border-emerald-500/30 rounded-[2rem] flex items-center justify-between">
-                                <div>
-                                    <span className="text-xs font-black uppercase tracking-tighter text-emerald-800 dark:text-emerald-400">Rooted Tree v2.0</span>
-                                    <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-0.5">Optimized Layout</p>
-                                </div>
-                                <CheckCircle2 size={18} strokeWidth={3} className="text-emerald-500" />
-                            </div>
-                        </div>
-
-                        <div className="mt-auto pt-6 text-center">
-                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                                <Settings2 size={10} /> Rendering Engine 6.5
+                                Applied globally to the rendering canvas. Registry fonts auto-detected.
                             </p>
                         </div>
                     </div>
@@ -472,7 +513,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 </div>
                             </div>
                             
-                            {/* Visual Hint */}
                             <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 dark:text-zinc-600 hidden md:block">
                                 High Resolution Preview • 1080x1080px
                             </p>
@@ -483,7 +523,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                 <ImageIcon size={48} strokeWidth={1} />
                             </div>
                             <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Awaiting Data</h3>
-                            <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Choose an item from the top toolbar to generate its official poster.</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Choose an item from the top toolbar.</p>
                         </div>
                     )}
                 </main>
@@ -500,14 +540,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                 )}
             </div>
-            
-            <style>{`
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-            `}</style>
         </div>
     );
 };
