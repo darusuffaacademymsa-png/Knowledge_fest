@@ -1,4 +1,3 @@
-
 import { Settings, Users, ClipboardList, Medal, Hash, LayoutDashboard, UserPlus, Calendar, Edit3, BarChart2, FileText, Home, Scale, Gavel, Palette, Timer, Monitor } from 'lucide-react';
 import { UserRole } from './types';
 
@@ -91,6 +90,7 @@ export const PAGES_WITH_GLOBAL_FILTERS = [
     TABS.GRADE_POINTS,
     TABS.SCORING_RESULTS,
     TABS.ITEM_TIMER,
+    TABS.JUDGES_MANAGEMENT,
 ];
 
 export const USER_ROLES = {

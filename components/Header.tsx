@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
     const isSearchablePage = [
         TABS.ITEMS, TABS.DATA_ENTRY, TABS.SCHEDULE, 
         TABS.SCORING_RESULTS, TABS.POINTS, TABS.GRADE_POINTS,
-        TABS.ITEM_TIMER
+        TABS.ITEM_TIMER, TABS.JUDGES_MANAGEMENT
     ].includes(pageTitle);
 
     const hasSubNavigation = [
@@ -201,7 +201,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick, handleLogout, c
                                 <button 
                                     onClick={cycleTheme}
                                     onContextMenu={(e) => { e.preventDefault(); setIsThemeMenuOpen(!isThemeMenuOpen); }}
-                                    className={`p-2 rounded-xl transition-all ${theme === 'light' ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/10' : theme === 'dark' ? 'text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : 'text-indigo-500 bg-indigo-50 dark:bg-indigo-900/10'}`}
+                                    className={`p-2 rounded-xl transition-all ${theme === 'light' ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/10' : theme === 'dark' ? 'text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : theme === 'indigo-500 bg-indigo-50 dark:bg-indigo-900/10'}`}
                                     title={`Current Theme: ${theme}. Click to cycle.`}
                                 >
                                     {getThemeIcon()}

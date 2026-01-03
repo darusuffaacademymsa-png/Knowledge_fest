@@ -14,13 +14,11 @@ const defaultState: AppState = {
     maxItemsPerParticipant: { onStage: 5, offStage: 5 },
     maxTotalItemsPerParticipant: null,
     defaultParticipantsPerItem: 10,
-    instructions: {},
     generalInstructions: 'Welcome to Amazio Knowledge Fest 2026! Adhere to the schedule and rules.',
     rankingStrategy: 'highest_mark',
     autoCodeAssignment: false,
     enableFloatingNav: false,
     mobileSidebarMode: 'floating',
-    lotEligibleCodes: [],
     eventDays: [],
     stages: [],
     timeSlots: [],
@@ -47,6 +45,8 @@ const defaultState: AppState = {
     institutionDetails: { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' },
     branding: { typographyUrl: '', teamLogoUrl: '' }
   },
+  instructions: {},
+  lotPool: [],
   customFonts: {},
   generalCustomFonts: [], 
   customTemplates: [], 
@@ -108,6 +108,7 @@ interface FirebaseContextType {
   login: (username: string, pass: string, rememberMe: boolean) => Promise<void>;
   logout: () => Promise<void>;
   updateSettings: (payload: Partial<AppState['settings']>) => Promise<void>;
+  updateLotPool: (payload: string[]) => Promise<void>;
   updateCustomFonts: (payload: AppState['customFonts']) => Promise<void>;
   updateGeneralCustomFonts: (payload: GeneralFontConfig[]) => Promise<void>;
   updateCustomBackgrounds: (payload: string[]) => Promise<void>;
@@ -305,6 +306,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     dataEntryView, setDataEntryView, itemsSubView, setItemsSubView, gradeSubView, setGradeSubView,
     scoringSubView, setScoringSubView, judgesSubView, setJudgesSubView, settingsSubView, setSettingsSubView,
     updateSettings: (p) => writeDoc('settings', { ...state?.settings, ...p }),
+    updateLotPool: (p) => writeDoc('lotPool', p),
     updateCustomFonts: (p) => writeDoc('customFonts', p),
     updateGeneralCustomFonts: (p) => writeDoc('generalCustomFonts', p),
     updateCustomBackgrounds: (p) => writeDoc('customBackgrounds', p),
@@ -372,7 +374,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     updateUser: async (p) => writeDoc('users', state!.users.map(u => u.id === p.id ? p : u)),
     deleteUser: async (id) => writeDoc('users', state!.users.filter(u => u.id !== id)),
     updatePermissions: async ({ role, pages }) => writeDoc('permissions', { ...state?.permissions, [role]: pages }),
-    updateInstruction: async ({ page, text }) => writeDoc('settings', { ...state?.settings, instructions: { ...state?.settings.instructions, [page]: text } }),
+    updateInstruction: async ({ page, text }) => writeDoc('instructions', { ...state?.instructions, [page]: text }),
     hasPermission: (tab) => {
         if (GUEST_PERMISSIONS.includes(tab)) return true;
         if (!currentUser) return false;

@@ -419,6 +419,16 @@ const JudgesManagement: React.FC = () => {
         }
     }, [items, judges, assignmentMode, globalSearchTerm, globalFilters]);
 
+    // NEW: Filtered Judges for the Registry view using the global search term
+    const filteredRegistryJudges = useMemo(() => {
+        const q = globalSearchTerm.toLowerCase();
+        return judges.filter(j => 
+            j.name.toLowerCase().includes(q) || 
+            (j.profession || '').toLowerCase().includes(q) || 
+            (j.place || '').toLowerCase().includes(q)
+        );
+    }, [judges, globalSearchTerm]);
+
     const handleToggleSelection = (id: string) => {
         setPendingSelections(prev => {
             const next = new Set(prev);
@@ -436,43 +446,27 @@ const JudgesManagement: React.FC = () => {
             const processedItemIds = new Set<string>();
 
             if (assignmentMode === 'BY_ITEM') {
-                // Updating list of judges for one item
                 const targetItem = items.find(i => i.id === selectedPrimaryId);
                 if (!targetItem) throw new Error("Item not found");
-
-                // Process target item
-                // Explicitly cast to string[] to resolve 'unknown[]' assignment error
                 const targetJudgeIds = Array.from(pendingSelections) as string[];
                 if (targetJudgeIds.length > 0) {
                     newAssignments.push({ id: `${targetItem.id}-${targetItem.categoryId}`, itemId: targetItem.id, categoryId: targetItem.categoryId, judgeIds: targetJudgeIds });
                 }
                 processedItemIds.add(targetItem.id);
-
-                // Preserve other items
                 state.judgeAssignments.forEach(ja => {
                     if (!processedItemIds.has(ja.itemId)) newAssignments.push(ja);
                 });
             } else {
-                // Updating list of items for one judge
                 const judgeId = selectedPrimaryId;
-                
-                // Construct mapping from scratch for all items
                 items.forEach(item => {
-                    // Explicitly define Set type to avoid 'unknown' inference during assignment
                     const currentJudges = new Set<string>(assignmentMap.get(item.id) || []);
-                    if (pendingSelections.has(item.id)) {
-                        currentJudges.add(judgeId);
-                    } else {
-                        currentJudges.delete(judgeId);
-                    }
-
+                    if (pendingSelections.has(item.id)) currentJudges.add(judgeId);
+                    else currentJudges.delete(judgeId);
                     if (currentJudges.size > 0) {
-                        // Explicitly cast to string[] to resolve 'unknown[]' assignment error
                         newAssignments.push({ id: `${item.id}-${item.categoryId}`, itemId: item.id, categoryId: item.categoryId, judgeIds: Array.from(currentJudges) as string[] });
                     }
                 });
             }
-
             await setJudgeAssignments(newAssignments);
             setIsDirty(false);
             setSelectedPrimaryId(null);
@@ -587,7 +581,7 @@ const JudgesManagement: React.FC = () => {
                         </div>
                     }>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {judges.map(j => {
+                            {filteredRegistryJudges.map(j => {
                                 const theme = getAvatarTheme(j.name);
                                 const isSelected = selectedRegistryIds.has(j.id);
                                 return (
@@ -625,7 +619,7 @@ const JudgesManagement: React.FC = () => {
                                     </div>
                                 );
                             })}
-                            {judges.length === 0 && (
+                            {filteredRegistryJudges.length === 0 && (
                                 <div className="col-span-full py-24 flex flex-col items-center justify-center opacity-30 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2.5rem]">
                                     <User size={48} strokeWidth={1} className="mb-4"/>
                                     <p className="font-black uppercase tracking-[0.3em] text-xs">Registry Empty</p>

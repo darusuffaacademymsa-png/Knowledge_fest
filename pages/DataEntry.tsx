@@ -1,11 +1,10 @@
 
-import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown } from 'lucide-react';
+import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown, ListCheck, UserCheck, ArrowRight } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../components/Card';
 import { useFirebase } from '../hooks/useFirebase';
 import { Item, ItemType, Participant, Team, User, AppState } from '../types';
-import { ItemFormModal, ParticipantFormModal } from './initialization/ItemsManagement';
 
 // --- Visual Helpers ---
 
@@ -26,6 +25,72 @@ const getTeamColor = (name: string) => {
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-sky-500', 'bg-teal-500', 'bg-orange-500'];
     return colors[hash % colors.length];
+};
+
+// --- Selection Modals ---
+
+const EntitySelectorModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSelect: (entity: any) => void;
+    type: 'ITEM' | 'PARTICIPANT';
+}> = ({ isOpen, onClose, onSelect, type }) => {
+    const { state } = useFirebase();
+    const [search, setSearch] = useState('');
+
+    if (!isOpen || !state) return null;
+
+    const list = type === 'ITEM' 
+        ? state.items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+        : state.participants.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.chestNumber.toLowerCase().includes(search.toLowerCase()));
+
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white dark:bg-[#121412] w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
+                    <div>
+                        <h3 className="text-xl font-black font-serif uppercase tracking-tighter text-amazio-primary dark:text-white">Select {type === 'ITEM' ? 'Event' : 'Delegate'}</h3>
+                        <p className="text-[10px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Choose to manage enrollment</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors text-zinc-400"><X size={24}/></button>
+                </div>
+                <div className="p-6">
+                    <div className="relative group mb-4">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Quick search..." 
+                            value={search} 
+                            onChange={e => setSearch(e.target.value)} 
+                            className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="space-y-2 overflow-y-auto custom-scrollbar max-h-[40vh] pr-2">
+                        {list.map(entity => (
+                            <button 
+                                key={entity.id} 
+                                onClick={() => { onSelect(entity); onClose(); }}
+                                className="w-full flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:border-indigo-500/30 transition-all text-left group"
+                            >
+                                <div className="min-w-0 pr-4">
+                                    <h5 className="text-sm font-black uppercase tracking-tight text-amazio-primary dark:text-zinc-100 truncate group-hover:text-indigo-600 transition-colors">{entity.name}</h5>
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
+                                        {type === 'ITEM' 
+                                            ? state.categories.find(c => c.id === entity.categoryId)?.name 
+                                            : `${state.teams.find(t => t.id === entity.teamId)?.name} • ${state.categories.find(c => c.id === entity.categoryId)?.name}`}
+                                    </p>
+                                </div>
+                                <ArrowRight size={16} className="text-zinc-300 group-hover:text-indigo-500 transition-all" />
+                            </button>
+                        ))}
+                        {list.length === 0 && <div className="py-12 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">No matching results</div>}
+                    </div>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
 };
 
 // --- Modals ---
@@ -401,7 +466,7 @@ const ParticipantManagementModal: React.FC<{
 
 // --- View Components ---
 
-const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
+const ItemEntryView: React.FC<{ onTriggerSelection: () => void }> = ({ onTriggerSelection }) => {
     const { state, globalSearchTerm, globalFilters } = useFirebase();
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -418,7 +483,7 @@ const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
     if (!state) return null;
 
     return (
-        <Card title="Enrollment by Events" action={<button onClick={onAddItem} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all active:scale-95"><Plus size={14} strokeWidth={3}/> New Event</button>}>
+        <Card title="Enrollment by Events" action={<button onClick={onTriggerSelection} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all active:scale-95"><ListCheck size={14} strokeWidth={3}/> Add Assignment</button>}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredItems.map(item => {
                     const category = state.categories.find(c => c.id === item.categoryId);
@@ -457,7 +522,7 @@ const ItemEntryView: React.FC<{ onAddItem: () => void }> = ({ onAddItem }) => {
     );
 };
 
-const ParticipantEntryView: React.FC<{ onAddParticipant: () => void }> = ({ onAddParticipant }) => {
+const ParticipantEntryView: React.FC<{ onTriggerSelection: () => void }> = ({ onTriggerSelection }) => {
     const { state, globalSearchTerm, globalFilters } = useFirebase();
     const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
@@ -475,7 +540,7 @@ const ParticipantEntryView: React.FC<{ onAddParticipant: () => void }> = ({ onAd
     if (!state) return null;
 
     return (
-        <Card title="Enrollment by Delegates" action={<button onClick={onAddParticipant} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-105 transition-all active:scale-95"><Plus size={14} strokeWidth={3}/> New Delegate</button>}>
+        <Card title="Enrollment by Delegates" action={<button onClick={onTriggerSelection} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-105 transition-all active:scale-95"><UserCheck size={14} strokeWidth={3}/> Add Enrollment</button>}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredParticipants.map(p => {
                     const team = state.teams.find(t => t.id === p.teamId);
@@ -515,8 +580,9 @@ const ParticipantEntryView: React.FC<{ onAddParticipant: () => void }> = ({ onAd
 
 const DataEntryPage: React.FC<{ currentUser: User | null }> = ({ currentUser }) => {
     const { dataEntryView: view } = useFirebase();
-    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
     return (
         <div className="space-y-6 sm:space-y-10 pb-24 animate-in fade-in duration-700 relative">
@@ -530,17 +596,27 @@ const DataEntryPage: React.FC<{ currentUser: User | null }> = ({ currentUser }) 
             <div className="space-y-10">
                 {view === 'ITEMS' ? (
                     <div className="animate-in slide-in-from-left duration-500">
-                        <ItemEntryView onAddItem={() => setIsItemModalOpen(true)} />
+                        <ItemEntryView onTriggerSelection={() => setIsSelectorOpen(true)} />
                     </div>
                 ) : (
                     <div className="animate-in slide-in-from-right duration-500">
-                        <ParticipantEntryView onAddParticipant={() => setIsParticipantModalOpen(true)} />
+                        <ParticipantEntryView onTriggerSelection={() => setIsSelectorOpen(true)} />
                     </div>
                 )}
             </div>
 
-            <ItemFormModal isOpen={isItemModalOpen} onClose={() => setIsItemModalOpen(false)} editingItem={null} />
-            <ParticipantFormModal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)} editingParticipant={null} currentUser={currentUser} />
+            <EntitySelectorModal 
+                isOpen={isSelectorOpen} 
+                onClose={() => setIsSelectorOpen(false)} 
+                type={view === 'ITEMS' ? 'ITEM' : 'PARTICIPANT'}
+                onSelect={(entity) => {
+                    if (view === 'ITEMS') setSelectedItem(entity);
+                    else setSelectedParticipant(entity);
+                }}
+            />
+
+            {selectedItem && <ItemManagementModal isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} item={selectedItem} />}
+            {selectedParticipant && <ParticipantManagementModal isOpen={!!selectedParticipant} onClose={() => setSelectedParticipant(null)} participant={selectedParticipant} />}
         </div>
     );
 };

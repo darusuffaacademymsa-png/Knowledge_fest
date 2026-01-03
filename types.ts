@@ -121,13 +121,11 @@ export interface Settings {
   };
   maxTotalItemsPerParticipant?: number | null; 
   defaultParticipantsPerItem: number;
-  instructions: { [page: string]: string };
   generalInstructions: string;
   rankingStrategy?: string; 
   autoCodeAssignment?: boolean;
   enableFloatingNav?: boolean; 
   mobileSidebarMode?: 'floating' | 'sticky'; 
-  lotEligibleCodes?: string[]; 
   
   eventDays?: string[];
   stages?: string[];
@@ -280,6 +278,8 @@ export interface Result {
 
 export interface AppState {
   settings: Settings;
+  instructions: { [page: string]: string };
+  lotPool: string[];
   // High-volume assets moved to top level for split-document storage
   customFonts: {
       malayalam?: FontConfig;

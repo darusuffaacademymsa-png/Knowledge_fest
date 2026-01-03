@@ -187,7 +187,7 @@ const ItemPointOverrideModal: React.FC<{
 // --- SECTION: Lot System ---
 
 const LotMachine: React.FC = () => {
-    const { state, updateMultipleTabulationEntries, updateSettings, globalFilters, globalSearchTerm } = useFirebase();
+    const { state, updateMultipleTabulationEntries, updateLotPool, globalFilters, globalSearchTerm } = useFirebase();
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [selectedItemId, setSelectedItemId] = useState('');
     const [selectedParticipantIds, setSelectedParticipantIds] = useState<Set<string>>(new Set());
@@ -195,7 +195,7 @@ const LotMachine: React.FC = () => {
     const [isSpinning, setIsSpinning] = useState(false);
     const [assignmentStatus, setAssignmentStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-    const lotPool = state?.settings.lotEligibleCodes || [];
+    const lotPool = state?.lotPool || [];
     const categories = useMemo(() => (state?.categories || []).slice().sort((a, b) => a.name.localeCompare(b.name)), [state?.categories]);
     
     // Clear lot results when changing items
@@ -210,7 +210,6 @@ const LotMachine: React.FC = () => {
         let items = state.items;
         if (selectedCategoryId) items = items.filter(i => i.categoryId === selectedCategoryId);
         if (globalFilters.categoryId?.length > 0) items = items.filter(i => globalFilters.categoryId.includes(i.categoryId));
-        // FIX: Replaced 'item.performanceType' with 'i.performanceType' in the filter callback to fix reference error.
         if (globalFilters.performanceType?.length > 0) items = items.filter(i => globalFilters.performanceType.includes(i.performanceType));
         
         if (globalFilters.assignmentStatus?.length > 0) {
@@ -289,9 +288,9 @@ const LotMachine: React.FC = () => {
             // Select exactly the first N codes to match participant count
             const nextPool = allRegCodes.slice(0, count);
             
-            // 1. Update the global pool in settings
-            if (JSON.stringify(state.settings.lotEligibleCodes) !== JSON.stringify(nextPool)) {
-                updateSettings({ lotEligibleCodes: nextPool });
+            // 1. Update the global pool in isolated lotPool doc
+            if (JSON.stringify(state.lotPool) !== JSON.stringify(nextPool)) {
+                updateLotPool(nextPool);
             }
 
             // 2. Refresh the local lotResults to map participants to the new pool
@@ -342,7 +341,7 @@ const LotMachine: React.FC = () => {
         });
         await updateMultipleTabulationEntries(updates as any);
         const usedCodes = new Set(lotResults.filter(r => r.code !== '?').map(r => r.code));
-        await updateSettings({ lotEligibleCodes: lotPool.filter(c => !usedCodes.has(c)) });
+        await updateLotPool(lotPool.filter(c => !usedCodes.has(c)));
         
         setIsSpinning(false);
         setAssignmentStatus('success');
@@ -769,12 +768,12 @@ const ManualCodeEditorModal: React.FC<{ itemId: string; onClose: () => void }> =
 // --- SECTION: Code Registry ---
 
 const CodeRegistry: React.FC = () => {
-    const { state, addCodeLetter, addMultipleCodeLetters, deleteCodeLetter, deleteMultipleCodeLetters, updateSettings } = useFirebase();
+    const { state, addCodeLetter, addMultipleCodeLetters, deleteCodeLetter, deleteMultipleCodeLetters, updateLotPool } = useFirebase();
     const [inputValue, setInputValue] = useState('');
     const [showPresets, setShowPresets] = useState(false);
 
     const allCodes = useMemo(() => [...(state?.codeLetters || [])].sort((a,b) => a.code.localeCompare(b.code)), [state?.codeLetters]);
-    const lotCodes = useMemo(() => new Set(state?.settings.lotEligibleCodes || []), [state?.settings.lotEligibleCodes]);
+    const lotCodes = useMemo(() => new Set(state?.lotPool || []), [state?.lotPool]);
 
     const handleSave = () => {
         const trimmed = inputValue.trim().toUpperCase().substring(0, 1);
@@ -819,7 +818,7 @@ const CodeRegistry: React.FC = () => {
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-5 xl:grid-cols-7 gap-3 overflow-y-auto flex-grow custom-scrollbar p-1">
                     {allCodes.map(c => (
                         <div key={c.id} className="relative group aspect-square">
-                            <div onClick={() => { const s = new Set(lotCodes); if(s.has(c.code)) s.delete(c.code); else s.add(c.code); updateSettings({ lotEligibleCodes: Array.from(s).sort() }); }} className={`w-full h-full rounded-2xl flex items-center justify-center font-black text-3xl border cursor-pointer select-none transition-all duration-500 ${lotCodes.has(c.code) ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg scale-[1.05]' : 'bg-white dark:bg-zinc-900/40 text-zinc-300 dark:text-zinc-600 border-zinc-100 dark:border-white/5 hover:border-zinc-300'}`}>{c.code}</div>
+                            <div onClick={() => { const s = new Set(lotCodes); if(s.has(c.code)) s.delete(c.code); else s.add(c.code); updateLotPool(Array.from(s).sort()); }} className={`w-full h-full rounded-2xl flex items-center justify-center font-black text-3xl border cursor-pointer select-none transition-all duration-500 ${lotCodes.has(c.code) ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg scale-[1.05]' : 'bg-white dark:bg-zinc-900/40 text-zinc-300 dark:text-zinc-600 border-zinc-100 dark:border-white/5 hover:border-zinc-300'}`}>{c.code}</div>
                             <button onClick={(e) => { e.stopPropagation(); deleteCodeLetter(c.id); }} className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20"><X size={10} strokeWidth={4}/></button>
                         </div>
                     ))}
