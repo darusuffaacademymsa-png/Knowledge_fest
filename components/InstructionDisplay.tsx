@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 // FIX: Replaced useAppState with useFirebase to resolve module import error.
 import { useFirebase } from '../hooks/useFirebase';
@@ -11,7 +12,7 @@ const InstructionDisplay: React.FC<InstructionDisplayProps> = ({ pageTitle }) =>
     const { state } = useFirebase();
     const [isVisible, setIsVisible] = useState(false);
 
-    const instructionText = state?.settings.instructions?.[pageTitle];
+    const instructionText = state?.instructions?.[pageTitle];
 
     useEffect(() => {
         if (instructionText && instructionText.trim() !== '') {
@@ -27,7 +28,9 @@ const InstructionDisplay: React.FC<InstructionDisplayProps> = ({ pageTitle }) =>
 
     return (
         <div className="mb-0 md:mb-6 p-4 border-l-4 border-sky-500 bg-sky-50 dark:bg-sky-900/30 rounded-r-lg shadow-sm flex items-start gap-4 transition-opacity duration-300 animate-fade-in">
-            <Info className="h-6 w-6 text-sky-600 dark:text-sky-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-shrink-0 mt-0.5">
+                <Info className="h-6 w-6 text-sky-600 dark:text-sky-400" />
+            </div>
             <div className="flex-grow">
                 <h4 className="font-semibold text-sky-800 dark:text-sky-200">Instructions for this Page</h4>
                 <p className="text-sm text-sky-700 dark:text-sky-300 whitespace-pre-wrap">{instructionText}</p>

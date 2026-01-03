@@ -1,3 +1,4 @@
+
 import { 
     ArrowLeft, Award, Crown, Maximize, Minimize, Trophy, Star, 
     ShieldCheck, Activity, Users, ClipboardList, Calendar, Clock, 
@@ -611,14 +612,28 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
         return slides.length > 0 ? slides : ['STATS'];
     }, [state?.settings.projector, data?.results]);
 
+    // Calculate dynamic duration for the current active slide
+    const currentSlideDuration = useMemo(() => {
+        const slideKey = SLIDE_ORDER[currentSlideIndex];
+        if (slideKey === 'LEADERBOARD') {
+            const timelineLength = data?.timeline?.length || 0;
+            // Duration = Surge + (Items * Step Duration) + 10 Seconds Hold
+            return BASELINE_SURGE_DURATION + (timelineLength * RACE_STEP_DURATION) + 10000;
+        }
+        return slideTempo.value;
+    }, [currentSlideIndex, SLIDE_ORDER, data?.timeline?.length, slideTempo.value]);
+
     useEffect(() => {
         const tick = () => {
             if (isPaused) { lastTickRef.current = Date.now(); return; }
             const now = Date.now();
             const delta = now - lastTickRef.current;
             lastTickRef.current = now;
-            const speed = slideTempo.value;
+            
+            // Use dynamic duration for progress calculation
+            const speed = currentSlideDuration;
             progressRef.current += (delta / speed) * 100;
+            
             if (progressRef.current >= 100) {
                 progressRef.current = 0;
                 setCurrentSlideIndex(prev => (prev + 1) % SLIDE_ORDER.length);
@@ -628,7 +643,7 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
         };
         const interval = setInterval(tick, 30);
         return () => clearInterval(interval);
-    }, [isPaused, slideTempo.value, SLIDE_ORDER.length]);
+    }, [isPaused, currentSlideDuration, SLIDE_ORDER.length]);
 
     useEffect(() => {
         if (SLIDE_ORDER[currentSlideIndex]?.startsWith('RESULT')) {
@@ -690,7 +705,10 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                         <div className="flex items-center justify-between px-4">
                             <div className="flex items-center gap-3">
                                  <button 
-                                    onClick={() => setCurrentSlideIndex(p => (p - 1 + SLIDE_ORDER.length) % SLIDE_ORDER.length)} 
+                                    onClick={() => {
+                                        progressRef.current = 0;
+                                        setCurrentSlideIndex(p => (p - 1 + SLIDE_ORDER.length) % SLIDE_ORDER.length);
+                                    }} 
                                     className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"
                                  >
                                     <ChevronLeft size={32} />
@@ -702,7 +720,10 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                                     {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
                                  </button>
                                  <button 
-                                    onClick={() => setCurrentSlideIndex(p => (p + 1) % SLIDE_ORDER.length)} 
+                                    onClick={() => {
+                                        progressRef.current = 0;
+                                        setCurrentSlideIndex(p => (p + 1) % SLIDE_ORDER.length);
+                                    }} 
                                     className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"
                                  >
                                     <ChevronRight size={32} />

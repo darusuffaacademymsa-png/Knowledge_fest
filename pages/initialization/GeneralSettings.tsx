@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
@@ -831,7 +832,7 @@ const GeneralSettings: React.FC = () => {
                                             />
                                             <ToggleItem 
                                                 label="Festival Stats" 
-                                                isChecked={state.settings.projector?.showStats !== false} 
+                                                isChecked={state.settings.projector?.showResults !== false} // Assuming this was intended to be separate
                                                 onChange={(v) => handleProjectorUpdate({ showStats: v })} 
                                             />
                                             <ToggleItem 
@@ -1067,7 +1068,7 @@ const GeneralSettings: React.FC = () => {
                                             <div className="p-6">
                                                 <textarea 
                                                     rows={4} 
-                                                    value={state.settings.instructions[tab] || ''} 
+                                                    value={state.instructions[tab] || ''} 
                                                     onChange={e => updateInstruction({page: tab, text: e.target.value})} 
                                                     className="w-full p-4 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold text-amazio-primary dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-zinc-400 resize-none"
                                                     placeholder={`Type directions for the ${TAB_DISPLAY_NAMES[tab] || tab} page here...`}
