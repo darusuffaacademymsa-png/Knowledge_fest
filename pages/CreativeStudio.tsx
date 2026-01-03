@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useFirebase } from '../hooks/useFirebase';
 import { 
@@ -101,7 +100,7 @@ const PosterCanvas: React.FC<{
             {/* Dynamic Content Overlay */}
             <div className="relative z-10 w-full h-full flex flex-col p-0">
                 
-                {/* Header Zone */}
+                {/* Header Zone: Category (Prefix/Suffix) & Item Name */}
                 <div className="mt-[232px] ml-[82px] space-y-0">
                     <div className="flex items-center gap-3">
                          <h2 className="text-[108px] font-black tracking-tighter leading-[0.9]" style={textStyle}>
@@ -115,14 +114,17 @@ const PosterCanvas: React.FC<{
                     </h3>
                 </div>
 
-                {/* Winners Zone */}
-                <div className="mt-[35px] ml-[205px] pr-[110px] space-y-[45px]">
+                {/* Winners Zone - Gaps adjusted to 30px. Typography refined for better vertical buffer. */}
+                <div className="mt-[30px] ml-[205px] pr-[110px] space-y-[30px]">
                     {data.winners.slice(0, 3).map((winner, idx) => (
                         <div key={idx} className="min-w-0">
-                            <h4 className="text-[46px] font-black uppercase tracking-tighter leading-[1.1] text-[#283618] truncate whitespace-nowrap" style={textStyle}>
+                            <h4 
+                                className={`text-[46px] font-black uppercase tracking-tighter leading-[1.3] text-[#283618] whitespace-nowrap pt-1 pb-1 ${isDownloadMode ? 'overflow-visible' : 'truncate'}`} 
+                                style={textStyle}
+                            >
                                 {winner.name}
                             </h4>
-                            <div className="mt-[-2px] flex items-center gap-3">
+                            <div className="mt-[-4px] flex items-center gap-3">
                                 <p className="text-[21px] font-black text-[#606C38] uppercase tracking-[0.2em] leading-tight" style={textStyle}>
                                     {winner.place}
                                 </p>
@@ -153,7 +155,6 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     const mainContainerRef = useRef<HTMLDivElement>(null);
     const bgInputRef = useRef<HTMLInputElement>(null);
-    const captureContainerRef = useRef<HTMLDivElement>(null);
 
     const toggleControls = () => setIsControlsOpen(!isControlsOpen);
 
@@ -285,43 +286,52 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     };
 
     const handleDownload = async () => {
-        const captureNode = document.getElementById('capture-render-node');
-        if (!captureNode) return;
+        const sourceElement = document.getElementById('poster-canvas-render-target');
+        if (!sourceElement) return;
         
         setIsDownloading(true);
         try {
-            // Wait a tiny bit for any font re-renders
-            await new Promise(r => setTimeout(r, 200));
+            // Wait slightly for any pending font layout recalculations
+            await new Promise(r => setTimeout(r, 500));
 
-            const canvas = await html2canvas(captureNode, {
-                scale: 2, // High resolution
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: null,
+            const captured = await html2canvas(sourceElement, { 
+                scale: 2, // Higher quality for download
+                useCORS: true, 
+                backgroundColor: null, 
+                logging: false,
                 width: 1080,
                 height: 1080,
-                logging: false,
                 onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('capture-render-node');
+                    const el = clonedDoc.getElementById('poster-canvas-render-target');
                     if (el) {
-                        el.style.display = 'block';
-                        el.style.visibility = 'visible';
-                        el.style.opacity = '1';
-                        el.style.position = 'static';
+                        // CRITICAL: Strip the scale transform and set dimensions to 1080px exactly for capture
+                        el.style.transform = 'none';
+                        el.style.width = '1080px';
+                        el.style.height = '1080px';
+                        el.style.overflow = 'visible';
+                        
+                        // Ensure all text containers are visible and not clipped
+                        const winners = el.querySelectorAll('h4');
+                        winners.forEach(w => {
+                            w.style.overflow = 'visible';
+                            w.style.whiteSpace = 'nowrap';
+                            w.style.paddingTop = '10px';
+                            w.style.paddingBottom = '10px';
+                            w.style.lineHeight = '1.4';
+                        });
                     }
                 }
             });
-
+            
             const link = document.createElement('a');
-            link.download = `amazio-result-${selectedItemId}.png`;
-            link.href = canvas.toDataURL('image/png', 1.0);
+            link.download = `amazio-poster-${selectedItemId}.png`;
+            link.href = captured.toDataURL('image/png', 1.0);
             link.click();
         } catch (err) {
-            console.error("Download error:", err);
-            alert("Export failed. Try refreshing.");
+            console.error("Capture failed:", err);
+            alert("Failed to generate image. Please try again.");
         } finally {
-            setIsDownloading(true); // Small delay to show state
-            setTimeout(() => setIsDownloading(false), 800);
+            setIsDownloading(false);
         }
     };
 
@@ -331,38 +341,14 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         { label: 'System Slab', value: 'font-slab' },
         { label: 'System Serif', value: 'font-serif' },
         { label: 'System Sans', value: 'font-sans' },
-        ...(state.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.customFonts.englishPrimary.family}`, value: state.customFonts.englishPrimary.family }] : []),
-        ...(state.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.customFonts.englishSecondary.family}`, value: state.customFonts.englishSecondary.family }] : []),
+        ...(state.customFonts?.englishPrimary?.family ? [{ label: `Primary: ${state.customFonts.englishPrimary.family}`, value: 'EnglishPrimary' }] : []),
+        ...(state.customFonts?.englishSecondary?.family ? [{ label: `Secondary: ${state.customFonts.englishSecondary.family}`, value: 'EnglishSecondary' }] : []),
         ...(state.generalCustomFonts || []).map(f => ({ label: f.family, value: f.family })),
     ];
 
     return (
         <div className="flex flex-col h-full bg-amazio-light-bg dark:bg-amazio-bg animate-in fade-in duration-500 overflow-hidden relative">
             
-            {/* Hidden High-Res Capture Node */}
-            <div 
-                style={{ 
-                    position: 'absolute', 
-                    top: '-9999px', 
-                    left: '-9999px', 
-                    width: '1080px', 
-                    height: '1080px', 
-                    overflow: 'hidden' 
-                }}
-            >
-                {posterData && (
-                    <div id="capture-render-node">
-                        <PosterCanvas 
-                            data={posterData} 
-                            scale={1} 
-                            customBg={selectedBgUrl}
-                            fontFamily={selectedFont}
-                            isDownloadMode={true}
-                        />
-                    </div>
-                )}
-            </div>
-
             {/* Header Toolbar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 sm:p-5 bg-white dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 z-30">
                 <div className="flex items-center gap-3">
@@ -410,7 +396,7 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     />
                 )}
 
-                {/* Sidebar */}
+                {/* Sidebar - Settings */}
                 <aside className={`
                     fixed md:relative bottom-0 left-0 right-0 md:right-auto md:w-72 lg:w-80
                     bg-white dark:bg-[#121412] border-t md:border-t-0 md:border-r border-zinc-200 dark:border-zinc-800 
@@ -503,16 +489,16 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                 }}
                             >
-                                <div id="poster-canvas-el" className="w-full h-full">
-                                    <PosterCanvas 
-                                        data={posterData} 
-                                        scale={scale} 
-                                        customBg={selectedBgUrl}
-                                        fontFamily={selectedFont}
-                                    />
-                                </div>
+                                <PosterCanvas 
+                                    id="poster-canvas-render-target"
+                                    data={posterData} 
+                                    scale={scale} 
+                                    customBg={selectedBgUrl}
+                                    fontFamily={selectedFont}
+                                />
                             </div>
                             
+                            {/* Meta Info */}
                             <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 dark:text-zinc-600 hidden md:block">
                                 High Resolution Preview • 1080x1080px
                             </p>
@@ -540,6 +526,14 @@ const CreativeStudio: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     </div>
                 )}
             </div>
+            
+            <style>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };
