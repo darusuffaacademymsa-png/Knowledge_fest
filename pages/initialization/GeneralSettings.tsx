@@ -9,7 +9,7 @@ import {
     ShieldAlert, Award, Edit2, Save, Type, CheckCircle, CheckCircle2, ClipboardList, Plus, FileText, 
     MoreHorizontal, Settings, Palette, Calendar, SlidersHorizontal, MousePointer2, 
     UserCheck, Shield, LayoutDashboard, UserPlus, Medal, Gavel, Timer, Monitor,
-    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw, Layers
+    BarChart2, Home, Search, AlertTriangle, ShieldCheck, Download, Sparkles, RefreshCw, Layers, Printer
 } from 'lucide-react';
 import { User, UserRole, AppState, FontConfig, GeneralFontConfig, ProjectorSettings } from '../../types';
 import { TABS, TAB_DISPLAY_NAMES } from '../../constants';
@@ -248,7 +248,7 @@ const LanguageFontCard = ({
                 <input type="file" ref={fileInputRef as any} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleFileChange} />
              </div>
 
-             <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
+             <div className="bg-zinc-100/50 dark:bg-[#050605] rounded-3xl p-8 border border-zinc-200 dark:border-zinc-700/50 min-h-[140px] flex flex-col justify-center relative group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
                 <span className="absolute top-5 left-6 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Live Rendering</span>
                 <p className="text-3xl text-amazio-primary dark:text-white text-center leading-relaxed" style={{ fontFamily: (tempFont || currentFont) ? `'${(tempFont || currentFont)?.family}_Preview', sans-serif` : 'inherit', direction: language === 'arabic' ? 'rtl' : 'ltr' }}>
                     {previewText}
@@ -379,13 +379,13 @@ const ScopeItem: React.FC<{ label: string, isChecked: boolean, onChange: () => v
 );
 
 const ToggleItem: React.FC<{ label: string, isChecked: boolean, onChange: (v: boolean) => void }> = ({ label, isChecked, onChange }) => (
-    <div className="flex items-center justify-between p-4 bg-zinc-50/50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5">
+    <div className="flex items-center justify-between p-4 bg-zinc-50/50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 transition-all hover:bg-white dark:hover:bg-zinc-800/80">
         <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">{label}</span>
         <button 
             onClick={() => onChange(!isChecked)} 
-            className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isChecked ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+            className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isChecked ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
         >
-            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${isChecked ? 'left-7' : 'left-1'}`}></div>
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-md ${isChecked ? 'left-7' : 'left-1'}`}></div>
         </button>
     </div>
 );
@@ -420,7 +420,7 @@ const GeneralSettings: React.FC = () => {
         heading: state?.settings.heading || '', 
         description: state?.settings.description || '', 
         eventDates: state?.settings.eventDates || [], 
-        branding: state?.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
+        branding: state?.settings.branding || { eventName: '', description: '', typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
     });
     
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -437,7 +437,7 @@ const GeneralSettings: React.FC = () => {
                 heading: state.settings.heading, 
                 description: state.settings.description, 
                 eventDates: state.settings.eventDates || [], 
-                branding: state.settings.branding || { typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
+                branding: state.settings.branding || { eventName: '', description: '', typographyUrl: '', typographyUrlLight: '', typographyUrlDark: '', teamLogoUrl: '' } 
             }); 
         }
     }, [state?.settings, isEditingOrg]);
@@ -454,6 +454,8 @@ const GeneralSettings: React.FC = () => {
             eventDates: orgData.eventDates, 
             branding: {
                 ...orgData.branding,
+                eventName: orgData.branding?.eventName || '',
+                description: orgData.branding?.description || '',
                 typographyUrlLight: orgData.branding?.typographyUrlLight || '',
                 typographyUrlDark: orgData.branding?.typographyUrlDark || ''
             } 
@@ -537,6 +539,15 @@ const GeneralSettings: React.FC = () => {
         });
     };
 
+    const handleReportDefaultUpdate = (payload: Partial<{ defaultShowHeader: boolean, defaultShowFooter: boolean }>) => {
+        updateSettings({
+            reportSettings: {
+                ...(state.settings.reportSettings),
+                ...payload
+            }
+        });
+    };
+
     const renderTabContent = () => {
         switch(activeTab) {
             case 'details':
@@ -615,14 +626,14 @@ const GeneralSettings: React.FC = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                 <div className="lg:col-span-2 space-y-6">
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Organizing Body</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Main Branding Title</label>
                                         <input 
                                             type="text" 
-                                            value={orgData.organizingTeam} 
-                                            onChange={e => setOrgData({...orgData, organizingTeam: e.target.value})} 
+                                            value={orgData.branding?.eventName || ''} 
+                                            onChange={e => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), eventName: e.target.value}}))} 
                                             disabled={!isEditingOrg} 
-                                            className="w-full p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
-                                            placeholder="e.g. Student's Union 2024"
+                                            className="w-full p-4 bg-emerald-50/30 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50"
+                                            placeholder="Primary heading for reports"
                                         />
                                     </div>
                                     <div>
@@ -634,6 +645,28 @@ const GeneralSettings: React.FC = () => {
                                             disabled={!isEditingOrg} 
                                             className="w-full p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
                                             placeholder="e.g. AMAZIO 2026"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Branding Subtitle / Description</label>
+                                        <input 
+                                            type="text" 
+                                            value={orgData.branding?.description || ''} 
+                                            onChange={e => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), description: e.target.value}}))} 
+                                            disabled={!isEditingOrg} 
+                                            className="w-full p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
+                                            placeholder="Secondary subtitle for reports"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Organizing Body</label>
+                                        <input 
+                                            type="text" 
+                                            value={orgData.organizingTeam} 
+                                            onChange={e => setOrgData({...orgData, organizingTeam: e.target.value})} 
+                                            disabled={!isEditingOrg} 
+                                            className="w-full p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
+                                            placeholder="e.g. Student's Union 2024"
                                         />
                                     </div>
                                     <div>
@@ -675,11 +708,11 @@ const GeneralSettings: React.FC = () => {
                                 </div>
                                 <div className="lg:col-span-1 h-full">
                                     <div className="h-full flex flex-col">
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Logo (Light Theme)</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Logo (Light Theme / Watermark)</label>
                                         <div className="flex-grow">
                                             <ImageUpload 
                                                 label="" 
-                                                description="Logo displayed during Light Theme mode." 
+                                                description="Logo used as a subtle watermark in reports." 
                                                 currentValue={orgData.branding?.typographyUrlLight || ''} 
                                                 onChange={v => setOrgData(prev => ({...prev, branding: {...(prev.branding || {}), typographyUrlLight: v}}))} 
                                                 disabled={!isEditingOrg}
@@ -707,215 +740,193 @@ const GeneralSettings: React.FC = () => {
                 );
             case 'display': 
                 return (
-                    <div className="space-y-10 animate-in slide-in-from-right duration-500">
-                        {/* Language & Identity Fonts */}
-                        <div>
-                            <SectionTitle title="Typography Core" icon={Type} color="indigo"/>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                                <LanguageFontCard 
-                                    title="English Primary"
-                                    subtitle="Latin Main Brand Font"
-                                    language="englishPrimary"
-                                    fontFamilyName="EnglishPrimary"
-                                    previewText="English Primary Title"
-                                    currentFont={state.customFonts?.englishPrimary}
-                                    onSave={(f) => handleUpdateCustomFont('englishPrimary', f)}
-                                />
-                                <LanguageFontCard 
-                                    title="English Secondary"
-                                    subtitle="Latin Body & UI Font"
-                                    language="englishSecondary"
-                                    fontFamilyName="EnglishSecondary"
-                                    previewText="English Secondary Text"
-                                    currentFont={state.customFonts?.englishSecondary}
-                                    onSave={(f) => handleUpdateCustomFont('englishSecondary', f)}
-                                />
-                                <LanguageFontCard 
-                                    title="Malayalam Global"
-                                    subtitle="Applied to ML Glyphs"
-                                    language="malayalam"
-                                    previewText="മലയാളം ഫോണ്ട് പ്രിവ്യൂ"
-                                    currentFont={state.customFonts?.malayalam}
-                                    onSave={(f) => handleUpdateCustomFont('malayalam', f)}
-                                />
-                                <LanguageFontCard 
-                                    title="Arabic Global"
-                                    subtitle="Applied to AR Glyphs"
-                                    language="arabic"
-                                    previewText="معاينة خط اللغة العربية"
-                                    currentFont={state.customFonts?.arabic}
-                                    onSave={(f) => handleUpdateCustomFont('arabic', f)}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Multiple Custom Fonts Management */}
-                        <div>
-                            <SectionTitle title="Extended Type Library" icon={Layers} color="purple"/>
-                            <div className="space-y-6">
-                                {/* Add New Generic Font */}
-                                <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-sm">
-                                     <div className="flex flex-col md:flex-row items-end gap-4">
-                                        <div className="flex-grow w-full">
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">New Library Font Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={newFontName} 
-                                                onChange={e => setNewFontName(e.target.value)} 
-                                                placeholder="e.g. Modern Sans, Fancy Script..."
-                                                className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500/20"
-                                            />
-                                        </div>
-                                        <button 
-                                            onClick={() => fontUploadInputRef.current?.click()}
-                                            disabled={!newFontName.trim()}
-                                            className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 ${newFontName.trim() ? 'bg-purple-600 text-white shadow-xl shadow-purple-500/20' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'}`}
-                                        >
-                                            <Upload size={16}/> Upload .ttf / .otf
-                                        </button>
-                                        <input type="file" ref={fontUploadInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleAddGenericFont} />
-                                     </div>
-                                </div>
-
-                                {/* List of Generic Fonts */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {(state.generalCustomFonts || []).map(font => (
-                                        <div key={font.id} className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col gap-4 relative group">
-                                            <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/10 flex items-center justify-center text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/20 shadow-inner">
-                                                        <Type size={18} />
-                                                    </div>
-                                                    <span className="text-sm font-black uppercase tracking-tight text-amazio-primary dark:text-white truncate max-w-[120px]">{font.family}</span>
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleDeleteGenericFont(font.id)}
-                                                    className="p-2 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                            <div className="p-6 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 min-h-[100px] flex items-center justify-center">
-                                                 <p className="text-xl text-center" style={{ fontFamily: `'${font.family}', sans-serif` }}>
-                                                    {font.family} Preview
-                                                 </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {(state.generalCustomFonts || []).length === 0 && (
-                                        <div className="col-span-full py-12 flex flex-col items-center justify-center opacity-30 italic text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem]">
-                                            <RefreshCw size={24} className="mb-2" />
-                                            Library empty
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Projector Configuration */}
-                        <div>
-                            <SectionTitle title="Projector Customization" icon={Monitor} color="amber" />
-                            <Card title="Live Screen Orchestration">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-zinc-400 mb-1 ml-1 block">Toggle Slides</label>
-                                        <div className="space-y-2">
-                                            <ToggleItem 
-                                                label="Declared Results" 
-                                                isChecked={state.settings.projector?.showResults !== false} 
-                                                onChange={(v) => handleProjectorUpdate({ showResults: v })} 
-                                            />
-                                            <ToggleItem 
-                                                label="Point Leaderboard" 
-                                                isChecked={state.settings.projector?.showLeaderboard !== false} 
-                                                onChange={(v) => handleProjectorUpdate({ showLeaderboard: v })} 
-                                            />
-                                            <ToggleItem 
-                                                label="Festival Stats" 
-                                                isChecked={state.settings.projector?.showResults !== false} // Assuming this was intended to be separate
-                                                onChange={(v) => handleProjectorUpdate({ showStats: v })} 
-                                            />
-                                            <ToggleItem 
-                                                label="Program Flow" 
-                                                isChecked={state.settings.projector?.showUpcoming !== false} 
-                                                onChange={(v) => handleProjectorUpdate({ showUpcoming: v })} 
-                                            />
-                                        </div>
+                    <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                        {/* 1. Brand Identity & Typography */}
+                        <div className="grid grid-cols-1 gap-8">
+                            <Card title="Identity & Typography">
+                                <div className="space-y-10">
+                                    {/* Language Fonts */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                                        <LanguageFontCard 
+                                            title="English Primary"
+                                            subtitle="Main Brand Font"
+                                            language="englishPrimary"
+                                            fontFamilyName="EnglishPrimary"
+                                            previewText="Brand Identity Title"
+                                            currentFont={state.customFonts?.englishPrimary}
+                                            onSave={(f) => handleUpdateCustomFont('englishPrimary', f)}
+                                        />
+                                        <LanguageFontCard 
+                                            title="English Secondary"
+                                            subtitle="UI & Body Font"
+                                            language="englishSecondary"
+                                            fontFamilyName="EnglishSecondary"
+                                            previewText="Secondary System Text"
+                                            currentFont={state.customFonts?.englishSecondary}
+                                            onSave={(f) => handleUpdateCustomFont('englishSecondary', f)}
+                                        />
+                                        <LanguageFontCard 
+                                            title="Malayalam Global"
+                                            subtitle="Native Script Font"
+                                            language="malayalam"
+                                            previewText="മലയാളം ഫോണ്ട് പ്രിവ്യൂ"
+                                            currentFont={state.customFonts?.malayalam}
+                                            onSave={(f) => handleUpdateCustomFont('malayalam', f)}
+                                        />
+                                        <LanguageFontCard 
+                                            title="Arabic Global"
+                                            subtitle="Directional Script Font"
+                                            language="arabic"
+                                            previewText="معاينة خط اللغة العربية"
+                                            currentFont={state.customFonts?.arabic}
+                                            onSave={(f) => handleUpdateCustomFont('arabic', f)}
+                                        />
                                     </div>
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Result Presentation Depth</label>
-                                            <div className="p-4 bg-zinc-50 dark:bg-black/20 rounded-2xl border border-zinc-100 dark:border-white/5 space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Results In Rotation</span>
-                                                    <div className="flex items-center gap-3">
-                                                        <button 
-                                                            onClick={() => handleProjectorUpdate({ resultsLimit: Math.max(1, (state.settings.projector?.resultsLimit || 3) - 1) })}
-                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-8 text-center font-black text-indigo-600 dark:text-indigo-400">{state.settings.projector?.resultsLimit || 3}</span>
-                                                        <button 
-                                                            onClick={() => handleProjectorUpdate({ resultsLimit: Math.min(10, (state.settings.projector?.resultsLimit || 3) + 1) })}
-                                                            className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <p className="text-[9px] text-zinc-400 leading-relaxed font-medium">Controls how many of the most recently declared results will be shown in the Live Projector rotation loop.</p>
+
+                                    {/* Extended Type Library */}
+                                    <div className="pt-8 border-t border-zinc-100 dark:border-zinc-800">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div>
+                                                <h4 className="text-sm font-black uppercase tracking-widest text-amazio-primary dark:text-zinc-100">Extended Type Library</h4>
+                                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Supplementary fonts for Creative Studio and Reports.</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <input 
+                                                    type="text" 
+                                                    value={newFontName} 
+                                                    onChange={e => setNewFontName(e.target.value)} 
+                                                    placeholder="New Font Name..."
+                                                    className="px-4 py-2 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold outline-none"
+                                                />
+                                                <button 
+                                                    onClick={() => fontUploadInputRef.current?.click()}
+                                                    disabled={!newFontName.trim()}
+                                                    className={`p-2.5 rounded-xl transition-all ${newFontName.trim() ? 'bg-indigo-600 text-white shadow-lg' : 'bg-zinc-100 text-zinc-300'}`}
+                                                >
+                                                    <Upload size={18}/>
+                                                </button>
+                                                <input type="file" ref={fontUploadInputRef} className="hidden" accept=".ttf,.otf,.woff,.woff2" onChange={handleAddGenericFont} />
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 ml-1 block">Transition Cadence</label>
-                                            <div className="flex gap-2">
-                                                {[
-                                                    { l: 'Slow', v: 20000 },
-                                                    { l: 'Standard', v: 12000 },
-                                                    { l: 'Fast', v: 6000 }
-                                                ].map(opt => (
-                                                    <button 
-                                                        key={opt.l}
-                                                        onClick={() => handleProjectorUpdate({ rotationSpeed: opt.v })}
-                                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${state.settings.projector?.rotationSpeed === opt.v ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700 hover:border-indigo-400'}`}
-                                                    >
-                                                        {opt.l}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                        
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            {(state.generalCustomFonts || []).map(font => (
+                                                <div key={font.id} className="p-4 bg-zinc-50/50 dark:bg-black/20 rounded-[1.5rem] border border-zinc-100 dark:border-zinc-800 group relative">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <span className="text-[9px] font-black uppercase text-indigo-500 tracking-widest truncate max-w-[120px]">{font.family}</span>
+                                                        <button onClick={() => handleDeleteGenericFont(font.id)} className="p-1.5 text-zinc-400 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14}/></button>
+                                                    </div>
+                                                    <p className="text-center py-2 text-xl truncate" style={{ fontFamily: `'${font.family}', sans-serif` }}>{font.family}</p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
                             </Card>
                         </div>
 
-                        {/* UX Preferences */}
-                        <div>
-                            <SectionTitle title="UX Preferences" icon={LayoutTemplate} color="emerald" />
-                            <div className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm md:shadow-xl">
-                                <div className="flex items-center gap-5 w-full">
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-900/20 shadow-inner shrink-0">
-                                        <SlidersHorizontal size={24} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-amazio-primary dark:text-white font-black font-serif text-lg tracking-tight">FLOATING NAVIGATION RAIL</h4>
-                                        <p className="text-xs text-zinc-500 mt-1 font-medium max-w-sm">Draggable floating icon menu for streamlined mobile usage.</p>
+                        {/* 2. Presentation & Live Data */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <Card title="Live Presentation (Projector)">
+                                <div className="space-y-4">
+                                    <ToggleItem 
+                                        label="Enable Leaderboard Slide" 
+                                        isChecked={state.settings.projector?.showLeaderboard !== false} 
+                                        onChange={(v) => handleProjectorUpdate({ showLeaderboard: v })} 
+                                    />
+                                    <ToggleItem 
+                                        label="Enable Results Slide" 
+                                        isChecked={state.settings.projector?.showResults !== false} 
+                                        onChange={(v) => handleProjectorUpdate({ showResults: v })} 
+                                    />
+                                    <ToggleItem 
+                                        label="Enable Timeline Slide" 
+                                        isChecked={state.settings.projector?.showUpcoming !== false} 
+                                        onChange={(v) => handleProjectorUpdate({ showUpcoming: v })} 
+                                    />
+                                    <div className="pt-4 grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Rotation speed (ms)</label>
+                                            <input 
+                                                type="number" 
+                                                step="1000"
+                                                value={state.settings.projector?.rotationSpeed || 12000}
+                                                onChange={e => handleProjectorUpdate({ rotationSpeed: +e.target.value })}
+                                                className="w-full p-3 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-black tabular-nums"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">History limit</label>
+                                            <input 
+                                                type="number" 
+                                                value={state.settings.projector?.resultsLimit || 3}
+                                                onChange={e => handleProjectorUpdate({ resultsLimit: +e.target.value })}
+                                                className="w-full p-3 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-black tabular-nums"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6 w-full md:w-auto justify-end">
-                                     <button 
-                                        onClick={() => window.dispatchEvent(new Event('reset-floating-nav'))} 
-                                        className="px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-amazio-primary dark:hover:text-white transition-all whitespace-nowrap"
-                                     >
-                                        Reset Anchor
-                                     </button>
-                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={state.settings.enableFloatingNav === true} onChange={e => updateSettings({ enableFloatingNav: e.target.checked })} />
-                                        <div className="w-14 h-8 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600 border border-zinc-300 dark:border-zinc-700"></div>
-                                     </label>
+                            </Card>
+
+                            <Card title="Document Print Defaults">
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <Printer size={20} className="text-indigo-500" />
+                                            <p className="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-300">Default reporting state</p>
+                                        </div>
+                                    </div>
+                                    <ToggleItem 
+                                        label="Show Branding Header by Default" 
+                                        isChecked={state.settings.reportSettings?.defaultShowHeader !== false} 
+                                        onChange={(v) => handleReportDefaultUpdate({ defaultShowHeader: v })} 
+                                    />
+                                    <ToggleItem 
+                                        label="Show System Footer by Default" 
+                                        isChecked={state.settings.reportSettings?.defaultShowFooter !== false} 
+                                        onChange={(v) => handleReportDefaultUpdate({ defaultShowFooter: v })} 
+                                    />
+                                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest mt-2 px-1">These settings affect the initial state of the Reports page toggles.</p>
                                 </div>
-                            </div>
+                            </Card>
+                        </div>
+
+                        {/* 3. Global Interface & Experience */}
+                        <div className="grid grid-cols-1">
+                            <Card title="Interface UX & Navigation">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <SectionTitle title="Mobile Navigation" color="emerald" />
+                                        <div className="p-6 bg-zinc-50 dark:bg-black/20 border border-zinc-100 dark:border-zinc-800 rounded-[2rem]">
+                                            <ToggleItem 
+                                                label="Floating Quick-Access Rail" 
+                                                isChecked={state.settings.enableFloatingNav === true} 
+                                                onChange={e => updateSettings({ enableFloatingNav: e })} 
+                                            />
+                                            <div className="mt-4 flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                                <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Sidebar anchor mode</span>
+                                                <div className="flex bg-zinc-100 dark:bg-black/40 p-1 rounded-xl">
+                                                    <button onClick={() => updateSettings({ mobileSidebarMode: 'floating' })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${state.settings.mobileSidebarMode === 'floating' ? 'bg-white dark:bg-zinc-700 text-indigo-600 shadow-sm' : 'text-zinc-400'}`}>Overlay</button>
+                                                    <button onClick={() => updateSettings({ mobileSidebarMode: 'sticky' })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${state.settings.mobileSidebarMode === 'sticky' ? 'bg-white dark:bg-zinc-700 text-indigo-600 shadow-sm' : 'text-zinc-400'}`}>Pinned</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <SectionTitle title="Schedule Density" color="purple" />
+                                        <div className="p-6 bg-zinc-50 dark:bg-black/20 border border-zinc-100 dark:border-zinc-800 rounded-[2rem]">
+                                            <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                                <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Display Priority</span>
+                                                <div className="flex bg-zinc-100 dark:bg-black/40 p-1 rounded-xl">
+                                                    <button onClick={() => updateSettings({ scheduleDisplayPriority: 'TIME_FIRST' })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${state.settings.scheduleDisplayPriority === 'TIME_FIRST' ? 'bg-white dark:bg-zinc-700 text-indigo-600 shadow-sm' : 'text-zinc-400'}`}>Clock</button>
+                                                    <button onClick={() => updateSettings({ scheduleDisplayPriority: 'DATE_FIRST' })} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${state.settings.scheduleDisplayPriority === 'DATE_FIRST' ? 'bg-white dark:bg-zinc-700 text-indigo-600 shadow-sm' : 'text-zinc-400'}`}>Calendar</button>
+                                                </div>
+                                            </div>
+                                            <p className="mt-4 text-[9px] text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">Adjust which temporal element takes visual precedence on the Stage Timeline cards.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
                         </div>
                     </div>
                 );
@@ -933,7 +944,7 @@ const GeneralSettings: React.FC = () => {
                         }>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
-                                    <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                                    <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-border text-[9px] font-black uppercase text-zinc-400 tracking-widest">
                                         <tr>
                                             <th className="px-6 py-4">Account Handle</th>
                                             <th className="px-6 py-4">Role Priority</th>
@@ -985,7 +996,7 @@ const GeneralSettings: React.FC = () => {
                                 
                                 return (
                                     <div key={role} className="bg-white dark:bg-[#121412] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm md:shadow-xl flex flex-col h-full">
-                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-border">
                                             <div className="h-4 w-1 bg-emerald-500 rounded-full"></div>
                                             <h4 className="text-amazio-primary dark:text-white font-black font-serif text-lg tracking-tight capitalize">{role.replace('_', ' ')} Scopes</h4>
                                         </div>

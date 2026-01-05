@@ -51,6 +51,7 @@ const ItemTimerPage: React.FC = () => {
     }, [state, globalSearchTerm, globalFilters]);
 
     const progress = initialDuration > 0 ? (timeLeft / initialDuration) * 100 : 0;
+    const timePassed = initialDuration - timeLeft;
     const isWarning = timeLeft <= 60 && timeLeft > 0;
     const isEnded = timeLeft <= 0;
     const isOvertimeCritical = timeLeft <= -60;
@@ -202,10 +203,20 @@ const ItemTimerPage: React.FC = () => {
                         />
                     </svg>
 
-                    <div 
-                        className={`text-[8rem] sm:text-[14rem] md:text-[20rem] font-black font-mono leading-none tracking-tighter transition-all duration-700 tabular-nums drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${isOvertimeCritical ? 'text-rose-600' : isEnded ? 'text-amber-500' : isWarning ? 'text-white' : 'text-white'}`}
-                    >
-                        {formatTime(timeLeft)}
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="flex flex-col items-center mb-[-2vh]">
+                            <span className="text-zinc-500 text-[2vh] lg:text-[3vh] font-black uppercase tracking-[0.4em] drop-shadow-md">
+                                Elapsed: {formatTime(timePassed)}
+                            </span>
+                        </div>
+                        <div 
+                            className={`text-[8rem] sm:text-[14rem] md:text-[20rem] font-black font-mono leading-none tracking-tighter transition-all duration-700 tabular-nums drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${isOvertimeCritical ? 'text-rose-600' : isEnded ? 'text-amber-500' : 'text-white'}`}
+                        >
+                            {formatTime(timeLeft)}
+                        </div>
+                        <div className="flex flex-col items-center mt-[-2vh]">
+                            <span className="text-zinc-500 text-[1.5vh] lg:text-[2vh] font-black uppercase tracking-[0.2em] opacity-60">Time Left</span>
+                        </div>
                     </div>
                     
                     <div className="mt-4 flex flex-col items-center gap-1">

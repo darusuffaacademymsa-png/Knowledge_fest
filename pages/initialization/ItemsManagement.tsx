@@ -176,7 +176,6 @@ export const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; e
                 </div>
                 <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-4">
                     <button onClick={onClose} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-amazio-primary transition-colors">Cancel</button>
-                    {/* Fixed: button used handleSave property instead of onClick handler */}
                     <button onClick={handleSave} className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
                 </div>
             </div>
@@ -293,15 +292,15 @@ export const ItemFormModal: React.FC<{
                             <div className="flex gap-2 sm:gap-4">
                                 <div className="flex-1">
                                     <span className="block text-[7px] sm:text-[8px] font-black uppercase text-[#d4a574] mb-1 text-center">1st</span>
-                                    <input type="number" value={formData.points?.first} onChange={e => setFormData({...formData, points: {...formData.points!, first: +e.target.value}})} className="w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg sm:rounded-xl text-center font-bold text-xs sm:text-base" />
+                                    <input type="number" value={formData.points?.first} onChange={e => setFormData({...formData, points: {...formData.points!, first: +e.target.value}})} className="w-full p-2.5 rounded-lg sm:rounded-xl bg-white dark:bg-zinc-800 border text-center font-bold text-xs sm:text-base" />
                                 </div>
                                 <div className="flex-1">
                                     <span className="block text-[7px] sm:text-[8px] font-black uppercase text-slate-500 mb-1 text-center">2nd</span>
-                                    <input type="number" value={formData.points?.second} onChange={e => setFormData({...formData, points: {...formData.points!, second: +e.target.value}})} className="w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg sm:rounded-xl text-center font-bold text-xs sm:text-base" />
+                                    <input type="number" value={formData.points?.second} onChange={e => setFormData({...formData, points: {...formData.points!, second: +e.target.value}})} className="w-full p-2.5 rounded-lg sm:rounded-xl bg-white dark:bg-zinc-800 border text-center font-bold text-xs sm:text-base" />
                                 </div>
                                 <div className="flex-1">
                                     <span className="block text-[7px] sm:text-[8px] font-black uppercase text-orange-600 mb-1 text-center">3rd</span>
-                                    <input type="number" value={formData.points?.third} onChange={e => setFormData({...formData, points: {...formData.points!, third: +e.target.value}})} className="w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg sm:rounded-xl text-center font-bold text-xs sm:text-base" />
+                                    <input type="number" value={formData.points?.third} onChange={e => setFormData({...formData, points: {...formData.points!, third: +e.target.value}})} className="w-full p-2.5 rounded-lg sm:rounded-xl bg-white dark:bg-zinc-800 border text-center font-bold text-xs sm:text-base" />
                                 </div>
                             </div>
                         </div>
@@ -614,16 +613,25 @@ const ItemsManagement: React.FC = () => {
 
     return (
         <div className="space-y-4 sm:space-y-10 pb-10 animate-in fade-in duration-700 relative">
-            <div className="hidden md:flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div>
-                    <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Items & Participants</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">System configuration for events and delegacy.</p>
+                    <h2 className="text-3xl sm:text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Items & Participants</h2>
+                    <p className="text-xs sm:text-lg text-zinc-500 dark:text-zinc-400 mt-2 sm:mt-3 font-medium italic">System configuration for events and delegacy.</p>
+                </div>
+                <div className="flex items-center gap-3 pb-1">
+                    <div className="px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Registry:</span>
+                        <span className="ml-2 text-sm font-black text-amazio-primary dark:text-white tabular-nums">
+                            {activeTab === 'ITEMS' ? filteredAndSortedItems.length : registryEntries.length}
+                        </span>
+                        <span className="ml-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Records</span>
+                    </div>
                 </div>
             </div>
 
             {activeTab === 'ITEMS' && (
                 <div className="animate-in slide-in-from-left duration-500">
-                    <Card title="Item Registry" action={<span className="text-[8px] sm:text-[10px] font-black text-zinc-500 dark:text-zinc-300 uppercase tracking-widest">{state.items.length} Records</span>}>
+                    <Card title="Item Registry" action={<span className="text-[8px] sm:text-[10px] font-black text-zinc-500 dark:text-zinc-300 uppercase tracking-widest">{filteredAndSortedItems.length} Records</span>}>
                         <div className="space-y-4 sm:space-y-8">
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-center">

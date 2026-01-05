@@ -1,5 +1,5 @@
 
-import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown, ListCheck, UserCheck, ArrowRight } from 'lucide-react';
+import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown, ListCheck, UserCheck, ArrowRight, Save } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../components/Card';
@@ -100,8 +100,16 @@ const ItemManagementModal: React.FC<{
     onClose: () => void; 
     item: Item;
 }> = ({ isOpen, onClose, item }) => {
-    const { state, updateParticipant, updateMultipleParticipants } = useFirebase();
+    const { state, updateMultipleParticipants } = useFirebase();
     const [search, setSearch] = useState('');
+    const [draftParticipants, setDraftParticipants] = useState<Participant[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && state) {
+            setDraftParticipants([...state.participants]);
+        }
+    }, [isOpen, state]);
 
     if (!isOpen || !state) return null;
 
@@ -109,74 +117,105 @@ const ItemManagementModal: React.FC<{
     const isGeneralItem = category?.isGeneralCategory;
     const isGroup = item.type === ItemType.GROUP;
 
-    const handleAssign = async (p: Participant, groupIndex?: number) => {
-        const newItemIds = Array.from(new Set([...p.itemIds, item.id]));
-        const newItemGroups = { ...(p.itemGroups || {}) };
-        if (isGroup && groupIndex !== undefined) {
-            newItemGroups[item.id] = groupIndex;
-        } else {
-            // For single items, clear any existing group index to avoid "Slot 1" artifacts
-            delete newItemGroups[item.id];
-        }
+    const handleAssign = (p: Participant, groupIndex?: number) => {
+        setDraftParticipants(prev => prev.map(participant => {
+            if (participant.id !== p.id) return participant;
 
-        let updates: Participant[] = [{ ...p, itemIds: newItemIds, itemGroups: newItemGroups }];
-
-        if (isGroup && groupIndex !== undefined) {
-            const teamParticipants = state.participants.filter(tp => 
-                tp.teamId === p.teamId && 
-                tp.itemIds.includes(item.id) && 
-                (tp.itemGroups?.[item.id] || 1) === groupIndex
-            );
-            const hasLeader = teamParticipants.some(tp => tp.groupLeaderItemIds?.includes(item.id));
-            if (!hasLeader) {
-                updates[0].groupLeaderItemIds = Array.from(new Set([...(p.groupLeaderItemIds || []), item.id]));
+            const newItemIds = Array.from(new Set([...participant.itemIds, item.id]));
+            const newItemGroups = { ...(participant.itemGroups || {}) };
+            if (isGroup && groupIndex !== undefined) {
+                newItemGroups[item.id] = groupIndex;
+            } else {
+                delete newItemGroups[item.id];
             }
-        }
 
-        await updateMultipleParticipants(updates);
+            const updated: Participant = { ...participant, itemIds: newItemIds, itemGroups: newItemGroups };
+
+            if (isGroup && groupIndex !== undefined) {
+                const teamParticipantsInDraft = prev.filter(tp => 
+                    tp.teamId === participant.teamId && 
+                    tp.itemIds.includes(item.id) && 
+                    (tp.itemGroups?.[item.id] || 1) === groupIndex
+                );
+                // Check if anyone else in the draft is already a leader
+                const hasLeader = teamParticipantsInDraft.some(tp => tp.groupLeaderItemIds?.includes(item.id));
+                if (!hasLeader) {
+                    updated.groupLeaderItemIds = Array.from(new Set([...(participant.groupLeaderItemIds || []), item.id]));
+                }
+            }
+
+            return updated;
+        }));
     };
 
-    const handleRemove = async (p: Participant) => {
-        const newItemIds = p.itemIds.filter(id => id !== item.id);
-        const newItemGroups = { ...(p.itemGroups || {}) };
-        delete newItemGroups[item.id];
-        
-        const nextLeaders = (p.groupLeaderItemIds || []).filter(id => id !== item.id);
-        const nextChests = { ...(p.groupChestNumbers || {}) };
-        delete nextChests[item.id];
+    const handleRemove = (p: Participant) => {
+        setDraftParticipants(prev => prev.map(participant => {
+            if (participant.id !== p.id) return participant;
 
-        await updateParticipant({ 
-            ...p, 
-            itemIds: newItemIds, 
-            itemGroups: newItemGroups, 
-            groupLeaderItemIds: nextLeaders,
-            groupChestNumbers: nextChests
-        });
+            const newItemIds = participant.itemIds.filter(id => id !== item.id);
+            const newItemGroups = { ...(participant.itemGroups || {}) };
+            delete newItemGroups[item.id];
+            
+            const nextLeaders = (participant.groupLeaderItemIds || []).filter(id => id !== item.id);
+            const nextChests = { ...(participant.groupChestNumbers || {}) };
+            delete nextChests[item.id];
+
+            return { 
+                ...participant, 
+                itemIds: newItemIds, 
+                itemGroups: newItemGroups, 
+                groupLeaderItemIds: nextLeaders,
+                groupChestNumbers: nextChests
+            };
+        }));
     };
 
-    const handleToggleLeader = async (targetParticipant: Participant, groupIndex: number) => {
+    const handleToggleLeader = (targetParticipant: Participant, groupIndex: number) => {
         if (!isGroup) return;
 
-        const members = state.participants.filter(p => 
-            p.teamId === targetParticipant.teamId && 
-            p.itemIds.includes(item.id) && 
-            (p.itemGroups?.[item.id] || 1) === groupIndex
-        );
+        setDraftParticipants(prev => {
+            const membersOfGroup = prev.filter(p => 
+                p.teamId === targetParticipant.teamId && 
+                p.itemIds.includes(item.id) && 
+                (p.itemGroups?.[item.id] || 1) === groupIndex
+            );
 
-        const updates: Participant[] = members.map(m => {
-            const isTarget = m.id === targetParticipant.id;
-            let currentLeaders = m.groupLeaderItemIds || [];
-            let nextLeaders = isTarget 
-                ? Array.from(new Set([...currentLeaders, item.id]))
-                : currentLeaders.filter(id => id !== item.id);
-            
-            let nextChests = { ...(m.groupChestNumbers || {}) };
-            if (!isTarget) delete nextChests[item.id];
+            return prev.map(m => {
+                // If this participant is NOT in the target group, leave them alone
+                if (!membersOfGroup.some(member => member.id === m.id)) return m;
 
-            return { ...m, groupLeaderItemIds: nextLeaders, groupChestNumbers: nextChests };
+                const isTarget = m.id === targetParticipant.id;
+                let currentLeaders = m.groupLeaderItemIds || [];
+                let nextLeaders = isTarget 
+                    ? Array.from(new Set([...currentLeaders, item.id]))
+                    : currentLeaders.filter(id => id !== item.id);
+                
+                let nextChests = { ...(m.groupChestNumbers || {}) };
+                if (!isTarget) delete nextChests[item.id];
+
+                return { ...m, groupLeaderItemIds: nextLeaders, groupChestNumbers: nextChests };
+            });
         });
+    };
 
-        await updateMultipleParticipants(updates);
+    const handleConfirmSave = async () => {
+        setIsSaving(true);
+        try {
+            // Only update participants that have actually changed
+            const changed = draftParticipants.filter(dp => {
+                const original = state.participants.find(sp => sp.id === dp.id);
+                return JSON.stringify(original) !== JSON.stringify(dp);
+            });
+
+            if (changed.length > 0) {
+                await updateMultipleParticipants(changed);
+            }
+            onClose();
+        } catch (e) {
+            alert("Failed to save changes.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return ReactDOM.createPortal(
@@ -199,7 +238,7 @@ const ItemManagementModal: React.FC<{
                             </h4>
                             <div className="space-y-4">
                                 {state.teams.map(team => {
-                                    const teamParticipants = state.participants.filter(p => p.teamId === team.id && p.itemIds.includes(item.id));
+                                    const teamParticipants = draftParticipants.filter(p => p.teamId === team.id && p.itemIds.includes(item.id));
                                     
                                     return (
                                         <div key={team.id} className="p-5 rounded-3xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-100 dark:border-zinc-800">
@@ -284,16 +323,16 @@ const ItemManagementModal: React.FC<{
                                 />
                             </div>
                             <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-                                {state.participants
+                                {draftParticipants
                                     .filter(p => (isGeneralItem || p.categoryId === item.categoryId) && !p.itemIds.includes(item.id))
                                     .filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.chestNumber.toLowerCase().includes(search.toLowerCase()))
                                     .sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}))
                                     .map(p => {
                                         const team = state.teams.find(t => t.id === p.teamId);
-                                        const teamParticipants = state.participants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id));
+                                        const teamParticipantsInDraft = draftParticipants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id));
                                         
                                         const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
-                                        const isUnitFull = teamParticipants.length >= totalLimit;
+                                        const isUnitFull = teamParticipantsInDraft.length >= totalLimit;
 
                                         return (
                                             <div key={p.id} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl group hover:border-indigo-500/30 transition-all">
@@ -310,7 +349,7 @@ const ItemManagementModal: React.FC<{
                                                     ) : isGroup ? (
                                                         Array.from({ length: item.maxGroupsPerTeam || 1 }).map((_, i) => {
                                                             const gIdx = i + 1;
-                                                            const occupants = teamParticipants.filter(tp => (tp.itemGroups?.[item.id] || 1) === gIdx);
+                                                            const occupants = teamParticipantsInDraft.filter(tp => (tp.itemGroups?.[item.id] || 1) === gIdx);
                                                             if (occupants.length >= item.maxParticipants) return null;
                                                             return (
                                                                 <button key={i} onClick={() => handleAssign(p, gIdx)} className="px-2 py-1 bg-indigo-600 text-white rounded text-[8px] font-black uppercase hover:bg-indigo-700 transition-all">Add G{gIdx}</button>
@@ -327,6 +366,13 @@ const ItemManagementModal: React.FC<{
                         </div>
                     </div>
                 </div>
+
+                <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-3">
+                    <button onClick={onClose} className="px-6 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-rose-500 transition-all">Discard Changes</button>
+                    <button onClick={handleConfirmSave} disabled={isSaving} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2">
+                        {isSaving ? <span className="animate-pulse">Saving...</span> : <><Save size={14}/> Confirm & Save</>}
+                    </button>
+                </div>
             </div>
         </div>,
         document.body
@@ -340,34 +386,40 @@ const ParticipantManagementModal: React.FC<{
 }> = ({ isOpen, onClose, participant }) => {
     const { state, updateParticipant } = useFirebase();
     const [search, setSearch] = useState('');
+    const [draftParticipant, setDraftParticipant] = useState<Participant | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    if (!isOpen || !state) return null;
+    useEffect(() => {
+        if (isOpen) {
+            setDraftParticipant({ ...participant });
+        }
+    }, [isOpen, participant]);
 
-    const team = state.teams.find(t => t.id === participant.teamId);
-    const category = state.categories.find(c => c.id === participant.categoryId);
+    if (!isOpen || !state || !draftParticipant) return null;
+
+    const team = state.teams.find(t => t.id === draftParticipant.teamId);
+    const category = state.categories.find(c => c.id === draftParticipant.categoryId);
     const theme = getCategoryTheme(category?.name || '');
-    const generalCategoryIds = useMemo(() => new Set(state.categories.filter(c => c.isGeneralCategory).map(c => c.id)), [state.categories]);
+    const generalCategoryIds = new Set(state.categories.filter(c => c.isGeneralCategory).map(c => c.id));
 
-    const availableItems = useMemo(() => {
-        return state.items
-            .filter(i => i.categoryId === participant.categoryId || generalCategoryIds.has(i.categoryId))
-            .filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
-            .sort((a,b) => a.name.localeCompare(b.name));
-    }, [state.items, participant.categoryId, generalCategoryIds, search]);
+    const availableItems = state.items
+        .filter(i => i.categoryId === draftParticipant.categoryId || generalCategoryIds.has(i.categoryId))
+        .filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a,b) => a.name.localeCompare(b.name));
 
-    const toggleEnrollment = async (item: Item) => {
-        const isEnrolled = participant.itemIds.includes(item.id);
+    const toggleEnrollment = (item: Item) => {
+        const isEnrolled = draftParticipant.itemIds.includes(item.id);
         if (isEnrolled) {
-            const newItemIds = participant.itemIds.filter(id => id !== item.id);
-            const newItemGroups = { ...(participant.itemGroups || {}) };
+            const newItemIds = draftParticipant.itemIds.filter(id => id !== item.id);
+            const newItemGroups = { ...(draftParticipant.itemGroups || {}) };
             delete newItemGroups[item.id];
-            const nextLeaders = (participant.groupLeaderItemIds || []).filter(id => id !== item.id);
-            const nextChests = { ...(participant.groupChestNumbers || {}) };
+            const nextLeaders = (draftParticipant.groupLeaderItemIds || []).filter(id => id !== item.id);
+            const nextChests = { ...(draftParticipant.groupChestNumbers || {}) };
             delete nextChests[item.id];
 
-            await updateParticipant({ ...participant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders, groupChestNumbers: nextChests });
+            setDraftParticipant({ ...draftParticipant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders, groupChestNumbers: nextChests });
         } else {
-            const teamEnrolled = state.participants.filter(p => p.teamId === participant.teamId && p.itemIds.includes(item.id));
+            const teamEnrolled = state.participants.filter(p => p.teamId === draftParticipant.teamId && p.itemIds.includes(item.id));
             const isGroup = item.type === ItemType.GROUP;
             const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
             
@@ -376,9 +428,9 @@ const ParticipantManagementModal: React.FC<{
                 return;
             }
 
-            const newItemIds = [...participant.itemIds, item.id];
-            const newItemGroups = { ...(participant.itemGroups || {}) };
-            const nextLeaders = [...(participant.groupLeaderItemIds || [])];
+            const newItemIds = [...draftParticipant.itemIds, item.id];
+            const newItemGroups = { ...(draftParticipant.itemGroups || {}) };
+            const nextLeaders = [...(draftParticipant.groupLeaderItemIds || [])];
 
             if (isGroup) {
                 let targetIdx = -1;
@@ -396,11 +448,22 @@ const ParticipantManagementModal: React.FC<{
                     }
                 }
             } else {
-                // Single item: No slot grouping needed
                 delete newItemGroups[item.id];
             }
 
-            await updateParticipant({ ...participant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders });
+            setDraftParticipant({ ...draftParticipant, itemIds: newItemIds, itemGroups: newItemGroups, groupLeaderItemIds: nextLeaders });
+        }
+    };
+
+    const handleConfirmSave = async () => {
+        setIsSaving(true);
+        try {
+            await updateParticipant(draftParticipant);
+            onClose();
+        } catch (e) {
+            alert("Failed to save enrollment.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -410,10 +473,10 @@ const ParticipantManagementModal: React.FC<{
                 <div className="p-7 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
                     <div className="flex items-center gap-4">
                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-xl shadow-lg ${getTeamColor(team?.name || '')}`}>
-                            {participant.name.charAt(0)}
+                            {draftParticipant.name.charAt(0)}
                         </div>
                         <div>
-                            <h3 className="text-xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{participant.name}</h3>
+                            <h3 className="text-xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{draftParticipant.name}</h3>
                             <div className="flex items-center gap-2 mt-2">
                                 <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{team?.name}</span>
                                 <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</span>
@@ -431,8 +494,8 @@ const ParticipantManagementModal: React.FC<{
 
                     <div className="grid grid-cols-1 gap-3">
                         {availableItems.map(item => {
-                                const isEnrolled = participant.itemIds.includes(item.id);
-                                const teamEnrolled = state.participants.filter(p => p.teamId === participant.teamId && p.itemIds.includes(item.id));
+                                const isEnrolled = draftParticipant.itemIds.includes(item.id);
+                                const teamEnrolled = state.participants.filter(p => p.teamId === draftParticipant.teamId && p.itemIds.includes(item.id));
                                 const isGroup = item.type === ItemType.GROUP;
                                 const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
                                 const isFull = !isEnrolled && teamEnrolled.length >= totalLimit;
@@ -457,6 +520,13 @@ const ParticipantManagementModal: React.FC<{
                                 );
                             })}
                     </div>
+                </div>
+
+                <div className="p-7 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01] flex justify-end gap-3">
+                    <button onClick={onClose} className="px-6 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-rose-500 transition-all">Discard Changes</button>
+                    <button onClick={handleConfirmSave} disabled={isSaving} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2">
+                        {isSaving ? <span className="animate-pulse">Saving...</span> : <><Save size={14}/> Confirm & Save</>}
+                    </button>
                 </div>
             </div>
         </div>,
@@ -579,17 +649,47 @@ const ParticipantEntryView: React.FC<{ onTriggerSelection: () => void }> = ({ on
 // --- Page Wrapper ---
 
 const DataEntryPage: React.FC<{ currentUser: User | null }> = ({ currentUser }) => {
-    const { dataEntryView: view } = useFirebase();
+    const { state, dataEntryView: view, globalSearchTerm, globalFilters } = useFirebase();
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
     const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
+    const filteredItemsCount = useMemo(() => {
+        if (!state) return 0;
+        return state.items.filter(item => {
+            const matchesSearch = item.name.toLowerCase().includes(globalSearchTerm.toLowerCase());
+            const matchesCat = globalFilters.categoryId.length > 0 ? globalFilters.categoryId.includes(item.categoryId) : true;
+            const matchesPerf = globalFilters.performanceType.length > 0 ? globalFilters.performanceType.includes(item.performanceType) : true;
+            return matchesSearch && matchesCat && matchesPerf;
+        }).length;
+    }, [state, globalSearchTerm, globalFilters]);
+
+    const filteredParticipantsCount = useMemo(() => {
+        if (!state) return 0;
+        return state.participants.filter(p => {
+            const matchesSearch = p.name.toLowerCase().includes(globalSearchTerm.toLowerCase()) || 
+                                 p.chestNumber.toLowerCase().includes(globalSearchTerm.toLowerCase());
+            const matchesTeam = globalFilters.teamId.length > 0 ? globalFilters.teamId.includes(p.teamId) : true;
+            const matchesCategory = globalFilters.categoryId.length > 0 ? globalFilters.categoryId.includes(p.categoryId) : true;
+            return matchesSearch && matchesTeam && matchesCategory;
+        }).length;
+    }, [state, globalSearchTerm, globalFilters]);
+
     return (
         <div className="space-y-6 sm:space-y-10 pb-24 animate-in fade-in duration-700 relative">
-            <div className="hidden md:flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div>
-                    <h2 className="text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Data Entry</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-3 font-medium text-lg italic">Strategic enrollment and identity management.</p>
+                    <h2 className="text-3xl sm:text-5xl font-black font-serif text-amazio-primary dark:text-white tracking-tighter uppercase leading-none">Data Entry</h2>
+                    <p className="text-xs sm:text-lg text-zinc-500 dark:text-zinc-400 mt-2 sm:mt-3 font-medium italic">Strategic enrollment and identity management.</p>
+                </div>
+                <div className="flex items-center gap-3 pb-1">
+                    <div className="px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Registry:</span>
+                        <span className="ml-2 text-sm font-black text-amazio-primary dark:text-white tabular-nums">
+                            {view === 'ITEMS' ? filteredItemsCount : filteredParticipantsCount}
+                        </span>
+                        <span className="ml-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Records</span>
+                    </div>
                 </div>
             </div>
 

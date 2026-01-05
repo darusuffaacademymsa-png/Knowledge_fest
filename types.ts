@@ -1,3 +1,4 @@
+
 export enum ItemType {
   SINGLE = 'Single',
   GROUP = 'Group',
@@ -151,6 +152,8 @@ export interface Settings {
     description: string;
     header: string;
     footer: string;
+    defaultShowHeader?: boolean;
+    defaultShowFooter?: boolean;
   };
   institutionDetails?: {
       name: string;
@@ -161,6 +164,8 @@ export interface Settings {
       logoUrl?: string; 
   };
   branding?: {
+      eventName?: string;
+      description?: string;
       typographyUrl?: string; 
       typographyUrlLight?: string; 
       typographyUrlDark?: string; 
