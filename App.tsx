@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TABS, SIDEBAR_GROUPS } from './constants';
 import { useFirebase } from './hooks/useFirebase';
@@ -130,7 +131,6 @@ const App: React.FC = () => {
       const height = window.innerHeight;
       const mobile = width < 768;
       
-      // CRITICAL FIX: Only act if width changes. Height changes are usually keyboard events on mobile.
       if (width === lastWidth.current) return;
       lastWidth.current = width;
 
@@ -139,7 +139,6 @@ const App: React.FC = () => {
       if (width >= 1024) {
           if (!isSidebarExpanded) setIsSidebarExpanded(true);
       } else if (mobile) {
-          // Prevent auto-closing if an input is focused (e.g. searching)
           if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
               return;
           }
@@ -178,7 +177,10 @@ const App: React.FC = () => {
     if (hasPermission(tab)) {
       setActiveTab(tab);
       window.location.hash = encodeURIComponent(tab);
-      if (isMobile && isSidebarExpanded) setIsSidebarExpanded(false);
+      // Auto-hide sidebar on mobile after clicking a tab
+      if (isMobile) {
+        setIsSidebarExpanded(false);
+      }
     }
   };
 
@@ -276,7 +278,6 @@ const App: React.FC = () => {
 
   const toggleSidebarExpansion = () => setIsSidebarExpanded(prev => !prev);
   const handleBackdropClick = () => {
-      // Prevent closing if we are currently searching
       if (document.activeElement?.tagName === 'INPUT') return;
       setIsSidebarExpanded(false);
   };

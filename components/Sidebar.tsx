@@ -82,6 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isStickyMode = isMobile && state?.settings.mobileSidebarMode === 'sticky';
   const widthClass = isExpanded ? 'w-72' : 'w-[84px]';
+  const isNavCollapsed = !isExpanded || isStickyMode;
   
   const containerClasses = isStickyMode 
     ? `fixed left-0 top-0 h-full z-40 bg-white/95 dark:bg-amazio-bg/95 backdrop-blur-3xl border-r border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col transition-all duration-300 w-[64px]`
@@ -98,11 +99,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleTabClick = (tab: string) => {
+    // Rely on handleSetActiveTab in App.tsx to manage sidebar collapse logic for mobile
     setActiveTab(tab);
-    // Auto-hide sidebar on mobile after clicking a tab
-    if (isMobile && isExpanded && !isStickyMode) {
-        toggleSidebar();
-    }
   };
 
   return (
@@ -110,12 +108,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={innerContainerClasses}>
         
         {/* Brand Header */}
-        <div className={`flex items-center transition-all duration-500 ${isExpanded && !isStickyMode ? 'px-6 py-5' : 'justify-center py-5'}`}>
+        <div className={`flex items-center transition-all duration-500 ${isExpanded && !isStickyMode ? 'px-6 py-5' : 'justify-center py-4'}`}>
             <div 
                 onClick={() => setActiveTab(TABS.LANDING)}
                 className="relative flex items-center justify-center cursor-pointer group"
             >
-                <div className="w-10 h-10 bg-gradient-to-br from-[#283618] to-[#606C38] dark:from-emerald-500 dark:to-teal-800 rounded-2xl flex items-center justify-center font-serif text-xl font-black text-white shadow-xl group-hover:rotate-12 transition-transform duration-500">
+                <div className={`bg-gradient-to-br from-[#283618] to-[#606C38] dark:from-emerald-500 dark:to-teal-800 rounded-2xl flex items-center justify-center font-serif font-black text-white shadow-xl group-hover:rotate-12 transition-all duration-500 ${isNavCollapsed ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-xl'}`}>
                     A
                 </div>
                 {isExpanded && !isStickyMode && (
@@ -146,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Navigation Core */}
-        <nav className={`flex-1 overflow-y-auto no-scrollbar scroll-smooth ${isExpanded && !isStickyMode ? 'px-4' : 'px-2'} py-2 space-y-3`}>
+        <nav className={`flex-1 overflow-y-auto no-scrollbar scroll-smooth ${isExpanded && !isStickyMode ? 'px-4 py-2 space-y-3' : 'px-2 py-1 space-y-1'}`}>
              {SIDEBAR_GROUPS.map((group) => {
                 const visibleTabs = group.tabs.filter(tab => {
                     if (!hasPermission(tab)) return false;
@@ -161,13 +159,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 const groupColorClass = GROUP_TITLE_COLORS[group.title] || 'text-zinc-500';
 
                 return (
-                    <div key={group.title} className="space-y-0 mb-4">
+                    <div key={group.title} className={`${isNavCollapsed ? 'mb-2' : 'mb-4'} space-y-0`}>
                         {isExpanded && !isStickyMode && (
                             <h3 className={`px-4 text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 mt-2 ${groupColorClass}`}>
                                 {group.title}
                             </h3>
                         )}
-                        <div className="space-y-1">
+                        <div className={`space-y-1 ${isNavCollapsed ? 'flex flex-col items-center' : ''}`}>
                             {visibleTabs.map(tab => {
                                 const Icon = iconMap[tab] || Settings;
                                 const isActive = activeTab === tab;
@@ -182,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         className={`
                                             group relative flex items-center w-full rounded-2xl transition-all duration-300
                                             ${themeClass}
-                                            ${isExpanded && !isStickyMode ? 'px-4 py-3' : 'justify-center py-4'}
+                                            ${isExpanded && !isStickyMode ? 'px-4 py-3' : 'justify-center py-2.5'}
                                         `}
                                     >
                                         <div className={`
@@ -191,7 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             ${isExpanded && !isStickyMode ? 'mr-3.5' : 'mr-0'}
                                         `}>
                                             <Icon 
-                                                className="h-4 w-4" 
+                                                className={`${isNavCollapsed ? 'h-[18px] w-[18px]' : 'h-4 w-4'}`}
                                                 strokeWidth={isActive ? 3 : 2.5}
                                             />
                                         </div>
@@ -205,7 +203,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             </span>
                                         )}
 
-                                        {(!isExpanded || isStickyMode) && !isMobile && (
+                                        {isNavCollapsed && !isMobile && (
                                             <div className="absolute left-full ml-4 px-3 py-1.5 bg-zinc-900 text-white text-[10px] font-black uppercase rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[1000] shadow-2xl">
                                                 {displayName}
                                             </div>
@@ -220,14 +218,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* User Identity Section */}
-        <div className={`mt-auto p-4 transition-all duration-500 ${isExpanded && !isStickyMode ? 'mb-2' : 'mb-4'}`}>
+        <div className={`mt-auto transition-all duration-500 ${isExpanded && !isStickyMode ? 'p-4 mb-2' : 'p-2 mb-4'}`}>
             <div className={`
                 relative flex items-center bg-zinc-50 dark:bg-black/20 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 overflow-hidden transition-all duration-500
-                ${isExpanded && !isStickyMode ? 'p-3' : 'p-2 flex-col justify-center gap-2'}
+                ${isExpanded && !isStickyMode ? 'p-3' : 'p-1.5 flex-col justify-center gap-2'}
             `}>
                 <div className={`
                     shrink-0 rounded-full bg-gradient-to-tr from-[#283618] to-amazio-accent p-[1.5px] transition-all duration-500
-                    ${isExpanded && !isStickyMode ? 'w-10 h-10' : 'w-9 h-9'}
+                    ${isExpanded && !isStickyMode ? 'w-10 h-10' : 'w-8 h-8'}
                 `}>
                     <div className="w-full h-full rounded-full bg-white dark:bg-[#0F1210] flex items-center justify-center font-black text-xs text-amazio-primary dark:text-amazio-accent uppercase">
                         {currentUser.username.substring(0, 2)}
@@ -241,7 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                 )}
 
-                <div className={`flex items-center gap-1 ${isStickyMode || (!isExpanded && !isMobile) ? 'flex-col' : ''}`}>
+                <div className={`flex items-center gap-1 ${isNavCollapsed ? 'flex-col' : ''}`}>
                     {!isMobile && (
                         <button 
                             onClick={toggleSidebar}
