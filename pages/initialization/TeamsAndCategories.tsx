@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../../hooks/useFirebase';
@@ -22,7 +21,7 @@ const getThemeColor = (str: string) => {
     }
     const themes = [
         { bg: 'bg-indigo-500', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800', light: 'bg-indigo-50 dark:bg-indigo-900/20', shadow: 'shadow-indigo-500/10' },
-        { bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', light: 'bg-emerald-50 dark:bg-emerald-900/20', shadow: 'shadow-emerald-500/10' },
+        { bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', light: 'bg-emerald-50 dark:bg-indigo-900/20', shadow: 'shadow-emerald-500/10' },
         { bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800', light: 'bg-amber-50 dark:bg-amber-900/10', shadow: 'shadow-amber-500/10' },
         { bg: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800', light: 'bg-rose-50 dark:bg-rose-900/20', shadow: 'shadow-rose-500/10' },
         { bg: 'bg-purple-500', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800', light: 'bg-purple-50 dark:bg-fuchsia-900/20', shadow: 'shadow-purple-500/10' },
@@ -157,7 +156,7 @@ const EntityManager = <T extends { id: string; name: string }>({
                                     <div className="flex gap-2">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); onUpdate(item); }}
-                                            className={`p-2 rounded-xl transition-colors ${isSelected ? 'text-amazio-secondary hover:bg-amazio-secondary/10' : 'text-zinc-300 hover:text-amazio-primary hover:bg-zinc-50 dark:hover:bg-white/5'}`}
+                                            className={`p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 ${isSelected ? 'text-amazio-secondary hover:bg-amazio-secondary/10' : 'text-zinc-300 hover:text-amazio-primary hover:bg-zinc-50 dark:hover:bg-white/5'}`}
                                         >
                                             <Edit3 size={18} />
                                         </button>

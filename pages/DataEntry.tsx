@@ -630,7 +630,7 @@ const ItemEntryView: React.FC<{ onTriggerSelection: () => void }> = ({ onTrigger
                                     <div className={`px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</div>
                                     {category?.isGeneralCategory && <span className="bg-amber-500 text-white text-[7px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">General</span>}
                                 </div>
-                                <button onClick={() => setSelectedItem(item)} className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-all hover:scale-110"><ListPlus size={18} /></button>
+                                <button onClick={() => setSelectedItem(item)} className="p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 bg-zinc-50 dark:bg-white/5 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:scale-110"><ListPlus size={18} /></button>
                             </div>
                             <h4 className="font-black text-amazio-primary dark:text-white text-lg uppercase tracking-tight leading-tight mb-2 line-clamp-1">{item.name}</h4>
                             <div className="flex items-center gap-2 mb-4">
@@ -688,7 +688,7 @@ const ParticipantEntryView: React.FC<{ onTriggerSelection: () => void }> = ({ on
                                         <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500 max-w-[100px] truncate">{team?.name}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedParticipant(p)} className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-all hover:scale-110"><Edit3 size={18} /></button>
+                                <button onClick={() => setSelectedParticipant(p)} className="p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 bg-zinc-50 dark:bg-white/5 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:scale-110"><Edit3 size={18} /></button>
                             </div>
                             <h4 className="font-black text-amazio-primary dark:text-white text-lg uppercase tracking-tight leading-tight mb-2 truncate">{p.name}</h4>
                             <div className={`inline-block px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</div>
