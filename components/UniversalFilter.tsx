@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useFirebase } from '../hooks/useFirebase';
-import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin, ClipboardList, Tag, RefreshCw } from 'lucide-react';
-import { UserRole, PerformanceType, ResultStatus } from '../types';
+import { Filter, X, Check, ChevronDown, CheckSquare, Square, ListRestart, Award, ShieldCheck, Clock, Calendar, MapPin, ClipboardList, Tag, RefreshCw, Users, User } from 'lucide-react';
+import { UserRole, PerformanceType, ResultStatus, ItemType } from '../types';
 import { TABS } from '../constants';
 
 interface MultiSelectProps {
@@ -128,6 +128,7 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
     const isScoringPage = pageTitle === TABS.SCORING_RESULTS;
     const isSchedulePage = pageTitle === TABS.SCHEDULE;
     const isCodesPage = pageTitle === TABS.GRADE_POINTS;
+    const isPointsPage = pageTitle === TABS.POINTS;
 
     const activeCount = [
         !isScoringPage && !isTeamLeader && !isSchedulePage && !isCodesPage && globalFilters.teamId.length > 0,
@@ -137,6 +138,7 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
         isCodesPage && globalFilters.assignmentStatus.length > 0,
         globalFilters.categoryId.length > 0,
         globalFilters.performanceType.length > 0,
+        globalFilters.itemType.length > 0,
         showItemFilter && globalFilters.itemId.length > 0
     ].filter(Boolean).length;
 
@@ -152,6 +154,7 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
             teamId: isTeamLeader && currentUser?.teamId ? [currentUser.teamId] : [],
             categoryId: [],
             performanceType: [],
+            itemType: [],
             itemId: [],
             status: [],
             date: [],
@@ -166,9 +169,13 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
     const teamOptions = state.teams.map(t => ({ id: t.id, name: t.name }));
     const categoryOptions = state.categories.map(c => ({ id: c.id, name: c.name }));
     const itemOptions = filteredItems.map(i => ({ id: i.id, name: i.name }));
-    const typeOptions = [
-        { id: PerformanceType.ON_STAGE, name: 'On Stage' },
-        { id: PerformanceType.OFF_STAGE, name: 'Off Stage' }
+    const performanceOptions = [
+        { id: PerformanceType.ON_STAGE, name: 'On Stage', icon: MapPin },
+        { id: PerformanceType.OFF_STAGE, name: 'Off Stage', icon: MapPin }
+    ];
+    const itemTypeOptions = [
+        { id: ItemType.SINGLE, name: 'Single', icon: User },
+        { id: ItemType.GROUP, name: 'Group', icon: Users }
     ];
     const statusOptions = [
         { id: ResultStatus.DECLARED, name: 'Declared', icon: ShieldCheck },
@@ -241,14 +248,23 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
                 onChange={ids => setGlobalFilters(prev => ({ ...prev, categoryId: ids, itemId: [] }))} 
             />
             
-            {/* Type filter is generally useful, keep for Schedule too unless specified otherwise */}
             {!isSchedulePage && (
-                <MultiSelect 
-                    label="Type" 
-                    options={typeOptions} 
-                    selectedIds={globalFilters.performanceType} 
-                    onChange={ids => setGlobalFilters(prev => ({ ...prev, performanceType: ids }))} 
-                />
+                <>
+                    <MultiSelect 
+                        label="Venue" 
+                        options={performanceOptions} 
+                        selectedIds={globalFilters.performanceType} 
+                        onChange={ids => setGlobalFilters(prev => ({ ...prev, performanceType: ids }))} 
+                        icon={MapPin}
+                    />
+                    <MultiSelect 
+                        label="Event Type" 
+                        options={itemTypeOptions} 
+                        selectedIds={globalFilters.itemType} 
+                        onChange={ids => setGlobalFilters(prev => ({ ...prev, itemType: ids }))} 
+                        icon={Users}
+                    />
+                </>
             )}
 
             {showItemFilter && (
@@ -429,23 +445,42 @@ const UniversalFilter: React.FC<UniversalFilterProps> = ({ pageTitle }) => {
                             </div>
 
                             {!isSchedulePage && (
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Performance Venue</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {typeOptions.map(t => (
-                                            <button 
-                                                key={t.id} 
-                                                onClick={() => {
-                                                    const next = globalFilters.performanceType.includes(t.id) ? globalFilters.performanceType.filter(id => id !== t.id) : [...globalFilters.performanceType, t.id];
-                                                    setGlobalFilters(prev => ({ ...prev, performanceType: next }));
-                                                }}
-                                                className={`px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-tight text-center border transition-all ${globalFilters.performanceType.includes(t.id) ? 'bg-purple-600 text-white border-purple-700 shadow-md' : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-500 border-zinc-100 dark:border-zinc-800'}`}
-                                            >
-                                                {t.name}
-                                            </button>
-                                        ))}
+                                <>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Performance Venue</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {performanceOptions.map(t => (
+                                                <button 
+                                                    key={t.id} 
+                                                    onClick={() => {
+                                                        const next = globalFilters.performanceType.includes(t.id) ? globalFilters.performanceType.filter(id => id !== t.id) : [...globalFilters.performanceType, t.id];
+                                                        setGlobalFilters(prev => ({ ...prev, performanceType: next }));
+                                                    }}
+                                                    className={`px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-tight text-center border transition-all ${globalFilters.performanceType.includes(t.id) ? 'bg-purple-600 text-white border-purple-700 shadow-md' : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-500 border-zinc-100 dark:border-zinc-800'}`}
+                                                >
+                                                    {t.name}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Event Type</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {itemTypeOptions.map(t => (
+                                                <button 
+                                                    key={t.id} 
+                                                    onClick={() => {
+                                                        const next = globalFilters.itemType.includes(t.id) ? globalFilters.itemType.filter(id => id !== t.id) : [...globalFilters.itemType, t.id];
+                                                        setGlobalFilters(prev => ({ ...prev, itemType: next }));
+                                                    }}
+                                                    className={`px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-tight text-center border transition-all ${globalFilters.itemType.includes(t.id) ? 'bg-emerald-600 text-white border-emerald-700 shadow-md' : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-500 border-zinc-100 dark:border-zinc-800'}`}
+                                                >
+                                                    {t.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
                             {showItemFilter && (

@@ -1,10 +1,9 @@
-
-import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown, ListCheck, UserCheck, ArrowRight, Save } from 'lucide-react';
+import { AlertTriangle, Award, Check, CheckCircle2, ChevronDown, ChevronRight, Edit3, Filter, LayoutGrid, Layers, ListPlus, Plus, Search, ShieldCheck, Tag, Trash2, User as UserIcon, Users as UsersIcon, X, MapPin, UserPlus, Info, Crown, ListCheck, UserCheck, ArrowRight, Save, Zap } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../components/Card';
 import { useFirebase } from '../hooks/useFirebase';
-import { Item, ItemType, Participant, Team, User, AppState } from '../types';
+import { Item, ItemType, Participant, Team, User, AppState, Category } from '../types';
 
 // --- Visual Helpers ---
 
@@ -111,11 +110,27 @@ const ItemManagementModal: React.FC<{
         }
     }, [isOpen, state]);
 
+    const groupedAssignableParticipants = useMemo<Record<string, Participant[]>>(() => {
+        if (!state) return {};
+        const isGeneralItem = state.categories.find(c => c.id === item.categoryId)?.isGeneralCategory;
+        const list = draftParticipants
+            .filter(p => (isGeneralItem || p.categoryId === item.categoryId) && !p.itemIds.includes(item.id))
+            .filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.chestNumber.toLowerCase().includes(search.toLowerCase()));
+        
+        const groups: Record<string, Participant[]> = {};
+        list.forEach(p => {
+            const catName = state.categories.find(c => c.id === p.categoryId)?.name || 'Uncategorized';
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(p);
+        });
+        return groups;
+    }, [draftParticipants, item.id, item.categoryId, state, search]);
+
     if (!isOpen || !state) return null;
 
     const category = state.categories.find(c => c.id === item.categoryId);
-    const isGeneralItem = category?.isGeneralCategory;
     const isGroup = item.type === ItemType.GROUP;
+    const totalEnrolled = draftParticipants.filter(p => p.itemIds.includes(item.id)).length;
 
     const handleAssign = (p: Participant, groupIndex?: number) => {
         setDraftParticipants(prev => prev.map(participant => {
@@ -137,7 +152,6 @@ const ItemManagementModal: React.FC<{
                     tp.itemIds.includes(item.id) && 
                     (tp.itemGroups?.[item.id] || 1) === groupIndex
                 );
-                // Check if anyone else in the draft is already a leader
                 const hasLeader = teamParticipantsInDraft.some(tp => tp.groupLeaderItemIds?.includes(item.id));
                 if (!hasLeader) {
                     updated.groupLeaderItemIds = Array.from(new Set([...(participant.groupLeaderItemIds || []), item.id]));
@@ -181,7 +195,6 @@ const ItemManagementModal: React.FC<{
             );
 
             return prev.map(m => {
-                // If this participant is NOT in the target group, leave them alone
                 if (!membersOfGroup.some(member => member.id === m.id)) return m;
 
                 const isTarget = m.id === targetParticipant.id;
@@ -201,7 +214,6 @@ const ItemManagementModal: React.FC<{
     const handleConfirmSave = async () => {
         setIsSaving(true);
         try {
-            // Only update participants that have actually changed
             const changed = draftParticipants.filter(dp => {
                 const original = state.participants.find(sp => sp.id === dp.id);
                 return JSON.stringify(original) !== JSON.stringify(dp);
@@ -222,9 +234,18 @@ const ItemManagementModal: React.FC<{
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-white dark:bg-[#121412] w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="p-7 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
-                    <div>
-                        <h3 className="text-2xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{item.name}</h3>
-                        <p className="text-[10px] font-black uppercase text-zinc-400 mt-2 tracking-widest">{category?.name} • {item.type} • {item.performanceType}</p>
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+                            <Zap size={24} fill="currentColor" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black font-serif uppercase tracking-tighter leading-none text-amazio-primary dark:text-white">{item.name}</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{category?.name} • {item.type} • {item.performanceType}</p>
+                                <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
+                                <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest">Live Total: {totalEnrolled}</span>
+                            </div>
+                        </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors text-zinc-400"><X size={24}/></button>
                 </div>
@@ -307,7 +328,7 @@ const ItemManagementModal: React.FC<{
                             </div>
                         </div>
 
-                        {/* Assignable Participants */}
+                        {/* Assignable Participants - Redesigned with Grouping */}
                         <div className="space-y-6">
                             <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
                                 <UserPlus size={14}/> Available Delegates
@@ -322,46 +343,57 @@ const ItemManagementModal: React.FC<{
                                     className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                 />
                             </div>
-                            <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-                                {draftParticipants
-                                    .filter(p => (isGeneralItem || p.categoryId === item.categoryId) && !p.itemIds.includes(item.id))
-                                    .filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.chestNumber.toLowerCase().includes(search.toLowerCase()))
-                                    .sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}))
-                                    .map(p => {
-                                        const team = state.teams.find(t => t.id === p.teamId);
-                                        const teamParticipantsInDraft = draftParticipants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id));
-                                        
-                                        const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
-                                        const isUnitFull = teamParticipantsInDraft.length >= totalLimit;
+                            <div className="space-y-6 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                                {(Object.entries(groupedAssignableParticipants) as [string, Participant[]][]).map(([catName, members]) => (
+                                    <div key={catName} className="space-y-2">
+                                        <div className="flex items-center gap-2 px-2">
+                                            <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 shrink-0">{catName}</span>
+                                            <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {members.map(p => {
+                                                const team = state.teams.find(t => t.id === p.teamId);
+                                                const teamParticipantsInDraft = draftParticipants.filter(tp => tp.teamId === p.teamId && tp.itemIds.includes(item.id));
+                                                const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
+                                                const isUnitFull = teamParticipantsInDraft.length >= totalLimit;
 
-                                        return (
-                                            <div key={p.id} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl group hover:border-indigo-500/30 transition-all">
-                                                <div className="min-w-0 pr-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black font-mono text-zinc-400">#{p.chestNumber}</span>
-                                                        <h5 className="text-sm font-black uppercase tracking-tight dark:text-white truncate">{p.name}</h5>
+                                                return (
+                                                    <div key={p.id} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl group hover:border-indigo-500/30 transition-all">
+                                                        <div className="min-w-0 pr-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[10px] font-black font-mono text-zinc-400">#{p.chestNumber}</span>
+                                                                <h5 className="text-sm font-black uppercase tracking-tight dark:text-white truncate">{p.name}</h5>
+                                                            </div>
+                                                            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{team?.name}</p>
+                                                        </div>
+                                                        <div className="flex gap-1">
+                                                            {isUnitFull ? (
+                                                                <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded">Limit Reached</span>
+                                                            ) : isGroup ? (
+                                                                Array.from({ length: item.maxGroupsPerTeam || 1 }).map((_, i) => {
+                                                                    const gIdx = i + 1;
+                                                                    const occupants = teamParticipantsInDraft.filter(tp => (tp.itemGroups?.[item.id] || 1) === gIdx);
+                                                                    if (occupants.length >= item.maxParticipants) return null;
+                                                                    return (
+                                                                        <button key={i} onClick={() => handleAssign(p, gIdx)} className="px-2 py-1 bg-indigo-600 text-white rounded text-[8px] font-black uppercase hover:bg-indigo-700 transition-all">Add G{gIdx}</button>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <button onClick={() => handleAssign(p)} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-emerald-700 transition-all">Enroll</button>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{team?.name}</p>
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    {isUnitFull ? (
-                                                        <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded">Limit Reached</span>
-                                                    ) : isGroup ? (
-                                                        Array.from({ length: item.maxGroupsPerTeam || 1 }).map((_, i) => {
-                                                            const gIdx = i + 1;
-                                                            const occupants = teamParticipantsInDraft.filter(tp => (tp.itemGroups?.[item.id] || 1) === gIdx);
-                                                            if (occupants.length >= item.maxParticipants) return null;
-                                                            return (
-                                                                <button key={i} onClick={() => handleAssign(p, gIdx)} className="px-2 py-1 bg-indigo-600 text-white rounded text-[8px] font-black uppercase hover:bg-indigo-700 transition-all">Add G{gIdx}</button>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <button onClick={() => handleAssign(p)} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-emerald-700 transition-all">Enroll</button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                                {Object.keys(groupedAssignableParticipants).length === 0 && (
+                                    <div className="py-12 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2.5rem]">
+                                        No available delegates
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -395,17 +427,28 @@ const ParticipantManagementModal: React.FC<{
         }
     }, [isOpen, participant]);
 
+    const groupedAvailableItems = useMemo<Record<string, Item[]>>(() => {
+        if (!state || !draftParticipant) return {};
+        const generalCategoryIds = new Set(state.categories.filter(c => c.isGeneralCategory).map(c => c.id));
+        const list = state.items
+            .filter(i => i.categoryId === draftParticipant.categoryId || generalCategoryIds.has(i.categoryId))
+            .filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+        
+        const groups: Record<string, Item[]> = {};
+        list.forEach(i => {
+            const catName = state.categories.find(c => c.id === i.categoryId)?.name || 'Uncategorized';
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(i);
+        });
+        return groups;
+    }, [state, draftParticipant, search]);
+
     if (!isOpen || !state || !draftParticipant) return null;
 
     const team = state.teams.find(t => t.id === draftParticipant.teamId);
     const category = state.categories.find(c => c.id === draftParticipant.categoryId);
     const theme = getCategoryTheme(category?.name || '');
-    const generalCategoryIds = new Set(state.categories.filter(c => c.isGeneralCategory).map(c => c.id));
-
-    const availableItems = state.items
-        .filter(i => i.categoryId === draftParticipant.categoryId || generalCategoryIds.has(i.categoryId))
-        .filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
-        .sort((a,b) => a.name.localeCompare(b.name));
+    const currentEnrolledCount = draftParticipant.itemIds.length;
 
     const toggleEnrollment = (item: Item) => {
         const isEnrolled = draftParticipant.itemIds.includes(item.id);
@@ -480,6 +523,8 @@ const ParticipantManagementModal: React.FC<{
                             <div className="flex items-center gap-2 mt-2">
                                 <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{team?.name}</span>
                                 <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${theme.border} ${theme.bg} ${theme.text}`}>{category?.name}</span>
+                                <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
+                                <span className="px-2 py-0.5 rounded bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest">Enrolled: {currentEnrolledCount}</span>
                             </div>
                         </div>
                     </div>
@@ -492,33 +537,49 @@ const ParticipantManagementModal: React.FC<{
                         <input type="text" placeholder="Search events..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3">
-                        {availableItems.map(item => {
-                                const isEnrolled = draftParticipant.itemIds.includes(item.id);
-                                const teamEnrolled = state.participants.filter(p => p.teamId === draftParticipant.teamId && p.itemIds.includes(item.id));
-                                const isGroup = item.type === ItemType.GROUP;
-                                const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
-                                const isFull = !isEnrolled && teamEnrolled.length >= totalLimit;
+                    <div className="space-y-8">
+                        {(Object.entries(groupedAvailableItems) as [string, Item[]][]).map(([catName, list]) => (
+                            <div key={catName} className="space-y-3">
+                                <div className="flex items-center gap-2 px-2">
+                                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 shrink-0">{catName}</span>
+                                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-grow"></div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {list.map(item => {
+                                        const isEnrolled = draftParticipant.itemIds.includes(item.id);
+                                        const teamEnrolled = state.participants.filter(p => p.teamId === draftParticipant.teamId && p.itemIds.includes(item.id));
+                                        const isGroup = item.type === ItemType.GROUP;
+                                        const totalLimit = isGroup ? ((item.maxGroupsPerTeam || 1) * item.maxParticipants) : item.maxParticipants;
+                                        const isFull = !isEnrolled && teamEnrolled.length >= totalLimit;
 
-                                return (
-                                    <div key={item.id} onClick={() => toggleEnrollment(item)} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${isEnrolled ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 shadow-md' : isFull ? 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200'}`}>
-                                        <div className="min-w-0 pr-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`font-black text-sm uppercase tracking-tight ${isEnrolled ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-zinc-100'}`}>{item.name}</div>
-                                                {isFull && <span className="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900 flex items-center gap-1"><AlertTriangle size={8}/> Unit Limit</span>}
-                                            </div>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                <div className="flex gap-1">
-                                                    <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.type}</span>
-                                                    <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.performanceType}</span>
+                                        return (
+                                            <div key={item.id} onClick={() => toggleEnrollment(item)} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${isEnrolled ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 shadow-md' : isFull ? 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200'}`}>
+                                                <div className="min-w-0 pr-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`font-black text-sm uppercase tracking-tight ${isEnrolled ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-zinc-100'}`}>{item.name}</div>
+                                                        {isFull && <span className="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900 flex items-center gap-1"><AlertTriangle size={8}/> Unit Limit</span>}
+                                                    </div>
+                                                    <div className="flex items-center gap-3 mt-1.5">
+                                                        <div className="flex gap-1">
+                                                            <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.type}</span>
+                                                            <span className="text-[8px] font-black uppercase text-zinc-400 bg-zinc-100 dark:bg-black/40 px-1.5 py-0.5 rounded">{item.performanceType}</span>
+                                                        </div>
+                                                        <span className={`text-[8px] font-black uppercase tracking-widest ${isFull ? 'text-rose-500' : 'text-zinc-400'}`}>{teamEnrolled.length} / {totalLimit} Enrolled</span>
+                                                    </div>
                                                 </div>
-                                                <span className={`text-[8px] font-black uppercase tracking-widest ${isFull ? 'text-rose-500' : 'text-zinc-400'}`}>{teamEnrolled.length} / {totalLimit} Enrolled</span>
+                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isEnrolled ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : isFull ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700'}`}>{isEnrolled && <Check size={16} strokeWidth={4} />}</div>
                                             </div>
-                                        </div>
-                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isEnrolled ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : isFull ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700'}`}>{isEnrolled && <Check size={16} strokeWidth={4} />}</div>
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                        {Object.keys(groupedAvailableItems).length === 0 && (
+                            <div className="py-20 text-center opacity-30 italic text-xs uppercase font-bold tracking-[0.2em] border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem]">
+                                No matching events found
+                            </div>
+                        )}
                     </div>
                 </div>
 

@@ -200,11 +200,9 @@ const SchedulePage: React.FC = () => {
         const times = state.settings.timeSlots || [];
 
         data.sort((a, b) => {
-            // Constant Sort Logic: Date then Time (ascending indices from settings)
             const dIdxA = days.indexOf(a.date);
             const dIdxB = days.indexOf(b.date);
             if (dIdxA !== dIdxB) return dIdxA - dIdxB;
-            
             const tIdxA = times.indexOf(a.time);
             const tIdxB = times.indexOf(b.time);
             return tIdxA - tIdxB;
@@ -253,7 +251,7 @@ const SchedulePage: React.FC = () => {
 
     if (!state) return <div className="p-10 text-center italic text-zinc-500">Synchronizing timeline...</div>;
 
-    const selectClasses = "w-full rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-amazio-surface py-2 sm:py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 focus:ring-2 outline-none transition-all appearance-none font-black uppercase tracking-widest";
+    const selectClasses = "w-full appearance-none rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-[#151816] py-2 sm:py-3.5 px-3 sm:px-4 text-xs sm:text-sm font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all cursor-pointer";
     const labelClass = "block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-zinc-400 mb-1 sm:mb-1.5 ml-1";
 
     return (
@@ -275,7 +273,7 @@ const SchedulePage: React.FC = () => {
                                 <option value="">All Categories</option>
                                 {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
                     <div className="lg:col-span-1">
@@ -292,34 +290,43 @@ const SchedulePage: React.FC = () => {
                                 {manualItemsGrouped.onStage.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                                 {manualItemsGrouped.offStage.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 lg:col-span-2">
                         <div>
                             <label className={labelClass}>Date</label>
-                            <select value={manualEntry.date} onChange={e => setManualEntry({...manualEntry, date: e.target.value})} className={selectClasses}>
-                                <option value="">Date</option>
-                                {(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={manualEntry.date} onChange={e => setManualEntry({...manualEntry, date: e.target.value})} className={selectClasses}>
+                                    <option value="">Date</option>
+                                    {(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                            </div>
                         </div>
                         <div>
                             <label className={labelClass}>Time</label>
-                            <select value={manualEntry.time} onChange={e => setManualEntry({...manualEntry, time: e.target.value})} className={selectClasses}>
-                                <option value="">Time</option>
-                                {(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={manualEntry.time} onChange={e => setManualEntry({...manualEntry, time: e.target.value})} className={selectClasses}>
+                                    <option value="">Time</option>
+                                    {(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                     <div className="flex gap-2">
                         <div className="flex-grow">
                             <label className={labelClass}>Stage</label>
-                            <select value={manualEntry.stage} onChange={e => setManualEntry({...manualEntry, stage: e.target.value})} className={selectClasses}>
-                                <option value="">Stage</option>
-                                {(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={manualEntry.stage} onChange={e => setManualEntry({...manualEntry, stage: e.target.value})} className={selectClasses}>
+                                    <option value="">Stage</option>
+                                    {(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                            </div>
                         </div>
-                        <button onClick={handleManualAdd} className="h-[36px] sm:h-[46px] px-4 sm:px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95"><Plus size={18} sm:size={22} strokeWidth={3}/></button>
+                        <button onClick={handleManualAdd} className="h-[36px] sm:h-[48px] px-4 sm:px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95"><Plus size={18} sm:size={22} strokeWidth={3}/></button>
                     </div>
                 </div>
             </div>
@@ -359,9 +366,18 @@ const SchedulePage: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                                            <select value={editFormData.date} onChange={e => setEditFormData({...editFormData, date: e.target.value})} className="w-full p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}</select>
-                                            <select value={editFormData.time} onChange={e => setEditFormData({...editFormData, time: e.target.value})} className="w-full p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}</select>
-                                            <select value={editFormData.stage} onChange={e => setEditFormData({...editFormData, stage: e.target.value})} className="w-full col-span-2 p-2 bg-zinc-50 border rounded-lg text-[10px] font-bold">{(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                            <div className="relative">
+                                                <select value={editFormData.date} onChange={e => setEditFormData({...editFormData, date: e.target.value})} className="w-full appearance-none p-2 bg-zinc-50 dark:bg-zinc-900 border rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500">{(state.settings.eventDays || []).map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                                <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                            </div>
+                                            <div className="relative">
+                                                <select value={editFormData.time} onChange={e => setEditFormData({...editFormData, time: e.target.value})} className="w-full appearance-none p-2 bg-zinc-50 dark:bg-zinc-900 border rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500">{(state.settings.timeSlots || []).map(t => <option key={t} value={t}>{t}</option>)}</select>
+                                                <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                            </div>
+                                            <div className="relative col-span-2">
+                                                <select value={editFormData.stage} onChange={e => setEditFormData({...editFormData, stage: e.target.value})} className="w-full appearance-none p-2 bg-zinc-50 dark:bg-zinc-900 border rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500">{(state.settings.stages || []).map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                                <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (

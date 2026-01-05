@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TABS, SIDEBAR_GROUPS } from './constants';
 import { useFirebase } from './hooks/useFirebase';
@@ -57,6 +56,7 @@ const App: React.FC = () => {
         teamId: currentUser?.role === UserRole.TEAM_LEADER && currentUser?.teamId ? [currentUser.teamId] : [],
         categoryId: [],
         performanceType: [],
+        itemType: [],
         itemId: [],
         status: [],
         date: [],

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { doc, onSnapshot, setDoc, updateDoc, collection } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -42,6 +41,8 @@ const defaultState: AppState = {
       description: 'Official Documentation',
       header: 'Amazio Knowledge Fest Manager',
       footer: 'Amazio 2026 Edition',
+      defaultShowHeader: true,
+      defaultShowFooter: true,
     },
     institutionDetails: { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' },
     branding: { typographyUrl: '', teamLogoUrl: '' }
@@ -72,8 +73,6 @@ const defaultState: AppState = {
   permissions: DEFAULT_PAGE_PERMISSIONS,
 };
 
-// Map Settings keys to specific Firestore document IDs for splitting
-// Fix: Corrected type from string | keyof Settings to (keyof Settings)[] to match the array values.
 const SETTINGS_DOC_MAPPING: Record<string, (keyof Settings)[]> = {
   'settings_core': ['organizingTeam', 'heading', 'description', 'eventDates'],
   'settings_constraints': ['maxItemsPerParticipant', 'maxTotalItemsPerParticipant', 'defaultParticipantsPerItem'],
@@ -104,8 +103,8 @@ interface FirebaseContextType {
   firebaseUser: FirebaseUser | null; 
   loading: boolean;
   isOnline: boolean;
-  globalFilters: { teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; };
-  setGlobalFilters: React.Dispatch<React.SetStateAction<{ teamId: string[]; categoryId: string[]; performanceType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; }>>;
+  globalFilters: { teamId: string[]; categoryId: string[]; performanceType: string[]; itemType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; };
+  setGlobalFilters: React.Dispatch<React.SetStateAction<{ teamId: string[]; categoryId: string[]; performanceType: string[]; itemType: string[]; itemId: string[]; status: ResultStatus[]; date: string[]; stage: string[]; assignmentStatus: string[]; }>>;
   globalSearchTerm: string;
   setGlobalSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   dataEntryView: 'ITEMS' | 'PARTICIPANTS';
@@ -151,9 +150,6 @@ interface FirebaseContextType {
   updateCodeLetter: (payload: CodeLetter) => Promise<void>;
   reorderCodeLetters: (payload: CodeLetter[]) => Promise<void>;
   deleteCodeLetter: (id: string) => Promise<void>;
-  /**
-   * Added deleteMultipleCodeLetters to resolve "Property 'deleteMultipleCodeLetters' does not exist on type 'FirebaseContextType'"
-   */
   deleteMultipleCodeLetters: (ids: string[]) => Promise<void>;
   addJudge: (payload: { name: string; place?: string; profession?: string; }) => Promise<void>;
   updateJudge: (payload: Judge) => Promise<void>;
@@ -180,6 +176,7 @@ interface FirebaseContextType {
   hasPermission: (tab: string) => boolean;
   backupData: () => void;
   restoreData: (file: File) => Promise<void>;
+  resetSystem: () => Promise<void>;
 }
 
 export const FirebaseContext = createContext<FirebaseContextType | null>(null);
@@ -198,6 +195,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     teamId: [] as string[], 
     categoryId: [] as string[], 
     performanceType: [] as string[], 
+    itemType: [] as string[],
     itemId: [] as string[], 
     status: [] as ResultStatus[], 
     date: [] as string[], 
@@ -249,7 +247,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         setState(prev => {
           const current = prev || defaultState;
           
-          // Handle merged settings logic
           if (key.startsWith('settings_')) {
               return {
                 ...current,
@@ -260,7 +257,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
               };
           }
 
-          // Handle standard keys
           return { ...current, [key]: value !== null ? value : (defaultState as any)[key] };
         });
         setLoadingMap(prev => ({ ...prev, [key]: false }));
@@ -306,7 +302,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         await setDoc(docRef, { value: sanitizedValue }, { merge: false });
     } catch (err: any) {
         console.error(`Error writing document ${key}:`, err);
-        alert(err.message || `Sync failed for ${key}.`);
         throw err;
     }
   };
@@ -315,17 +310,17 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       add: async (payload: any) => {
           if (!state) return;
           const newList = [...(state[listName] as any[]), { ...payload, id: `${listName}_${Date.now()}` }];
-          await writeDoc(listName, newList);
+          await writeDoc(listName as string, newList);
       },
       update: async (payload: any) => {
           if (!state) return;
           const newList = (state[listName] as any[]).map(item => item.id === payload.id ? payload : item);
-          await writeDoc(listName, newList);
+          await writeDoc(listName as string, newList);
       },
       deleteMultiple: async (ids: string[]) => {
           if (!state) return;
           const newList = (state[listName] as any[]).filter(item => !ids.includes(item.id));
-          await writeDoc(listName, newList);
+          await writeDoc(listName as string, newList);
       }
   });
 
@@ -344,24 +339,19 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     
     updateSettings: async (p) => {
         if (!state) return;
-        // Identify which setting docs need updating based on the keys in payload
         const affectedDocs = new Set<string>();
         Object.keys(p).forEach(key => {
             for (const [docId, keys] of Object.entries(SETTINGS_DOC_MAPPING)) {
-                // Fix: Properly typed keys is now recognised as a subtype of string[].
                 if ((keys as string[]).includes(key)) {
                     affectedDocs.add(docId);
                 }
             }
         });
 
-        // Update each affected document by merging with current state values
         const promises = Array.from(affectedDocs).map(docId => {
-            // Fix: No longer needs an overlap-mistake-prone cast since SETTINGS_DOC_MAPPING[docId] is now correctly typed as an array.
             const keysForThisDoc = SETTINGS_DOC_MAPPING[docId];
             const updatedDataForDoc: any = {};
             keysForThisDoc.forEach(k => {
-                // Use new value if provided in payload, else fallback to current state
                 updatedDataForDoc[k] = (p as any)[k] !== undefined ? (p as any)[k] : (state.settings as any)[k];
             });
             return writeDoc(docId, updatedDataForDoc);
@@ -397,9 +387,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     updateCodeLetter: async (p) => writeDoc('codeLetters', state!.codeLetters.map(c => c.id === p.id ? p : c)),
     reorderCodeLetters: (p) => writeDoc('codeLetters', p),
     deleteCodeLetter: async (id) => writeDoc('codeLetters', state!.codeLetters.filter(c => c.id !== id)),
-    /**
-     * Implementation of deleteMultipleCodeLetters to resolve missing property error.
-     */
     deleteMultipleCodeLetters: async (ids) => writeDoc('codeLetters', state!.codeLetters.filter(c => !ids.includes(c.id))),
     addJudge: async (p) => writeDoc('judges', [...state!.judges, { ...p, id: `j_${Date.now()}` }]),
     updateJudge: async (p) => writeDoc('judges', state!.judges.map(j => j.id === p.id ? p : j)),
@@ -461,8 +448,40 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
             }
         };
         reader.readAsText(file);
+    },
+    resetSystem: async () => {
+        if (!confirm("CRITICAL: This will PERMANENTLY DELETE all festival data and reset all settings to defaults. Are you absolutely sure?")) return;
+        if (!confirm("FINAL WARNING: This action cannot be undone. All participants, results, and custom configurations will be wiped. Proceed?")) return;
+        
+        try {
+            // Reset non-settings docs
+            const dataKeys = Object.keys(defaultState).filter(k => k !== 'settings');
+            for (const key of dataKeys) {
+                await writeDoc(key, (defaultState as any)[key]);
+            }
+            
+            // Reset settings docs using documented mapping
+            for (const docId of Object.keys(SETTINGS_DOC_MAPPING)) {
+                const keysForThisDoc = SETTINGS_DOC_MAPPING[docId];
+                const defaultDataForDoc: any = {};
+                keysForThisDoc.forEach(k => {
+                    defaultDataForDoc[k] = (defaultState.settings as any)[k];
+                });
+                await writeDoc(docId, defaultDataForDoc);
+            }
+            
+            alert("System has been reset to factory defaults.");
+            window.location.reload();
+        } catch (err) {
+            console.error("Reset failed:", err);
+            alert("Failed to reset system.");
+        }
     }
   };
 
-  return <FirebaseContext.Provider value={contextValue}>{children}</FirebaseContext.Provider>;
+  return (
+    <FirebaseContext.Provider value={contextValue}>
+      {children}
+    </FirebaseContext.Provider>
+  );
 };

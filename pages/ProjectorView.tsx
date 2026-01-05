@@ -5,7 +5,7 @@ import {
     ChevronRight, Play, Pause, Layers, Zap, 
     MapPin, TrendingUp, Timer, Presentation, Info,
     Hash, BarChart2, CheckCircle2, ChevronUp, ChevronLeft,
-    Monitor, Radio
+    Monitor, Radio, User
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { TABS } from '../constants';
@@ -132,7 +132,6 @@ const ResultSlide: React.FC<{ result: any; revealStep: number }> = ({ result, re
         <div className="h-full w-full flex flex-col items-center justify-center p-[2vh] lg:p-[5vh] overflow-hidden select-none">
             <div className="text-center mb-[5vh] relative z-20 w-full animate-float">
                 <div className="inline-flex items-center gap-[1.5vh] px-[3vh] py-[1vh] bg-white/5 rounded-full border border-white/10 mb-[2vh] animate-in fade-in slide-in-from-top-4 duration-700">
-                    <Radio size={20} className="text-emerald-500 animate-pulse" />
                     <span className="text-[1.8vh] lg:text-[2.5vh] font-black uppercase tracking-[0.5em] text-zinc-400">{result.categoryName}</span>
                 </div>
                 <h1 className="text-[6vh] lg:text-[9vh] font-black font-serif uppercase tracking-tighter leading-[0.95] text-white mb-[1.5vh] whitespace-nowrap overflow-hidden text-ellipsis px-[4vh] animate-in fade-in zoom-in-95 duration-1000 delay-200">
@@ -178,12 +177,10 @@ const LeaderboardSlide: React.FC<{
     const [progressIndex, setProgressIndex] = useState(-1); // -1 = Surge Phase, 0+ = Relay Phase
     const [isReplaying, setIsReplaying] = useState(false);
 
-    // Track a key that changes when timeline content or baseline shifts, to re-run the race replay
     const timelineKey = useMemo(() => {
         return JSON.stringify(timeline.map(t => t.itemId)) + JSON.stringify(baselinePoints);
     }, [timeline, baselinePoints]);
 
-    // Initialize: Set all to 0 immediately to start the surge from ground zero
     useEffect(() => {
         if (active) {
             setTeamStates(teams.map(t => ({
@@ -202,19 +199,17 @@ const LeaderboardSlide: React.FC<{
         }
     }, [active, teams, timelineKey]);
 
-    // Race Loop: 0 -> Baseline Surge -> Relay
     useEffect(() => {
         if (!active || !isReplaying) return;
 
         const getNextStepDelay = () => {
-            if (progressIndex === -1) return 100; // Near-instant start for initial surge
-            if (progressIndex === 0) return BASELINE_SURGE_DURATION + 200; // Wait for surge to complete
+            if (progressIndex === -1) return 100; 
+            if (progressIndex === 0) return BASELINE_SURGE_DURATION + 200; 
             return RACE_STEP_DURATION;
         };
 
         const timer = setTimeout(() => {
             if (progressIndex === -1) {
-                // PHASE 1: Surge from 0 to Baseline
                 setTeamStates(prev => prev.map(t => {
                     const basePoints = baselinePoints[t.id] || 0;
                     return {
@@ -227,7 +222,6 @@ const LeaderboardSlide: React.FC<{
                 }));
                 setProgressIndex(0);
             } else if (progressIndex < timeline.length) {
-                // PHASE 2: Item-by-Item Relay
                 const result = timeline[progressIndex];
                 const item = items.find(i => i.id === result.itemId);
                 if (item) {
@@ -244,13 +238,7 @@ const LeaderboardSlide: React.FC<{
                         };
                     }));
                 }
-                setProgressIndex(prev => {
-                    if (prev >= timeline.length - 1) {
-                         // End of relay
-                         return prev + 1;
-                    }
-                    return prev + 1;
-                });
+                setProgressIndex(prev => prev + 1);
             }
         }, getNextStepDelay());
 
@@ -264,13 +252,10 @@ const LeaderboardSlide: React.FC<{
     const maxPoints = Math.max(...teamStates.map(t => t.points), 1);
     const visibleCount = Math.min(8, teams.length);
     const ROW_HEIGHT_VH = 65 / visibleCount;
-
-    // Correctly count how many items have been processed into the current visual points
     const itemsProcessedCount = baselineCount + (progressIndex >= 0 ? Math.min(progressIndex + 1, timeline.length) : 0);
 
     return (
         <div className="h-full w-full flex flex-col p-[5vh] lg:p-[8vh] relative overflow-hidden select-none">
-            {/* Background Surge Glow */}
             <div className="absolute inset-0 z-0 opacity-[0.03] transition-all duration-1000" style={{ background: `radial-gradient(circle at 50% 50%, #3b82f6 0%, transparent 80%)` }}></div>
 
             <div className="flex flex-row justify-between items-end mb-[5vh] relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -289,33 +274,15 @@ const LeaderboardSlide: React.FC<{
                             </div>
                         )}
                     </div>
-                    <p className="text-[1.2vh] lg:text-[1.6vh] font-bold text-zinc-600 uppercase tracking-[0.4em] mt-[1.5vh]">
-                        {progressIndex === -1 ? 'IGNITING ENGINE...' : 
-                         progressIndex < timeline.length ? `LIVE REPLAY: VERDICT ${progressIndex + 1} OF ${timeline.length}` : 'FINAL STANDINGS'}
-                    </p>
                 </div>
-                
-                {sortedStates.length > 0 && (
-                    <div className={`flex items-center gap-[3vh] p-[2.5vh] rounded-[4vh] bg-indigo-600 text-white shadow-2xl border border-white/10 shrink-0 transition-all duration-1000 ${progressIndex >= 0 ? 'animate-float opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
-                        <Crown size={40} className="hidden lg:block shrink-0 animate-pulse" fill="currentColor" />
-                        <div className="min-w-0">
-                            <div className="text-[1vh] lg:text-[1.2vh] font-black uppercase tracking-[0.4em] opacity-80 mb-[0.5vh]">CHAMPION SPOTLIGHT</div>
-                            <div className="text-[2.5vh] lg:text-[4vh] font-black uppercase tracking-tight truncate max-w-[15ch]">
-                                {sortedStates[0].name}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="flex-1 relative w-full">
                 {teamStates.map((team) => {
                     const rankIdx = sortedStates.findIndex(s => s.id === team.id);
                     if (rankIdx >= visibleCount) return null;
-
                     const isWinner = rankIdx === 0;
                     const isRunner = rankIdx === 1;
-                    
                     const medalColor = isWinner ? 'text-[#FFD700]' : isRunner ? 'text-[#C0C0C0]' : rankIdx === 2 ? 'text-[#CD7F32]' : 'text-zinc-700';
                     const barColor = isWinner 
                         ? 'bg-gradient-to-r from-[#FFD700] via-yellow-400 to-yellow-600 shadow-[0_0_40px_rgba(255,215,0,0.3)]' 
@@ -324,68 +291,127 @@ const LeaderboardSlide: React.FC<{
                             : rankIdx === 2 
                                 ? 'bg-gradient-to-r from-[#CD7F32] via-orange-500 to-orange-800'
                                 : 'bg-gradient-to-r from-sky-600 to-indigo-700';
-                    
                     const percentage = (team.points / maxPoints) * 100;
-
                     return (
-                        <div 
-                            key={team.id}
-                            className="absolute left-0 w-full transition-all duration-[1200ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center group"
-                            style={{ 
-                                top: `${rankIdx * (ROW_HEIGHT_VH + 2)}vh`,
-                                height: `${ROW_HEIGHT_VH}vh`,
-                                zIndex: team.lastGain > 0 ? 50 : 10
-                            }}
-                        >
-                            {/* Rank Column */}
-                            <div className={`w-[8vh] lg:w-[15vh] shrink-0 flex items-center justify-center font-black text-[3vh] lg:text-[6vh] font-mono ${medalColor} transition-colors duration-1000`}>
-                                {(rankIdx + 1).toString().padStart(2, '0')}
-                            </div>
-
-                            {/* Race Bar Container */}
+                        <div key={team.id} className="absolute left-0 w-full transition-all duration-[1200ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center group" style={{ top: `${rankIdx * (ROW_HEIGHT_VH + 2)}vh`, height: `${ROW_HEIGHT_VH}vh`, zIndex: team.lastGain > 0 ? 50 : 10 }}>
+                            <div className={`w-[8vh] lg:w-[15vh] shrink-0 flex items-center justify-center font-black text-[3vh] lg:text-[6vh] font-mono ${medalColor} transition-colors duration-1000`}>{(rankIdx + 1).toString().padStart(2, '0')}</div>
                             <div className={`flex-grow h-full bg-zinc-950/60 border-2 transition-all duration-1000 rounded-[2.5vh] relative overflow-hidden flex items-center px-[3vh] lg:px-[6vh] ${team.lastGain > 0 ? 'border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.1)]' : 'border-white/5'}`}>
-                                
-                                {/* Label Layer */}
                                 <div className="flex justify-between items-center relative z-10 w-full">
                                     <div className="flex items-center gap-4 min-w-0 pr-6">
-                                        {isWinner && <Zap size={24} className="text-yellow-400 animate-pulse hidden lg:block shrink-0" fill="currentColor" />}
-                                        <span className={`text-[2vh] lg:text-[4vh] font-black uppercase tracking-tight truncate transition-colors duration-1000 ${isWinner ? 'text-white' : 'text-zinc-500'}`}>
-                                            {team.name}
-                                        </span>
+                                        <span className={`text-[2vh] lg:text-[4vh] font-black uppercase tracking-tight truncate transition-colors duration-1000 ${isWinner ? 'text-white' : 'text-zinc-500'}`}>{team.name}</span>
                                     </div>
-                                    <div className={`text-[3.5vh] lg:text-[6.5vh] font-black tabular-nums tracking-tighter leading-none transition-all duration-1000 ${medalColor}`}>
-                                        <CountUp start={team.prevPoints} end={team.points} duration={progressIndex === 0 ? BASELINE_SURGE_DURATION : 1400} />
-                                    </div>
+                                    <div className={`text-[3.5vh] lg:text-[6.5vh] font-black tabular-nums tracking-tighter leading-none transition-all duration-1000 ${medalColor}`}><CountUp start={team.prevPoints} end={team.points} duration={progressIndex === 0 ? BASELINE_SURGE_DURATION : 1400} /></div>
                                 </div>
-
-                                {/* Dynamic Fill Bar */}
                                 <div className="absolute bottom-0 left-0 h-[1.2vh] bg-white/[0.02] w-full"></div>
-                                <div 
-                                    className={`absolute bottom-0 left-0 h-[1.2vh] transition-all duration-[1500ms] ease-out ${barColor}`}
-                                    style={{ width: `${Math.max(percentage, 1)}%` }}
-                                >
-                                    <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-r from-transparent to-white/20"></div>
-                                </div>
-
-                                {/* Event Badge (Points Gained) */}
+                                <div className={`absolute bottom-0 left-0 h-[1.2vh] transition-all duration-[1500ms] ease-out ${barColor}`} style={{ width: `${Math.max(percentage, 1)}%` }}></div>
                                 {team.lastGain > 0 && (
                                     <div className="absolute right-[2vh] top-1/2 -translate-y-1/2 animate-in fade-in zoom-in slide-in-from-right-12 duration-700 bg-emerald-500 text-white px-[2.5vh] py-[1vh] rounded-[2vh] shadow-[0_15px_40px_rgba(16,185,129,0.4)] flex items-center gap-[2vh] border border-emerald-400">
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[2.2vh] lg:text-[3.2vh] font-black leading-none">+{team.lastGain}</span>
-                                            <span className="text-[0.8vh] font-bold uppercase opacity-80 mt-0.5">Points</span>
-                                        </div>
-                                        <div className="h-[3.5vh] w-[1px] bg-white/30 hidden lg:block"></div>
-                                        <div className="hidden lg:block min-w-0">
-                                            <span className="text-[1vh] lg:text-[1.3vh] font-black uppercase tracking-widest text-white/90 block truncate max-w-[15vh]">
-                                                {team.lastItem}
-                                            </span>
-                                        </div>
+                                        <span className="text-[2.2vh] lg:text-[3.2vh] font-black leading-none">+{team.lastGain}</span>
                                     </div>
                                 )}
                             </div>
                         </div>
                     );
                 })}
+            </div>
+        </div>
+    );
+};
+
+// --- NEW: CATEGORY TOPPERS SLIDE ---
+
+interface TopperState {
+    id: string;
+    name: string;
+    points: number;
+    prevPoints: number;
+    teamName: string;
+    categoryName: string;
+    chestNumber: string;
+}
+
+const CategoryToppersSlide: React.FC<{ toppers: any[]; active: boolean }> = ({ toppers, active }) => {
+    const [localToppers, setLocalToppers] = useState<TopperState[]>([]);
+    const [isSurging, setIsSurging] = useState(false);
+
+    useEffect(() => {
+        if (active) {
+            setLocalToppers(toppers.map(t => ({ ...t, points: 0, prevPoints: 0 })));
+            setIsSurging(false);
+            const timer = setTimeout(() => {
+                setLocalToppers(toppers.map(t => ({ ...t, prevPoints: 0, points: t.points })));
+                setIsSurging(true);
+            }, 500);
+            return () => clearTimeout(timer);
+        } else {
+            setIsSurging(false);
+            setLocalToppers([]);
+        }
+    }, [active, toppers]);
+
+    const maxPoints = Math.max(...toppers.map(t => t.points), 1);
+    const visibleToppers = localToppers.slice(0, 8); // Top 8 by point value for layout
+    const ROW_HEIGHT_VH = 65 / Math.max(visibleToppers.length, 1);
+
+    return (
+        <div className="h-full w-full flex flex-col p-[5vh] lg:p-[8vh] relative overflow-hidden select-none">
+            <div className="absolute inset-0 z-0 opacity-[0.03] transition-all duration-1000" style={{ background: `radial-gradient(circle at 50% 50%, #10b981 0%, transparent 80%)` }}></div>
+
+            <div className="mb-[5vh] animate-in fade-in slide-in-from-top-4 duration-700">
+                <div className="flex items-center gap-[1.5vh] mb-[1.5vh]">
+                    <div className="w-[1.5vh] h-[1.5vh] rounded-full bg-emerald-500 shadow-[0_0_25px_#10b981] animate-pulse"></div>
+                    <h2 className="text-[1.5vh] lg:text-[2.2vh] font-black uppercase tracking-[0.6em] text-emerald-500">INDIVIDUAL EXCELLENCE</h2>
+                </div>
+                <h1 className="text-[6vh] lg:text-[11vh] font-black font-serif uppercase tracking-tighter leading-none text-white">CATEGORY TOPPERS</h1>
+                <p className="text-[1.2vh] lg:text-[1.6vh] font-bold text-zinc-600 uppercase tracking-[0.4em] mt-[1.5vh]">MOST POINTS EARNED IN SINGLE ITEMS</p>
+            </div>
+
+            <div className="flex-1 relative w-full">
+                {visibleToppers.map((topper, idx) => {
+                    const percentage = (topper.points / maxPoints) * 100;
+                    return (
+                        <div 
+                            key={topper.id}
+                            className="absolute left-0 w-full transition-all duration-[1200ms] ease-out flex items-center group"
+                            style={{ 
+                                top: `${idx * (ROW_HEIGHT_VH + 2)}vh`,
+                                height: `${ROW_HEIGHT_VH}vh`
+                            }}
+                        >
+                            <div className="w-[8vh] lg:w-[20vh] shrink-0 flex items-center justify-center font-black text-[2.5vh] lg:text-[4vh] text-zinc-600 truncate px-2 font-mono">
+                                {topper.categoryName}
+                            </div>
+
+                            <div className={`flex-grow h-full bg-zinc-950/60 border-2 border-white/5 transition-all duration-1000 rounded-[2.5vh] relative overflow-hidden flex items-center px-[3vh] lg:px-[6vh] ${isSurging ? 'border-indigo-500/40 shadow-[0_0_50px_rgba(99,102,241,0.1)]' : ''}`}>
+                                <div className="flex justify-between items-center relative z-10 w-full">
+                                    <div className="flex items-center gap-4 min-w-0 pr-6">
+                                        <div className="p-2 bg-indigo-500/20 rounded-xl hidden lg:block shrink-0"><User size={24} className="text-indigo-400" /></div>
+                                        <div className="min-w-0">
+                                            <span className="text-[2vh] lg:text-[3.5vh] font-black uppercase tracking-tight text-white block truncate leading-tight">{topper.name}</span>
+                                            <span className="text-[1vh] lg:text-[1.4vh] font-black uppercase tracking-widest text-zinc-500 block truncate opacity-80">{topper.teamName} • #{topper.chestNumber}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[3.5vh] lg:text-[6.5vh] font-black tabular-nums tracking-tighter leading-none text-indigo-400">
+                                            <CountUp start={topper.prevPoints} end={topper.points} duration={2000} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 h-[1.2vh] bg-white/[0.02] w-full"></div>
+                                <div 
+                                    className="absolute bottom-0 left-0 h-[1.2vh] transition-all duration-[2000ms] ease-out bg-gradient-to-r from-indigo-600 to-emerald-500"
+                                    style={{ width: `${Math.max(percentage, 1)}%` }}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+                {visibleToppers.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 italic text-[2vh] font-black uppercase tracking-widest">
+                        <Award size={80} strokeWidth={1} className="mb-6" />
+                        Awaiting individual standings
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -427,10 +453,6 @@ const StatsSlide: React.FC<{ stats: any }> = ({ stats }) => (
                             {stat.label}
                         </p>
                     </div>
-                    
-                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-                         <stat.icon size={120} />
-                    </div>
                 </div>
             ))}
         </div>
@@ -470,22 +492,11 @@ const UpcomingSlide: React.FC<{ events: any[] }> = ({ events }) => (
                                     <MapPin size={16} fill="currentColor" />
                                     <p className="text-[1.8vh] lg:text-[2.6vh] font-black truncate uppercase tracking-tighter leading-none">{ev.stage || 'TBA'}</p>
                                 </div>
-                                <p className="text-[1vh] lg:text-[1.3vh] font-bold text-zinc-500 uppercase tracking-widest truncate mt-2.5 opacity-60">{ev.date || 'TBA'}</p>
-                            </div>
-                            <div className="ml-4 flex flex-col items-center">
-                                 <p className="text-[0.9vh] lg:text-[1.1vh] font-black uppercase text-zinc-500 tracking-widest mb-1">Time</p>
-                                 <div className="text-[2.5vh] lg:text-[4vh] font-black text-amber-400 tabular-nums leading-none tracking-tighter">{ev.time || '--:--'}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             ))}
-            {events.length === 0 && (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-30 italic text-[1.5vh] font-black uppercase tracking-widest">
-                    <Calendar size={48} className="mb-4" />
-                    Timeline finalized
-                </div>
-            )}
         </div>
     </div>
 );
@@ -504,8 +515,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const progressRef = useRef<number>(0);
     const lastTickRef = useRef<number>(Date.now());
 
-    // CALCULATE ONLY DECLARED POINTS:
-    // This callback is used during relay construction and stats generation.
     const calculateItemScores = useCallback((item: any, winners: any[]) => {
         if (!state) return [];
         const gradesConfig = item.type === ItemType.SINGLE ? (state.gradePoints?.single || []) : (state.gradePoints?.group || []);
@@ -532,7 +541,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
     const data = useMemo(() => {
         if (!state) return null;
         
-        // REINFORCED: Filter results strictly for DECLARED status AND ensure the item exists in current registry
         const declaredOnly = state.results.filter(r => {
             const item = state.items.find(i => i.id === r.itemId);
             return r.status === ResultStatus.DECLARED && !!item;
@@ -541,7 +549,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
         const rotationLimit = state.settings.projector?.resultsLimit || 3;
         const raceLimit = state.settings.projector?.pointsLimit || 10;
         
-        // Individual Results Slides (Limited to validated DECLARED results)
         const resultsSlidesData = declaredOnly.slice(-rotationLimit).reverse().map(r => {
             const item = state.items.find(i => i.id === r.itemId);
             const category = state.categories.find(c => c.id === item?.categoryId);
@@ -552,8 +559,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             };
         }).filter(Boolean);
 
-        // Leaderboard Race Relay Data:
-        // We divide validated DECLARED results into "Baseline" (instant points) and "Timeline" (progressive reveal)
         const timeline = declaredOnly.slice(-raceLimit);
         const baselineResults = declaredOnly.slice(0, Math.max(0, declaredOnly.length - raceLimit));
         const baselineCount = baselineResults.length;
@@ -570,7 +575,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             }
         });
 
-        // Compute Total Sum (Stats slide uses this, ensuring ONLY validated DECLARED are counted)
         const totalPointsMap: Record<string, number> = { ...baselinePoints };
         timeline.forEach(r => {
             const item = state.items.find(i => i.id === r.itemId);
@@ -581,11 +585,47 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             }
         });
 
+        // CALCULATE CATEGORY TOPPERS (Individual Single Points)
+        const toppersMap: Record<string, any[]> = {};
+        state.categories.forEach(c => toppersMap[c.id] = []);
+
+        declaredOnly.forEach(r => {
+            const item = state.items.find(i => i.id === r.itemId);
+            if (item && item.type === ItemType.SINGLE) {
+                calculateItemScores(item, r.winners).forEach(w => {
+                    if (w.participantId && w.totalPoints > 0) {
+                        const entryId = `${item.categoryId}_${w.participantId}`;
+                        const existing = toppersMap[item.categoryId].find(e => e.participantId === w.participantId);
+                        if (existing) {
+                            existing.points += w.totalPoints;
+                        } else {
+                            toppersMap[item.categoryId].push({ 
+                                participantId: w.participantId, 
+                                name: w.participantName, 
+                                teamName: w.teamName, 
+                                chestNumber: w.chestNumber || '',
+                                points: w.totalPoints, 
+                                categoryName: state.categories.find(c => c.id === item.categoryId)?.name || '' 
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+        const categoryToppers = state.categories.map(c => {
+            const list = toppersMap[c.id];
+            if (!list || list.length === 0) return null;
+            const topper = [...list].sort((a,b) => b.points - a.points)[0];
+            return { ...topper, id: c.id };
+        }).filter(Boolean).sort((a: any, b: any) => b.points - a.points);
+
         return { 
             results: resultsSlidesData,
             timeline: timeline,
             baselinePoints: baselinePoints,
             baselineCount: baselineCount,
+            categoryToppers: categoryToppers,
             teams: state.teams.map(t => ({ id: t.id, name: t.name })),
             stats: {
                 participants: state.participants.length, items: state.items.length,
@@ -607,18 +647,25 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             data.results.forEach((_, i) => slides.push(`RESULT_${i}`));
         }
         if (config?.showLeaderboard !== false) slides.push('LEADERBOARD');
+        
+        // Always show toppers slide if there is data
+        if (data?.categoryToppers && data.categoryToppers.length > 0) {
+            slides.push('TOPPERS');
+        }
+
         if (config?.showStats !== false) slides.push('STATS');
         if (config?.showUpcoming !== false) slides.push('UPCOMING');
         return slides.length > 0 ? slides : ['STATS'];
-    }, [state?.settings.projector, data?.results]);
+    }, [state?.settings.projector, data?.results, data?.categoryToppers]);
 
-    // Calculate dynamic duration for the current active slide
     const currentSlideDuration = useMemo(() => {
         const slideKey = SLIDE_ORDER[currentSlideIndex];
         if (slideKey === 'LEADERBOARD') {
             const timelineLength = data?.timeline?.length || 0;
-            // Duration = Surge + (Items * Step Duration) + 10 Seconds Hold
             return BASELINE_SURGE_DURATION + (timelineLength * RACE_STEP_DURATION) + 10000;
+        }
+        if (slideKey === 'TOPPERS') {
+            return 15000; // Static long duration for toppers race
         }
         return slideTempo.value;
     }, [currentSlideIndex, SLIDE_ORDER, data?.timeline?.length, slideTempo.value]);
@@ -630,7 +677,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
             const delta = now - lastTickRef.current;
             lastTickRef.current = now;
             
-            // Use dynamic duration for progress calculation
             const speed = currentSlideDuration;
             progressRef.current += (delta / speed) * 100;
             
@@ -664,7 +710,6 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
 
     return (
         <div ref={containerRef} className="h-screen w-screen overflow-hidden relative font-sans select-none bg-black text-white flex flex-col p-0 m-0">
-            {/* Ambient FX */}
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-emerald-50/10 rounded-full blur-[160px] animate-pulse"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-indigo-50/15 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '3s' }}></div>
@@ -690,6 +735,9 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                                     baselineCount={data.baselineCount}
                                 />
                             )}
+                            {key === 'TOPPERS' && (
+                                <CategoryToppersSlide toppers={data.categoryToppers} active={isActive} />
+                            )}
                             {key === 'STATS' && <StatsSlide stats={data.stats} />}
                             {key === 'UPCOMING' && <UpcomingSlide events={data.upcoming} />}
                         </div>
@@ -697,83 +745,36 @@ const ProjectorView: React.FC<ProjectorViewProps> = ({ onNavigate }) => {
                 })}
             </main>
 
-            {/* Cinematic Controls Overlay */}
             <div className="absolute inset-0 z-[60] pointer-events-none group">
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95vw] max-w-[700px] pointer-events-auto opacity-0 translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-700">
                     <div className="bg-black/95 backdrop-blur-3xl border-2 border-white/10 p-5 rounded-[3vh] shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col gap-5 overflow-hidden">
-                        
                         <div className="flex items-center justify-between px-4">
                             <div className="flex items-center gap-3">
-                                 <button 
-                                    onClick={() => {
-                                        progressRef.current = 0;
-                                        setCurrentSlideIndex(p => (p - 1 + SLIDE_ORDER.length) % SLIDE_ORDER.length);
-                                    }} 
-                                    className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"
-                                 >
-                                    <ChevronLeft size={32} />
-                                 </button>
-                                 <button 
-                                    onClick={() => setIsPaused(!isPaused)} 
-                                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-95 ${isPaused ? 'bg-emerald-600 text-white' : 'bg-white text-black'}`}
-                                 >
-                                    {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
-                                 </button>
-                                 <button 
-                                    onClick={() => {
-                                        progressRef.current = 0;
-                                        setCurrentSlideIndex(p => (p + 1) % SLIDE_ORDER.length);
-                                    }} 
-                                    className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"
-                                 >
-                                    <ChevronRight size={32} />
-                                 </button>
+                                 <button onClick={() => { progressRef.current = 0; setCurrentSlideIndex(p => (p - 1 + SLIDE_ORDER.length) % SLIDE_ORDER.length); }} className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"><ChevronLeft size={32} /></button>
+                                 <button onClick={() => setIsPaused(!isPaused)} className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-95 ${isPaused ? 'bg-emerald-600 text-white' : 'bg-white text-black'}`}>{isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}</button>
+                                 <button onClick={() => { progressRef.current = 0; setCurrentSlideIndex(p => (p + 1) % SLIDE_ORDER.length); }} className="p-3 text-zinc-500 hover:text-white transition-all active:scale-90"><ChevronRight size={32} /></button>
                             </div>
-
                             <div className="flex items-center gap-2">
                                 {SPEEDS.map(s => (
-                                    <button 
-                                        key={s.label}
-                                        onClick={() => setSlideTempo(s)}
-                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${slideTempo.value === s.value ? 'bg-indigo-600 text-white shadow-lg' : 'border-white/5 text-zinc-500 hover:text-zinc-300'}`}
-                                    >
-                                        {s.label}
-                                    </button>
+                                    <button key={s.label} onClick={() => setSlideTempo(s)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${slideTempo.value === s.value ? 'bg-indigo-600 text-white shadow-lg' : 'border-white/5 text-zinc-500 hover:text-zinc-300'}`}>{s.label}</button>
                                 ))}
                             </div>
-
                             <div className="flex items-center gap-3">
-                                <button onClick={toggleFullscreen} className="p-3 text-zinc-500 hover:text-white transition-all">
-                                    {isFullscreen ? <Minimize size={28}/> : <Maximize size={28}/>}
-                                </button>
-                                <button onClick={() => onNavigate(TABS.DASHBOARD)} className="p-3 bg-rose-600/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-full transition-all border border-rose-500/20">
-                                    <ArrowLeft size={28} strokeWidth={3} />
-                                </button>
+                                <button onClick={toggleFullscreen} className="p-3 text-zinc-500 hover:text-white transition-all">{isFullscreen ? <Minimize size={28}/> : <Maximize size={28}/>}</button>
+                                <button onClick={() => onNavigate(TABS.DASHBOARD)} className="p-3 bg-rose-600/20 text-rose-500 hover:bg-rose-600 hover:text-white rounded-full transition-all border border-rose-500/20"><ArrowLeft size={28} strokeWidth={3} /></button>
                             </div>
                         </div>
-
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                             <div id="active-slide-progress" className="h-full bg-emerald-500 transition-all duration-300 linear shadow-[0_0_15px_#10b981]"></div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-1.5vh); }
-                }
-                .animate-float {
-                    animation: float 6s ease-in-out infinite;
-                }
-                @keyframes bounce-slow {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-0.8vh); }
-                }
-                .animate-bounce-slow {
-                    animation: bounce-slow 4s ease-in-out infinite;
-                }
+                @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5vh); } }
+                .animate-float { animation: float 6s ease-in-out infinite; }
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.8vh); } }
+                .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>

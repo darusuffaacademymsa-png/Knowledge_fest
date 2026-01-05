@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Card from '../../components/Card';
@@ -409,7 +408,7 @@ const TAB_ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const GeneralSettings: React.FC = () => {
-    const { state, updateSettings, updateCustomFonts, updateGeneralCustomFonts, addUser, updateUser, deleteUser, updatePermissions, updateInstruction, backupData, restoreData, settingsSubView: activeTab } = useFirebase();
+    const { state, updateSettings, updateCustomFonts, updateGeneralCustomFonts, addUser, updateUser, deleteUser, updatePermissions, updateInstruction, backupData, restoreData, resetSystem, settingsSubView: activeTab } = useFirebase();
     const restoreInputRef = useRef<HTMLInputElement>(null);
     const [isEditingInst, setIsEditingInst] = useState(false);
     const [instData, setInstData] = useState(state?.settings.institutionDetails || { name: '', address: '', email: '', contactNumber: '', description: '', logoUrl: '' });
@@ -1108,7 +1107,7 @@ const GeneralSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {/* Export Section */}
                             <div className="group relative flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-300 hover:border-emerald-500/30 hover:-translate-y-1">
                                 <div className="p-8 pb-4">
@@ -1129,13 +1128,13 @@ const GeneralSettings: React.FC = () => {
                             </div>
 
                             {/* Restore Section */}
-                            <div className="group relative flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-300 hover:border-rose-500/30 hover:-translate-y-1">
+                            <div className="group relative flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-300 hover:border-indigo-500/30 hover:-translate-y-1">
                                 <div className="p-8 pb-4">
-                                    <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                                    <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-6 shadow-inner group-hover:scale-110 transition-transform">
                                         <RefreshCw className="animate-spin" size={16} />
                                     </div>
                                     <h3 className="text-2xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">System Restore</h3>
-                                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed">Overwrite the existing database with data from a previously generated snapshot. <span className="text-rose-500 font-bold uppercase">This action is irreversible.</span></p>
+                                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed">Overwrite the existing database with data from a previously generated snapshot. <span className="text-indigo-500 font-bold uppercase">This action is irreversible.</span></p>
                                 </div>
                                 <div className="p-8 mt-auto">
                                     <input 
@@ -1153,9 +1152,28 @@ const GeneralSettings: React.FC = () => {
                                     />
                                     <button 
                                         onClick={() => (restoreInputRef.current as any)?.click()}
-                                        className="w-full py-4 border-2 border-rose-100 dark:border-strong-900/30 text-rose-600 dark:text-rose-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-50 dark:hover:bg-rose-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        className="w-full py-4 border-2 border-indigo-100 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                     >
                                         <Upload size={16} strokeWidth={3}/> Upload Snapshot
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Reset Section */}
+                            <div className="group relative flex flex-col h-full bg-white dark:bg-[#121412] rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-300 hover:border-rose-600/30 hover:-translate-y-1">
+                                <div className="p-8 pb-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-500 mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                                        <Trash2 size={32} />
+                                    </div>
+                                    <h3 className="text-2xl font-black font-serif text-amazio-primary dark:text-white uppercase tracking-tighter">Factory Reset</h3>
+                                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed">Wipe all competition data, user accounts, and media assets. Revert the terminal to its initial empty state.</p>
+                                </div>
+                                <div className="p-8 mt-auto">
+                                    <button 
+                                        onClick={resetSystem}
+                                        className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-rose-500/20 hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <ShieldAlert size={16} strokeWidth={3}/> Purge All Data
                                     </button>
                                 </div>
                             </div>
@@ -1164,7 +1182,7 @@ const GeneralSettings: React.FC = () => {
                         {/* Safety Disclaimer */}
                         <div className="flex items-center justify-center gap-2 py-4 opacity-50">
                             <AlertTriangle size={14} className="text-amber-500" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Security: User sessions are preserved during data operations</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-50">Security: This operation requires manager authorization</span>
                         </div>
                     </div>
                 );

@@ -52,6 +52,8 @@ const SectionTitle = ({ title, icon: Icon, color = 'indigo' }: { title: string, 
     );
 };
 
+const selectClasses = "w-full appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm font-bold cursor-pointer text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all disabled:opacity-50";
+
 const GradeRangeVisualizer: React.FC<{ grades: Grade[], min: number, max: number }> = ({ grades, min, max }) => {
     const range = max - min;
     const sortedGrades = [...grades].sort((a, b) => a.lowerLimit - b.lowerLimit);
@@ -139,7 +141,7 @@ const ItemPointOverrideModal: React.FC<{
                                         type="number" 
                                         value={(prizePoints as any)[p.k]} 
                                         onChange={e => setPrizePoints({ ...prizePoints, [p.k]: +e.target.value })}
-                                        className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 font-black text-center text-lg"
+                                        className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 font-black text-center text-lg outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
                                     />
                                 </div>
                             ))}
@@ -163,7 +165,7 @@ const ItemPointOverrideModal: React.FC<{
                                             placeholder={g.points.toString()}
                                             value={gradeOverrides[g.id] ?? ''} 
                                             onChange={e => setGradeOverrides({ ...gradeOverrides, [g.id]: e.target.value === '' ? g.points : +e.target.value })}
-                                            className="w-16 p-2 rounded-xl bg-white dark:bg-zinc-800 border-2 border-indigo-200 dark:border-indigo-900 text-center font-black"
+                                            className="w-16 p-2 rounded-xl bg-white dark:bg-zinc-800 border-2 border-indigo-200 dark:border-indigo-900 text-center font-black outline-none transition-all"
                                         />
                                     </div>
                                 </div>
@@ -392,14 +394,14 @@ const LotMachine: React.FC = () => {
                         <SectionTitle title="Logic Mapping" icon={Layers} color="emerald" />
                         <div className="space-y-4">
                             <div className="relative">
-                                <select disabled={assignmentStatus === 'success'} value={selectedCategoryId} onChange={e => setSelectedCategoryId(e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all disabled:opacity-50">
+                                <select disabled={assignmentStatus === 'success'} value={selectedCategoryId} onChange={e => setSelectedCategoryId(e.target.value)} className={selectClasses}>
                                     <option value="" className="dark:bg-zinc-900">All Categories</option>
                                     {categories.map(c => <option key={c.id} value={c.id} className="dark:bg-zinc-900">{c.name}</option>)}
                                 </select>
                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={16} />
                             </div>
                             <div className="relative">
-                                <select disabled={assignmentStatus === 'success'} value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm font-bold appearance-none cursor-pointer text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all disabled:opacity-50">
+                                <select disabled={assignmentStatus === 'success'} value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)} className={selectClasses}>
                                     <option value="" className="dark:bg-zinc-900">-- Choose Item --</option>
                                     {availableItems.map(i => <option key={i.id} value={i.id} className="dark:bg-zinc-900">{i.name}</option>)}
                                 </select>
@@ -918,12 +920,12 @@ const GradeRuleEditor: React.FC<{ itemType: 'single' | 'group' }> = ({ itemType 
             </div>
             <form onSubmit={handleSave} className="mt-8 p-6 rounded-[2rem] bg-zinc-50/50 dark:bg-white/[0.01] border border-zinc-100 dark:border-zinc-800 flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <input type="text" placeholder="Grade" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border outline-none bg-white dark:bg-zinc-800" required/>
-                    <input type="number" placeholder="Min %" value={formData.lowerLimit} onChange={e => setFormData({...formData, lowerLimit: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border outline-none bg-white dark:bg-zinc-800"/>
-                    <input type="number" placeholder="Max %" value={formData.upperLimit} onChange={e => setFormData({...formData, upperLimit: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border outline-none bg-white dark:bg-zinc-800"/>
-                    <input type="number" placeholder="Pts" value={formData.points} onChange={e => setFormData({...formData, points: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border outline-none bg-white dark:bg-zinc-800"/>
+                    <input type="text" placeholder="Grade" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border border-zinc-200 dark:border-zinc-700 outline-none bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-indigo-500/20" required/>
+                    <input type="number" placeholder="Min %" value={formData.lowerLimit} onChange={e => setFormData({...formData, lowerLimit: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border border-zinc-200 dark:border-zinc-700 outline-none bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-indigo-500/20"/>
+                    <input type="number" placeholder="Max %" value={formData.upperLimit} onChange={e => setFormData({...formData, upperLimit: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border border-zinc-200 dark:border-zinc-700 outline-none bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-indigo-500/20"/>
+                    <input type="number" placeholder="Pts" value={formData.points} onChange={e => setFormData({...formData, points: +e.target.value})} className="w-full rounded-xl p-3 text-sm font-bold border border-zinc-200 dark:border-zinc-700 outline-none bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-indigo-500/20"/>
                 </div>
-                <button type="submit" className="w-full py-4 bg-amazio-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">
+                <button type="submit" className="w-full py-4 bg-amazio-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
                     {editingId ? 'Update Range' : 'Add Rule'}
                 </button>
             </form>

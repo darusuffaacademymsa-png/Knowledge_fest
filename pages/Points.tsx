@@ -1,4 +1,3 @@
-
 import { 
     Award, BarChart2, CheckCircle2, ChevronDown, ChevronRight, 
     Filter, GraduationCap, Info, Layers, Layout, ListFilter, 
@@ -149,12 +148,13 @@ const PointsPage: React.FC = () => {
             const category = categories.find(c => c.id === result.categoryId);
             if (!item || !category) return;
 
-            // Apply Filters: Category, Performance Type, Item ID
+            // Apply Filters: Category, Performance Type, Item ID, Item Type (Robust check)
             const matchesCat = globalFilters.categoryId.length === 0 || globalFilters.categoryId.includes(item.categoryId);
             const matchesPerf = globalFilters.performanceType.length === 0 || globalFilters.performanceType.includes(item.performanceType);
+            const matchesItemType = globalFilters.itemType.length === 0 || globalFilters.itemType.some(t => t.toLowerCase() === (item.type || '').toLowerCase());
             const matchesItemId = globalFilters.itemId.length === 0 || globalFilters.itemId.includes(item.id);
 
-            if (!matchesCat || !matchesPerf || !matchesItemId) return;
+            if (!matchesCat || !matchesPerf || !matchesItemType || !matchesItemId) return;
             
             activeItemIds.add(item.id);
             if (!itemAggregate[item.id]) {
@@ -332,13 +332,17 @@ const PointsPage: React.FC = () => {
                 });
             }
             const p = map.get(entry.participant.id);
-            if (entry.item.type === ItemType.SINGLE) {
-                p.total += entry.total;
+            // Modified: If a filter is active, we should show the points within that filtered context.
+            // If No filter is active, we only count Single for individual leaderboard logic.
+            if (globalFilters.itemType.length > 0) {
+                 p.total += entry.total;
+            } else if (entry.item.type === ItemType.SINGLE) {
+                 p.total += entry.total;
             }
             p.items.push(entry);
         });
         return Array.from(map.values()).sort((a,b) => b.total - a.total);
-    }, [analytics, teams]);
+    }, [analytics, teams, globalFilters.itemType]);
 
     if (!state || !analytics) return <div className="p-12 text-center text-zinc-500">Calculating standings...</div>;
 
@@ -648,7 +652,7 @@ const PointsPage: React.FC = () => {
 
                     <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 flex items-start gap-3 mb-6">
                         <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
-                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase leading-relaxed">Individual tallies only include performance from Single items. Group item points are listed for history but excluded from the total.</p>
+                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-200 uppercase leading-relaxed">Individual tallies prioritize performance from Single items. Group item points are listed for history and are included in calculations only when the "Group" filter is active.</p>
                     </div>
 
                     <div className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-2 mb-4">Contribution Matrix</div>
@@ -668,11 +672,11 @@ const PointsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className={`text-lg font-black tabular-nums ${e.item.type === ItemType.GROUP ? 'text-zinc-400 line-through decoration-zinc-400/50' : 'text-emerald-600'}`}>
+                                    <div className={`text-lg font-black tabular-nums ${e.item.type === ItemType.GROUP && globalFilters.itemType.length === 0 ? 'text-zinc-400 line-through decoration-zinc-400/50' : 'text-emerald-600'}`}>
                                         +{e.total}
                                     </div>
                                     <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">
-                                        {e.item.type === ItemType.GROUP ? 'Group (Excluded)' : 'Points Earned'}
+                                        {e.item.type === ItemType.GROUP && globalFilters.itemType.length === 0 ? 'Group (Excluded)' : 'Points Earned'}
                                     </p>
                                 </div>
                             </div>

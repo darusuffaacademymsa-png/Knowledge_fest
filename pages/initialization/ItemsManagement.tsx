@@ -1,4 +1,3 @@
-
 import { AlertTriangle, ArrowRight, CheckCircle, ChevronDown, ChevronUp, ClipboardList, Clock, Edit2, FileDown, Image as ImageIcon, LayoutList, Layers, MapPin, Plus, RefreshCw, Save, Search, ShieldAlert, Sparkles, Tag, Trash2, Upload, UserPlus, Users, User as UserIcon, X, XCircle, BookOpen, Mic, PenTool, Hash, Info, ListTree, PackageSearch, Settings2, CheckSquare, Square, Check, Contact, Crown, ShieldCheck, Shield } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -44,6 +43,8 @@ const getThemeColor = (str: string) => {
 };
 
 // --- Styled Components ---
+
+const selectClasses = "w-full appearance-none px-4 py-3 sm:py-4 bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all cursor-pointer";
 
 const SortButton = <T extends string>({ label, sortKey, currentSortKey, currentSortDir, onSort }: { 
     label: string, 
@@ -157,10 +158,13 @@ export const GroupEntryModal: React.FC<{ isOpen: boolean; onClose: () => void; e
                     </div>
                     <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Group Leader</label>
-                        <select value={leaderId} onChange={e => setLeaderId(e.target.value)} className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 text-sm font-bold outline-none appearance-none">
-                            <option value="">-- Select Leader --</option>
-                            {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </select>
+                        <div className="relative">
+                            <select value={leaderId} onChange={e => setLeaderId(e.target.value)} className={selectClasses}>
+                                <option value="">-- Select Leader --</option>
+                                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Members ({members.length})</label>
@@ -234,10 +238,13 @@ export const ItemFormModal: React.FC<{
 
                         <div>
                             <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Category</label>
-                            <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none appearance-none">
-                                <option value="">Select Level</option>
-                                {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className={selectClasses}>
+                                    <option value="">Select Level</option>
+                                    {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                            </div>
                         </div>
 
                         <div>
@@ -248,18 +255,24 @@ export const ItemFormModal: React.FC<{
                         <div className="grid grid-cols-2 gap-4 md:col-span-2">
                             <div>
                                 <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Type</label>
-                                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as ItemType, maxParticipants: e.target.value === ItemType.SINGLE ? 1 : 7})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none">
-                                    <option value={ItemType.SINGLE}>Single</option>
-                                    <option value={ItemType.GROUP}>Group</option>
-                                </select>
+                                <div className="relative">
+                                    <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as ItemType, maxParticipants: e.target.value === ItemType.SINGLE ? 1 : 7})} className={selectClasses}>
+                                        <option value={ItemType.SINGLE}>Single</option>
+                                        <option value={ItemType.GROUP}>Group</option>
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                </div>
                             </div>
 
                             <div>
                                 <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Venue</label>
-                                <select value={formData.performanceType} onChange={e => setFormData({...formData, performanceType: e.target.value as PerformanceType})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none">
-                                    <option value={PerformanceType.ON_STAGE}>On-Stage</option>
-                                    <option value={PerformanceType.OFF_STAGE}>Off-Stage</option>
-                                </select>
+                                <div className="relative">
+                                    <select value={formData.performanceType} onChange={e => setFormData({...formData, performanceType: e.target.value as PerformanceType})} className={selectClasses}>
+                                        <option value={PerformanceType.ON_STAGE}>On-Stage</option>
+                                        <option value={PerformanceType.OFF_STAGE}>Off-Stage</option>
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                </div>
                             </div>
                         </div>
 
@@ -380,28 +393,37 @@ export const ParticipantFormModal: React.FC<{
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Team / House</label>
-                                <select value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none appearance-none">
-                                    <option value="">Select Team</option>
-                                    {state.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                </select>
+                                <div className="relative">
+                                    <select value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})} className={selectClasses}>
+                                        <option value="">Select Team</option>
+                                        {state.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                </div>
                             </div>
 
                             <div>
                                 <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Level / Category</label>
-                                <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none appearance-none">
-                                    <option value="">Select Level</option>
-                                    {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
+                                <div className="relative">
+                                    <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className={selectClasses}>
+                                        <option value="">Select Level</option>
+                                        {state.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                </div>
                             </div>
                         </div>
 
                         <div>
                             <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 sm:mb-2 ml-1">Registry Role</label>
-                            <select value={formData.role || ''} onChange={e => setFormData({...formData, role: (e.target.value || undefined) as any})} className="w-full p-3 sm:p-4 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold outline-none">
-                                <option value="">Standard Delegate</option>
-                                <option value="leader">Team Leader</option>
-                                <option value="assistant">Assistant Leader</option>
-                            </select>
+                            <div className="relative">
+                                <select value={formData.role || ''} onChange={e => setFormData({...formData, role: (e.target.value || undefined) as any})} className={selectClasses}>
+                                    <option value="">Standard Delegate</option>
+                                    <option value="leader">Team Leader</option>
+                                    <option value="assistant">Assistant Leader</option>
+                                </select>
+                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                 </div>

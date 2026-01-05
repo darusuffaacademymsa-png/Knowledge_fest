@@ -1,7 +1,7 @@
-
 import JSZip from 'jszip';
-import { AlignJustify, Book, CheckSquare, Calendar, Download, File, FileCheck, FileDown, FileText, Grid3X3, Layers, Printer, Square, Stamp, Trophy, UserSquare2, Crown, MapPin, Phone, Mail, Globe, Info } from 'lucide-react';
+import { AlignJustify, Book, CheckSquare, Calendar, Download, File, FileCheck, FileDown, FileText, Grid3X3, Layers, Printer, Square, Stamp, Trophy, UserSquare2, Crown, MapPin, Phone, Mail, Globe, Info, Settings2, X, Check } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
 import Card from '../components/Card';
 import ReportViewer from '../components/ReportViewer';
 import { useFirebase } from '../hooks/useFirebase';
@@ -19,7 +19,7 @@ const ReportsPage: React.FC = () => {
   const [isPaginated, setIsPaginated] = useState(true);
   const [showEnrollmentMarks, setShowEnrollmentMarks] = useState(true);
   const [showWatermark, setShowWatermark] = useState(true);
-  const [includeGroupsInPrizes, setIncludeGroupsInPrizes] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Initialize from global settings if available
   const [showPrintHeader, setShowPrintHeader] = useState(state?.settings.reportSettings?.defaultShowHeader !== false);
@@ -48,7 +48,7 @@ const ReportsPage: React.FC = () => {
             }
 
             if (itemTypeFilter.length > 0) {
-                const hasTypeMatch = relevantItems.some(item => itemTypeFilter.includes(item.type));
+                const hasTypeMatch = relevantItems.some(item => itemTypeFilter.some(t => t.toLowerCase() === (item.type || '').toLowerCase()));
                 if (!hasTypeMatch) return false;
             }
 
@@ -62,7 +62,7 @@ const ReportsPage: React.FC = () => {
       return state.items.filter(item => 
             (globalFilters.categoryId.length === 0 || globalFilters.categoryId.includes(item.categoryId)) &&
             (globalFilters.performanceType.length === 0 || globalFilters.performanceType.includes(item.performanceType)) &&
-            (itemTypeFilter.length === 0 || itemTypeFilter.includes(item.type)) &&
+            (itemTypeFilter.length === 0 || itemTypeFilter.some(t => t.toLowerCase() === (item.type || '').toLowerCase())) &&
             (globalFilters.itemId.length === 0 || globalFilters.itemId.includes(item.id))
           );
   }, [state, globalFilters]);
@@ -77,7 +77,7 @@ const ReportsPage: React.FC = () => {
 
           if (globalFilters.categoryId.length > 0 && !globalFilters.categoryId.includes(category?.id || '')) return false;
           if (globalFilters.performanceType.length > 0 && !globalFilters.performanceType.includes(item?.performanceType || '')) return false;
-          if (itemTypeFilter.length > 0 && !itemTypeFilter.includes(item?.type || '')) return false;
+          if (itemTypeFilter.length > 0 && !itemTypeFilter.some(t => t.toLowerCase() === (item?.type || '').toLowerCase())) return false;
           if (globalFilters.itemId.length > 0 && !globalFilters.itemId.includes(item.id)) return false;
           return true;
       });
@@ -94,7 +94,7 @@ const ReportsPage: React.FC = () => {
 
            if (globalFilters.categoryId.length > 0 && !globalFilters.categoryId.includes(category?.id || '')) return false;
            if (globalFilters.performanceType.length > 0 && !globalFilters.performanceType.includes(item?.performanceType || '')) return false;
-           if (itemTypeFilter.length > 0 && !itemTypeFilter.includes(item?.type || '')) return false;
+           if (itemTypeFilter.length > 0 && !itemTypeFilter.some(t => t.toLowerCase() === (item?.type || '').toLowerCase())) return false;
            if (globalFilters.itemId.length > 0 && !globalFilters.itemId.includes(item.id)) return false;
            return true;
       });
@@ -204,7 +204,7 @@ const ReportsPage: React.FC = () => {
       const participantScheduledItems = p.itemIds.map(itemId => { 
           const item = state.items.find(i => i.id === itemId); 
           if (!item) return null;
-          if (itemTypeFilter.length > 0 && !itemTypeFilter.includes(item.type)) return null;
+          if (itemTypeFilter.length > 0 && !itemTypeFilter.some(t => t.toLowerCase() === (item.type || '').toLowerCase())) return null;
           const schedule = state.schedule.find(s => s.itemId === itemId && s.categoryId === p.categoryId); 
           return { item, schedule }; 
       }).filter(Boolean);
@@ -218,14 +218,135 @@ const ReportsPage: React.FC = () => {
   const generateIDCards = () => {
     if (!state) return;
     const itemTypeFilter = globalFilters.itemType || [];
-    const idCardStyles = ` <style> .id-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; z-index: 1; position: relative; } .id-card { width: 320px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; page-break-inside: avoid; margin-bottom: 10px; } .id-header { padding: 16px; border-bottom: 1px solid #f1f5f9; } .id-chest { font-size: 1.5rem; font-weight: 800; color: #1e293b; } .id-name { font-size: 1.1rem; font-weight: 700; text-transform: uppercase; } .item-chip { font-size: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; margin: 2px; display: inline-block; } </style> `;
-    let html = `${idCardStyles}${getWatermarkHTML()} <div style="text-align:center; padding: 20px;">${getBrandingHeaderHTML('Identity Cards')}</div> <div class="id-grid"> `;
+    const idCardStyles = `
+      <style>
+        .id-grid { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; z-index: 1; position: relative; padding: 20px; }
+        .id-card { 
+            width: 320px; 
+            border: 2px solid #1F2B1B; 
+            border-radius: 16px; 
+            background: #fff; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+            page-break-inside: avoid; 
+            margin-bottom: 15px; 
+            position: relative;
+        }
+        .id-top-bar { height: 8px; background: #1F2B1B; }
+        .id-header { padding: 18px; border-bottom: 1px solid #f1f5f9; text-align: center; background: #fafafa; }
+        .id-chest { 
+            font-family: 'Roboto Slab', serif; 
+            font-size: 1.8rem; 
+            font-weight: 900; 
+            color: #1F2B1B; 
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .id-name { 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            color: #1F2B1B;
+            line-height: 1.2;
+        }
+        .id-meta { font-size: 0.75rem; color: #666; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .id-body { padding: 15px 18px; }
+        .zone-group { margin-bottom: 12px; }
+        .zone-title { 
+            font-size: 9px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: #6A7B45; 
+            border-bottom: 1px solid #E0E2D9;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .type-subgroup { margin-bottom: 8px; padding-left: 4px; }
+        .type-label { font-size: 8px; font-weight: 800; color: #999; margin-bottom: 4px; text-transform: uppercase; }
+        
+        .item-list { display: flex; flex-wrap: wrap; gap: 4px; }
+        .item-chip { 
+            font-size: 10px; 
+            font-weight: 700;
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            color: #475569;
+        }
+        .id-footer { 
+            padding: 10px; 
+            background: #1F2B1B; 
+            color: white !important; 
+            text-align: center; 
+            font-size: 9px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+        }
+      </style>
+    `;
+
+    let html = `${getStyles()}${idCardStyles}${getWatermarkHTML()}
+      <div style="text-align:center; padding: 20px;">${getBrandingHeaderHTML('Official Identity Cards')}</div>
+      <div class="id-grid">
+    `;
+
     filteredParticipants.forEach((p) => {
-      const team = getTeamName(p.teamId); const categoryName = getCategoryName(p.categoryId); 
-      const items = p.itemIds.map(id => state.items.find(i => i.id === id)).filter(Boolean) as Item[];
-      const relevantItems = items.filter(i => itemTypeFilter.length === 0 || itemTypeFilter.includes(i.type));
-      html += ` <div class="report-block id-card"> <div class="id-header"> <div class="id-chest">${p.chestNumber}</div> <div class="id-name">${p.name}</div> <div style="font-size:0.7rem; color:#666">${team} • ${categoryName}</div> </div> <div style="padding:12px 16px"> ${relevantItems.map(i => `<div class="item-chip">${i.name} (${i.type.charAt(0)})</div>`).join('')} </div> </div> `;
+        const team = getTeamName(p.teamId);
+        const categoryName = getCategoryName(p.categoryId);
+        const items = p.itemIds.map(id => state.items.find(i => i.id === id)).filter(Boolean) as Item[];
+        const relevantItems = items.filter(i => itemTypeFilter.length === 0 || itemTypeFilter.some(t => t.toLowerCase() === (i.type || '').toLowerCase()));
+
+        // Grouping: Zone (PerformanceType) -> Type (ItemType)
+        const groupedItems: Record<string, Record<string, Item[]>> = {};
+        relevantItems.forEach(item => {
+            const zone = item.performanceType;
+            const type = item.type;
+            if (!groupedItems[zone]) groupedItems[zone] = {};
+            if (!groupedItems[zone][type]) groupedItems[zone][type] = [];
+            groupedItems[zone][type].push(item);
+        });
+
+        html += `
+            <div class="id-card">
+                <div class="id-top-bar"></div>
+                <div class="id-header">
+                    <div class="id-chest">${p.chestNumber}</div>
+                    <div class="id-name">${p.name}</div>
+                    <div class="id-meta">${team} <span style="opacity:0.3; margin: 0 4px;">|</span> ${categoryName}</div>
+                </div>
+                <div class="id-body">
+                    ${Object.entries(groupedItems).sort(([z1], [z2]) => z1.localeCompare(z2)).map(([zone, types]) => `
+                        <div class="zone-group">
+                            <div class="zone-title">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                ${zone} Zone
+                            </div>
+                            ${Object.entries(types).sort(([t1], [t2]) => t1.localeCompare(t2)).map(([type, list]) => `
+                                <div class="type-subgroup">
+                                    <div class="type-label">${type}s</div>
+                                    <div class="item-list">
+                                        ${list.map(i => `<div class="item-chip">${i.name}</div>`).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                    ${relevantItems.length === 0 ? '<div style="text-align:center; padding: 20px; color:#ccc; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">No Items Registered</div>' : ''}
+                </div>
+                <div class="id-footer">${state?.settings.branding?.eventName || 'Art Fest 2026'}</div>
+            </div>
+        `;
     });
+
     html += `</div>`;
     setReportContent({ title: 'Participant ID Cards', content: html, isSearchable: true, hideHeader: !showPrintHeader, hideFooter: !showPrintFooter });
   };
@@ -255,7 +376,11 @@ const ReportsPage: React.FC = () => {
           } else {
               displayEntries = participants.map(p => ({ id: p.id, chestNumber: p.chestNumber, name: p.name, teamId: p.teamId })).sort((a,b) => a.chestNumber.localeCompare(b.chestNumber, undefined, {numeric: true}));
           }
-          html += ` <div class="report-block" style="margin-bottom: 2rem; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}"> <div class="block-header" style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9;"> <h3 style="margin:0;">${item.name} (${item.type})</h3> <p style="margin:0;">Category: ${category} | Duration: ${item.duration} min</p> </div> <table> <thead><tr><th>Sl</th><th>Chest No</th><th>Name</th><th>Team</th><th>Signature</th></tr></thead> <tbody> ${displayEntries.map((p, i) => ` <tr><td>${i+1}</td><td style="font-weight:bold">${p.chestNumber}</td><td>${p.name}</td><td>${getTeamName(p.teamId)}</td><td></td></tr> `).join('')} </tbody> </table> </div> `;
+          html += ` <div class="report-block" style="margin-bottom: 2rem; ${index > 0 && isPaginated ? 'page-break-before: always;' : ''}"> <div class="block-header" style="background: var(--table-header); padding: 10px; border: 1px solid #E0E2D9;"> <h3 style="margin:0;">${item.name} (${item.type})</h3> <p style="margin:0;">Category: ${category} | Duration: ${item.duration} min</p> </div> <table> <thead><tr><th>Sl</th><th>Code</th><th>Chest No</th><th>Name</th><th>Team</th><th>Signature</th></tr></thead> <tbody> ${displayEntries.map((p, i) => {
+              const tab = state.tabulation.find(t => t.itemId === item.id && t.participantId === p.id);
+              const code = tab?.codeLetter || '-';
+              return ` <tr><td>${i+1}</td><td style="font-weight:bold;color:#6366f1">${code}</td><td style="font-weight:bold">${p.chestNumber}</td><td>${p.name}</td><td>${getTeamName(p.teamId)}</td><td></td></tr> `;
+          }).join('')} </tbody> </table> </div> `;
       });
       setReportContent({ title: 'Reporting List', content: html, isSearchable: true, hideHeader: !showPrintHeader, hideFooter: !showPrintFooter });
   };
@@ -296,7 +421,7 @@ const ReportsPage: React.FC = () => {
     const manualStyles = ` <style> .item-card { border: 1px solid #E0E2D9; border-radius: 12px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; } .badge { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; border: 1px solid #eee; margin-right: 4px; } </style> `;
     let html = `${getStyles()}${manualStyles}${getWatermarkHTML()} <div style="text-align:center; padding: 50px 0;"> ${getBrandingHeaderHTML('Official Program Manual')} </div> `;
     state.categories.forEach(cat => {
-        const items = state.items.filter(i => i.categoryId === cat.id && (itemTypeFilter.length === 0 || itemTypeFilter.includes(i.type))).sort((a,b) => a.name.localeCompare(b.name));
+        const items = state.items.filter(i => i.categoryId === cat.id && (itemTypeFilter.length === 0 || itemTypeFilter.some(t => t.toLowerCase() === (i.type || '').toLowerCase()))).sort((a,b) => a.name.localeCompare(b.name));
         if (items.length === 0) return;
         html += ` <div class="page-break-before-always"> <h3>${cat.name}</h3> ${items.map(item => ` <div class="item-card"> <h4>${item.name}</h4> <p style="font-size:12px;color:#666">${item.description || 'Event description.'}</p> <div> <span class="badge" style="background:#6A7B45;color:white">${item.type}</span> <span class="badge">${item.performanceType}</span> <span class="badge">🕒 ${item.duration} MIN</span> </div> </div> `).join('')} </div> `;
     });
@@ -320,14 +445,10 @@ const ReportsPage: React.FC = () => {
     // Aggregation of item-wise data
     const itemWinners: any[] = [];
 
-    state.results.forEach(res => {
+    // Use filteredResults which already respects Category, Performance Type, Item Type, and Item selection
+    filteredResults.forEach(res => {
         const item = state.items.find(i => i.id === res.itemId);
-        if (!item || res.status !== ResultStatus.DECLARED) return;
-        if (!includeGroupsInPrizes && item.type === ItemType.GROUP) return;
-
-        // Respect global category/perf filters for items too
-        if (globalFilters.categoryId.length > 0 && !globalFilters.categoryId.includes(item.categoryId)) return;
-        if (globalFilters.performanceType.length > 0 && !globalFilters.performanceType.includes(item.performanceType)) return;
+        if (!item) return;
 
         const currentItemWinner: any = {
             name: item.name,
@@ -335,13 +456,18 @@ const ReportsPage: React.FC = () => {
             prizes: { 1: [], 2: [], 3: [] }
         };
 
+        let hasRelevantWinner = false;
+
         res.winners.forEach(w => {
             if (!w.position || w.position > 3) return;
             
             const participant = state.participants.find(p => p.id === w.participantId);
             if (!participant) return;
 
-            // Updated: Only chest number and name, formatted as "ChestNo. Name"
+            // Apply Team Filter from universal filters
+            if (globalFilters.teamId.length > 0 && !globalFilters.teamId.includes(participant.teamId)) return;
+
+            hasRelevantWinner = true;
             const winnerSummary = `${participant.chestNumber}. ${participant.name}`;
             currentItemWinner.prizes[w.position].push(winnerSummary);
 
@@ -378,10 +504,13 @@ const ReportsPage: React.FC = () => {
             data.total += points;
         });
 
-        itemWinners.push(currentItemWinner);
+        if (hasRelevantWinner) {
+            itemWinners.push(currentItemWinner);
+        }
     });
 
-    const sortedParticipants = Array.from(winnersMap.values()).sort((a, b) => b.total - a.total);
+    // Updated: Sort by chest number instead of total points
+    const sortedParticipants = Array.from(winnersMap.values()).sort((a, b) => a.chest.localeCompare(b.chest, undefined, { numeric: true }));
     const sortedItems = itemWinners.sort((a, b) => a.name.localeCompare(b.name));
 
     // Standard list formatter with numbering
@@ -411,10 +540,9 @@ const ReportsPage: React.FC = () => {
             <thead>
                 <tr>
                     <th style="width: 25%;">Participant Identity</th>
-                    <th style="width: 20%;">1st Place Items</th>
-                    <th style="width: 20%;">2nd Place Items</th>
-                    <th style="width: 20%;">3rd Place Items</th>
-                    <th style="width: 15%; text-align: center;">Total Points</th>
+                    <th style="width: 25%;">1st Place Items</th>
+                    <th style="width: 25%;">2nd Place Items</th>
+                    <th style="width: 25%;">3rd Place Items</th>
                 </tr>
             </thead>
             <tbody>
@@ -430,7 +558,6 @@ const ReportsPage: React.FC = () => {
                         <td>${formatItemList(w.prizes[1])}</td>
                         <td>${formatItemList(w.prizes[2])}</td>
                         <td>${formatItemList(w.prizes[3])}</td>
-                        <td class="text-center font-bold" style="font-size: 16px; color: #283E25;">${w.total}</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -488,13 +615,67 @@ const ReportsPage: React.FC = () => {
 
   const generateParticipantItemChecklist = () => {
     if (!state) return;
-    let html = `${getStyles()}${getWatermarkHTML()}${getBrandingHeaderHTML('Matrix Checklist')}<h3>Registration Matrix</h3>`;
+    const matrixStyles = `
+      <style>
+        .matrix-table { border-collapse: collapse; width: auto; min-width: 100%; font-size: 10px; }
+        .matrix-table th, .matrix-table td { border: 1px solid #E0E2D9; padding: 4px; text-align: center; }
+        .matrix-header-cell { height: 160px; vertical-align: bottom; padding: 10px 2px !important; width: 30px; min-width: 30px; position: relative; }
+        .matrix-header-text-container {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            white-space: nowrap;
+            text-align: left;
+            font-weight: 800;
+            font-size: 9px;
+            color: var(--primary);
+            text-transform: uppercase;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .participant-name-cell { text-align: left !important; font-weight: 700; min-width: 200px; padding-left: 10px !important; }
+        .check-mark { font-family: serif; font-weight: bold; color: var(--brand-green); font-size: 14px; }
+      </style>
+    `;
+    let html = `${getStyles()}${matrixStyles}${getWatermarkHTML()}${getBrandingHeaderHTML('Registration Matrix')}<h3>Participant Registry Matrix</h3>`;
+    
     state.categories.forEach(cat => {
-        const catItems = state.items.filter(i => i.categoryId === cat.id && (globalFilters.itemType.length === 0 || globalFilters.itemType.includes(i.type))).sort((a,b) => a.name.localeCompare(b.name));
+        const catItems = state.items.filter(i => i.categoryId === cat.id && (globalFilters.itemType.length === 0 || globalFilters.itemType.some(t => t.toLowerCase() === (i.type || '').toLowerCase()))).sort((a,b) => a.name.localeCompare(b.name));
         if (catItems.length === 0) return;
         const catParticipants = filteredParticipants.filter(p => p.categoryId === cat.id);
         if (catParticipants.length === 0) return;
-        html += ` <div class="page-break-before-always"> <h4>${cat.name}</h4> <table style="font-size: 9px;"> <thead> <tr> <th>Participant</th> ${catItems.map(item => `<th style="writing-mode: vertical-rl; padding: 10px 2px;">${item.name}</th>`).join('')} </tr> </thead> <tbody> ${catParticipants.map(p => ` <tr> <td style="font-weight:bold">${p.chestNumber} - ${p.name}</td> ${catItems.map(item => ` <td style="text-align:center">${p.itemIds.includes(item.id) && showEnrollmentMarks ? '&#10003;' : ''}</td> `).join('')} </tr> `).join('')} </tbody> </table> </div> `;
+        
+        html += `
+            <div class="report-block page-break-before-always">
+                <h4 style="margin-top: 20px;">${cat.name}</h4>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px; text-align: left; padding-left: 10px;">Participant Identity</th>
+                            ${catItems.map(item => `
+                                <th class="matrix-header-cell">
+                                    <div class="matrix-header-text-container">
+                                        ${item.name}
+                                    </div>
+                                </th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${catParticipants.map(p => `
+                            <tr>
+                                <td class="participant-name-cell">${p.chestNumber} - ${p.name}</td>
+                                ${catItems.map(item => `
+                                    <td>${p.itemIds.includes(item.id) && showEnrollmentMarks ? '<span class="check-mark">&#10003;</span>' : ''}</td>
+                                `).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
     });
     setReportContent({ title: 'Checklist Matrix', content: html, isSearchable: true, hideHeader: !showPrintHeader, hideFooter: !showPrintFooter });
   };
@@ -509,58 +690,102 @@ const ReportsPage: React.FC = () => {
 
   if (!state) return <div>Loading...</div>;
 
-  return (
-    <div className="space-y-6">
-        <div className="hidden md:flex justify-between items-center">
-             <h2 className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">Reports</h2>
-             <div className="flex items-center gap-2">
-                <div className="flex items-center bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700 mr-2">
-                    <button onClick={() => setShowWatermark(!showWatermark)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${showWatermark ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}>
-                        <Stamp size={14} /> <span className="hidden sm:inline">Watermark</span>
-                    </button>
+  const CustomizationModal = () => (
+      ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setIsSettingsOpen(false)}>
+            <div className="bg-white dark:bg-[#121412] w-full max-w-md rounded-[2.5rem] shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.01]">
+                    <div>
+                        <h3 className="text-xl font-black font-serif uppercase tracking-tighter text-amazio-primary dark:text-white">Configure Layout</h3>
+                        <p className="text-[10px] font-black uppercase text-zinc-400 mt-1 tracking-widest">Global Print Settings</p>
+                    </div>
+                    <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors text-zinc-400"><X size={24}/></button>
                 </div>
-                <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                    <button onClick={() => setIsPaginated(true)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isPaginated ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}>Paginated</button>
-                    <button onClick={() => setIsPaginated(false)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isPaginated ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}>Continuous</button>
-                </div>
-             </div>
-        </div>
-        
-        {/* New Print Options Card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card title="Print Layout Options">
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
-                        <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Include Header</span>
+                <div className="p-8 space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-3">
+                            <Stamp size={18} className="text-indigo-500" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Show Watermark</span>
+                        </div>
+                        <button onClick={() => setShowWatermark(!showWatermark)} className={`relative w-10 h-5 rounded-full transition-colors ${showWatermark ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
+                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showWatermark ? 'left-6' : 'left-1'}`} />
+                        </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-3">
+                            <AlignJustify size={18} className="text-indigo-500" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Use Pagination</span>
+                        </div>
+                        <button onClick={() => setIsPaginated(!isPaginated)} className={`relative w-10 h-5 rounded-full transition-colors ${isPaginated ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
+                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isPaginated ? 'left-6' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-3">
+                            <Layers size={18} className="text-indigo-500" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Include Header</span>
+                        </div>
                         <button onClick={() => setShowPrintHeader(!showPrintHeader)} className={`relative w-10 h-5 rounded-full transition-colors ${showPrintHeader ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
                             <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showPrintHeader ? 'left-6' : 'left-1'}`} />
                         </button>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
-                        <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Include Footer</span>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-3">
+                            <Square size={18} className="text-indigo-500" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Include Footer</span>
+                        </div>
                         <button onClick={() => setShowPrintFooter(!showPrintFooter)} className={`relative w-10 h-5 rounded-full transition-colors ${showPrintFooter ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
                             <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showPrintFooter ? 'left-6' : 'left-1'}`} />
                         </button>
                     </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800">
+                        <div className="flex items-center gap-3">
+                            <CheckSquare size={18} className="text-indigo-600 dark:text-indigo-400" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Registry Marks</span>
+                        </div>
+                        <button onClick={() => setShowEnrollmentMarks(!showEnrollmentMarks)} className={`relative w-10 h-5 rounded-full transition-colors ${showEnrollmentMarks ? 'bg-indigo-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}>
+                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showEnrollmentMarks ? 'left-6' : 'left-1'}`} />
+                        </button>
+                    </div>
                 </div>
-            </Card>
-            <div className="md:col-span-2 p-6 rounded-[2rem] bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center gap-4">
-                <Info className="text-indigo-500" size={24} />
-                <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                    Header and footer visibility can be toggled per print session. Headers include institutional and event branding, while footers include page numbers and system identification.
-                </p>
+                <div className="p-6 border-t border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01]">
+                    <button 
+                        onClick={() => setIsSettingsOpen(false)}
+                        className="w-full py-4 bg-amazio-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all"
+                    >
+                        Apply Changes
+                    </button>
+                </div>
             </div>
+        </div>,
+        document.body
+      )
+  );
+
+  return (
+    <div className="space-y-6">
+        <div className="flex justify-between items-center">
+             <h2 className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">Reports Dashboard</h2>
+             <div className="flex items-center gap-2">
+                <button 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 transition-all shadow-sm group"
+                >
+                    <Settings2 size={16} className="group-hover:rotate-90 transition-transform duration-500" />
+                    <span className="hidden sm:inline">Configure Layout</span>
+                </button>
+             </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
              <Card title="Prize Holders" action={<button onClick={generatePrizeWinnersReport} className="text-indigo-600 hover:text-indigo-800"><Printer size={20}/></button>}> 
                 <div className="text-center p-4"> 
                     <Crown className="h-12 w-12 mx-auto text-yellow-600 mb-2" /> 
-                    <p className="text-sm text-zinc-500">Comprehesive list of winners by items and points.</p> 
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                        <input type="checkbox" id="incGrps" checked={includeGroupsInPrizes} onChange={e => setIncludeGroupsInPrizes(e.target.checked)} className="rounded border-zinc-300 text-indigo-600 h-4 w-4" />
-                        <label htmlFor="incGrps" className="text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer">Include Group Items</label>
-                    </div>
+                    <p className="text-sm text-zinc-500">Comprehensive list of winners by items and points.</p> 
                 </div> 
              </Card>
              <Card title="Declared Results" action={<button onClick={generateResultsReport} className="text-indigo-600 hover:text-indigo-800"><Trophy size={20}/></button>}> {filteredResults.length > 0 && <CountBadge count={filteredResults.length} />} <div className="text-center p-4"> <Trophy className="h-12 w-12 mx-auto text-rose-400 mb-2" /> <p className="text-sm text-zinc-500">Published results by Single/Group.</p> </div> </Card>
@@ -573,6 +798,9 @@ const ReportsPage: React.FC = () => {
              <Card title="Program Manual" action={<button onClick={generateProgramManual} className="text-indigo-600 hover:text-indigo-800"><Book size={20}/></button>}> {filteredItems.length > 0 && <CountBadge count={filteredItems.length} />} <div className="text-center p-4"> <Book className="h-12 w-12 mx-auto text-orange-400 mb-2" /> <p className="text-sm text-zinc-500">Handbook with rules and details.</p> </div> </Card>
              <Card title="Schedule" action={<button onClick={generateScheduleReport} className="text-indigo-600 hover:text-indigo-800"><Calendar size={20}/></button>}> {filteredSchedule.length > 0 && <CountBadge count={filteredSchedule.length} />} <div className="text-center p-4"> <Calendar className="h-12 w-12 mx-auto text-amber-400 mb-2" /> <p className="text-sm text-zinc-500">Detailed event schedule and timeline.</p> </div> </Card>
         </div>
+        
+        {isSettingsOpen && <CustomizationModal />}
+        
         <ReportViewer isOpen={!!reportContent} onClose={() => setReportContent(null)} title={reportContent?.title || ''} content={reportContent?.content || ''} isSearchable={reportContent?.isSearchable} hideHeader={reportContent?.hideHeader} hideFooter={reportContent?.hideFooter} />
     </div>
   );
